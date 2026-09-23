@@ -1,6 +1,6 @@
 # 🎯 InterviewMate · AI 面试陪练
 
-![version](https://img.shields.io/badge/version-0.9.0-4f6bf0) ![license](https://img.shields.io/badge/license-MIT-green) ![deps](https://img.shields.io/badge/dependencies-0-brightgreen) ![node](https://img.shields.io/badge/node-%3E%3D18-339933)
+![version](https://img.shields.io/badge/version-0.10.0-4f6bf0) ![license](https://img.shields.io/badge/license-MIT-green) ![deps](https://img.shields.io/badge/dependencies-0-brightgreen) ![node](https://img.shields.io/badge/node-%3E%3D18-339933)
 
 > 你的私人 AI 面试官 —— **智能体教练**、模拟面试、间隔重复复习、岗位雷达、简历工坊、个人知识库，本地运行、数据自持。
 
@@ -20,14 +20,23 @@
 
 | 内置工具 | 能力 |
 | --- | --- |
-| `my_stats()` | 读取各分类掌握度、待复习数、模拟面试得分历史 |
+| `my_stats()` | 读取各分类掌握度、待复习数、错题数、模拟面试得分历史、目标面试倒计时 |
 | `search_bank(query)` | 检索题库（含掌握状态） |
 | `get_resume()` | 读取简历工坊中的当前简历 |
 | `search_jobs(query)` | 检索岗位雷达已汇集的岗位 |
 | `add_cards(cards)` | **直接创建练习题**并入题库与复习系统 |
 | `save_knowledge(...)` | **直接写入知识库** |
+| `search_knowledge(query)` | 检索用户知识库（标题/内容/标签） |
+| `my_wrong()` | 读取错题本（挂科次数最多的题目） |
 
-多步执行循环：模型输出 `TOOL: {...}` → 本地执行 → 结果回灌 → 继续推理（最多 4 轮），界面上以工具芯片实时展示每次调用。内置任务卡：**弱项体检 + 7 天冲刺计划**（自动建题）、**简历 × 岗位匹配**（自动存档）、**今日特训清单**。
+多步执行循环：模型输出 `TOOL: {...}` → 本地执行 → 结果回灌 → 继续推理（最多 4 轮），界面上以工具芯片实时展示每次调用。内置任务卡：**距面试冲刺计划**（结合倒计时与错题本）、**弱项体检 + 7 天冲刺计划**（自动建题）、**简历 × 岗位匹配**（自动存档）、**今日特训清单**。
+
+**🎯 冲刺与复盘套件**（v0.10）：
+
+- **面试倒计时**：设置目标面试日期，看板常驻 D-Day 倒计时，Agent 与每日简报自动围绕剩余天数排计划
+- **错题本**：评「不会」的题自动聚合，按挂科次数排序，一键「错题重练」
+- **分享成绩单**：面试报告一键生成 1200×675 精美成绩卡（评分环 + 维度条 + 渐变光斑），下载即发朋友圈
+- **新手引导**：首次访问三步上手（v0.9）
 
 **🛒 Agent 技能市场**（v0.8）：把 Agent 从固定功能变成可扩展平台——
 
@@ -201,6 +210,8 @@ INTERVIEW_MATE_JOB_REFRESH_MIN=30
 - [x] **Anki 式记忆套件**（填空卡 / 限时口述 / 练习年历 / 复习预测 / Anki 互通）（v0.7）
 - [x] **PWA 可安装**（网络优先 SW，离线兜底）（v0.7）
 - [x] **Agent 技能市场**（自定义 HTTP 工具 / 自定义专家 / 官方技能包 / JSON 分享）（v0.8）
+- [x] 新手引导 + 开源工程化（CI / 贡献指南 / 截图），上线 GitHub（v0.9）
+- [x] 冲刺与复盘套件（面试倒计时 / 错题本 / 分享成绩单 / Agent 新工具）（v0.10）
 - [ ] 团队部署模式（服务端统一密钥、多用户数据隔离）——按需启动
 
 ## ❓ FAQ

@@ -1,5 +1,5 @@
 /* 模拟面试：AI 面试官逐题追问 + 评估报告 + 语音 */
-import { $, $$, esc, md, icon, toast, downloadFile, printHtml, fmtTime, confetti, animateRing } from '../core.js';
+import { $, $$, esc, md, icon, toast, downloadFile, printHtml, fmtTime, confetti, animateRing, downloadShareCard } from '../core.js';
 import { S, persist } from '../state.js';
 import { streamChat, hasKey } from '../api.js';
 import { switchView } from '../router.js';
@@ -384,6 +384,7 @@ function finishMock(reportMd) {
     </div>
     <div class="md">${md(body || raw)}</div>
     <div class="report-actions">
+      <button class="btn small ghost" id="rp-share">${icon('star', 14)}生成分享图</button>
       <button class="btn small ghost" id="rp-export">${icon('download', 14)}导出 Markdown</button>
       <button class="btn small ghost" id="rp-print">${icon('printer', 14)}打印 / 存为 PDF</button>
       <button class="btn small primary" id="rp-again">${icon('rotate', 14)}再来一场</button>
@@ -392,6 +393,15 @@ function finishMock(reportMd) {
   $('#chat-messages').scrollTop = $('#chat-messages').scrollHeight;
   requestAnimationFrame(() => animateRing($('.score-ring', card), total ?? 0));
   if ((total ?? 0) >= 80) confetti(2200);
+  $('#rp-share').onclick = () => {
+    downloadShareCard({
+      title: '模拟面试成绩单',
+      subtitle: `${ROLE_NAMES[m.cfg.role] || ''} · ${TYPE_NAMES[m.cfg.type] || ''}`,
+      score: total ?? 0,
+      dims,
+    }, `面试成绩单-${new Date().toISOString().slice(0, 10)}.png`);
+    toast('分享图已生成，去下载文件夹查看', 'ok');
+  };
   $('#rp-export').onclick = () => downloadFile(`面试报告-${new Date().toISOString().slice(0, 10)}.md`, raw, 'text/markdown');
   $('#rp-print').onclick = () => printHtml('面试评估报告', `<h1>面试评估报告</h1>${md(raw)}`);
   $('#rp-again').onclick = resetMock;

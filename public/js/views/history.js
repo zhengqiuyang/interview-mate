@@ -1,5 +1,5 @@
 /* 面试记录：时间线 / 筛选 / 导出 / 打印 */
-import { $, $$, esc, md, icon, toast, openModal, downloadFile, printHtml, fmtDate, fmtTime } from '../core.js';
+import { $, $$, esc, md, icon, toast, openModal, downloadFile, printHtml, fmtDate, fmtTime, downloadShareCard } from '../core.js';
 import { S } from '../state.js';
 import { renderReport } from './resume.js';
 import { startFlashcards } from './flashcards.js';
@@ -75,9 +75,27 @@ function viewSession(s) {
   $('.modal-body', m.el).innerHTML = `
     <div class="md">${md(s.reportMd)}</div>
     <div class="result-tools">
+      ${isMock ? '<button class="btn small ghost" id="hv-share">✨ 生成分享图</button>' : ''}
       <button class="btn small ghost" id="hv-print">${icon('printer', 14)}打印 / 存为 PDF</button>
       <button class="btn small ghost" id="hv-export">${icon('download', 14)}导出 Markdown</button>
     </div>`;
+  const shareBtn = $('#hv-share', m.el);
+  if (shareBtn) {
+    shareBtn.onclick = () => {
+      const scoreM = s.reportMd.match(/总体评分[：:]*\s*(\d{1,3})\s*(?:\/|分)?\s*100/);
+      const dims = [];
+      const re = /[-*]\s*([^\s：:（(]{2,10})[：:]\s*(\d{1,2}(?:\.\d+)?)\s*\/\s*10/g;
+      let mm;
+      while ((mm = re.exec(s.reportMd))) dims.push({ name: mm[1], score: Number(mm[2]) });
+      downloadShareCard({
+        title: '模拟面试成绩单',
+        subtitle: s.title,
+        score: scoreM ? Number(scoreM[1]) : (s.score ?? 0),
+        dims,
+      }, `面试成绩单-${fmtDate(s.date).slice(0, 10)}.png`);
+      toast('分享图已生成', 'ok');
+    };
+  }
   $('#hv-print', m.el).onclick = () => {
     const title = isMock ? '面试评估报告' : 'JD 匹配分析';
     printHtml(title, `<h1>${title}</h1>${md(s.reportMd)}`);

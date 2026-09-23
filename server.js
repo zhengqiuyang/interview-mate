@@ -157,12 +157,14 @@ function buildDeepdiveSystemPrompt(question, answer) {
 
 const AGENT_TOOL_SPEC = [
   '可用工具（每次最多一个）：',
-  '1. my_stats() — 获取用户学习统计：各分类掌握度、待复习数、模拟面试历史得分',
+  '1. my_stats() — 获取用户学习统计：各分类掌握度、待复习数、错题数、模拟面试历史得分、目标面试倒计时',
   '2. search_bank(query) — 按关键词搜索题库，返回题目（id、题干、分类、是否掌握）',
   '3. get_resume() — 获取用户当前保存的简历全文',
   '4. search_jobs(query) — 搜索已汇集的岗位库（含标题、公司、薪资、JD 摘要）',
   '5. add_cards(cards) — 为用户创建自定义练习题并进入复习系统，cards: [{q, a}]',
   '6. save_knowledge(title, content, tags) — 将内容存入用户知识库',
+  '7. search_knowledge(query) — 搜索用户知识库条目（标题/内容/标签）',
+  '8. my_wrong() — 获取用户错题本（挂科次数最多的题目）',
   '',
   '执行规则（严格遵守）：',
   '- 需要调用工具时，只输出一行，格式：TOOL: {"name": "工具名", "args": {...}}，然后立即停止输出，等待 TOOL_RESULT 消息。',

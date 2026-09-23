@@ -82,7 +82,19 @@ export function render() {
   });
 
   const streak = streakDays();
+  const daysLeft = S.targetDate
+    ? Math.ceil((new Date(S.targetDate + 'T23:59:59') - new Date()) / 86400000)
+    : null;
   $('#dash-streak').innerHTML = `
+    ${daysLeft != null ? `
+      <div class="streak-flame" style="background:linear-gradient(135deg,#4f6bf0,#7c5cf5);box-shadow:0 4px 14px rgba(79,107,240,.45)">
+        ${daysLeft >= 0 ? daysLeft : '⏰'}
+      </div>
+      <div>
+        <div class="streak-num">${daysLeft >= 0 ? daysLeft + ' 天' : '已过期'}</div>
+        <div class="streak-label">距目标面试（${S.targetDate}）</div>
+      </div>
+      <div style="width:1px;height:34px;background:var(--line);margin:0 4px"></div>` : ''}
     <div class="streak-flame">${icon('flame', 22)}</div>
     <div>
       <div class="streak-num">${streak} 天</div>

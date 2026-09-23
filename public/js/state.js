@@ -52,6 +52,7 @@ export const S = {
   customTools: store.get('im_custom_tools', []),
   customExperts: store.get('im_custom_experts', []),
   panelPick: store.get('im_panel_pick', ['interviewer', 'strategist', 'coach']),
+  targetDate: store.get('im_target_date', ''),
   serverKey: false,
   bankLoaded: false,
 };
@@ -74,6 +75,7 @@ const KEYMAP = {
   customTools: 'im_custom_tools',
   customExperts: 'im_custom_experts',
   panelPick: 'im_panel_pick',
+  targetDate: 'im_target_date',
 };
 
 export function persist(key) {

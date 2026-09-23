@@ -8,7 +8,7 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="/icon.svg">
-  <link rel="stylesheet" href="/css/style.css?v=0.9.0">
+  <link rel="stylesheet" href="/css/style.css?v=0.10.0">
 </head>
 <body>
   <div class="aurora"></div>
@@ -39,7 +39,7 @@
         <button class="tool-btn" id="palette-btn" title="命令面板 Ctrl+K"><span data-icon="command"></span><em>命令面板</em></button>
       </div>
       <div class="sidebar-foot">
-        v0.9.0 · 本地运行 · 数据自持<br>
+        v0.10.0 · 本地运行 · 数据自持<br>
         题库体系参考
         <a href="https://github.com/Snailclimb/JavaGuide" target="_blank" rel="noopener">JavaGuide</a> ·
         <a href="https://github.com/CyC2018/CS-Notes" target="_blank" rel="noopener">CS-Notes</a> ·
@@ -465,12 +465,16 @@
         </div>
 
         <div class="card settings-card">
-          <h3><span class="ico" data-icon="palette"></span>外观</h3>
+          <h3><span class="ico" data-icon="palette"></span>外观与目标</h3>
           <div class="seg" id="theme-choice">
             <button data-theme-val="auto">跟随系统</button>
             <button data-theme-val="light">浅色</button>
             <button data-theme-val="dark">深色</button>
           </div>
+          <label class="field" style="margin-top:14px">
+            <span>🎯 目标面试日期（用于看板倒计时与 Agent 冲刺计划）</span>
+            <input type="date" id="set-target-date">
+          </label>
         </div>
 
         <div class="card settings-card">
@@ -506,7 +510,7 @@
 
         <div class="card settings-card about">
           <h3><span class="ico" data-icon="info"></span>关于</h3>
-          <p>InterviewMate v0.9.0 · 零依赖本地运行 · 数据不出本机（除 LLM 请求本身）</p>
+          <p>InterviewMate v0.10.0 · 零依赖本地运行 · 数据不出本机（除 LLM 请求本身）</p>
           <div class="actions">
             <button class="btn ghost" id="btn-onboarding">🚀 重看新手引导</button>
           </div>
@@ -531,6 +535,6 @@
   <div id="toast-root"></div>
   <div id="fatal-error" class="banner warn hidden" style="position:fixed;left:50%;transform:translateX(-50%);bottom:24px;z-index:200"></div>
 
-  <script type="module" src="/js/app.js?v=0.9.0"></script>
+  <script type="module" src="/js/app.js?v=0.10.0"></script>
 </body>
 </html>

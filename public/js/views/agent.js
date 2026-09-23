@@ -5,13 +5,18 @@ import { $, $$, esc, md, icon, toast, staggerIn, openModal, confirmModal, downlo
 import { S, persist, remergeBank } from '../state.js';
 import { streamChat, hasKey } from '../api.js';
 import { switchView } from '../router.js';
-import { catMastery, dueList, isMastered, streakDays } from '../srs.js';
+import { catMastery, dueList, isMastered, streakDays, wrongList } from '../srs.js';
 import { render as renderBank } from './bank.js';
 import { render as renderDashboard } from './dashboard.js';
 
 const MAX_TOOL_CALLS = 4;
 
 const MISSIONS = [
+  {
+    icon: 'calendar', name: '🎯 距面试冲刺计划',
+    desc: '结合面试倒计时与错题本，输出按天拆解的冲刺计划（先去设置里填目标面试日期）',
+    prompt: '请用 my_stats() 查看我的目标面试倒计时与掌握度，用 my_wrong() 查看错题本，然后输出一份按天拆解的冲刺计划（精确到每天复习哪些具体题目题干，优先消灭错题与薄弱分类），最后用 add_cards 创建 3 道最可能考到的押题。',
+  },
   {
     icon: 'gauge', name: '弱项体检 + 7 天冲刺计划',
     desc: '读取你的学习数据，找出薄弱分类，生成每天可执行的冲刺计划并创建针对弱项的新题',
@@ -147,22 +152,43 @@ const TOOLS = {
     persist('knowledge');
     return { 已保存知识: title };
   },
+  search_knowledge(args = {}) {
+    const kw = String(args.query || '').trim().toLowerCase();
+    if (!kw) return { error: 'query 不能为空' };
+    const hits = S.knowledge
+      .filter((k) => `${k.title} ${k.content} ${(k.tags || []).join(' ')}`.toLowerCase().includes(kw))
+      .slice(0, 5);
+    return { 知识条目: hits.map((k) => ({ 标题: k.title, 摘要: (k.content || '').slice(0, 160), 标签: k.tags })), 命中数: hits.length, 知识库总量: S.knowledge.length };
+  },
+  my_wrong() {
+    const wrong = wrongList().slice(0, 8).map((qid) => {
+      const q = S.questions.find((x) => x.id === qid);
+      const c = S.srs[qid];
+      return { 题干: q?.q?.slice(0, 50), 挂科次数: c.lapses, 当前间隔级别: c.box };
+    });
+    return { 错题数: wrongList().length, 错题: wrong };
+  },
 };
 
 export function collectStatsText(forTool = false) {
   const cats = catMastery();
   const mocks = S.sessions.filter((s) => s.kind === 'mock' && s.score != null);
   const avg = mocks.length ? Math.round(mocks.reduce((a, s) => a + s.score, 0) / mocks.length) : null;
+  const daysLeft = S.targetDate
+    ? Math.ceil((new Date(S.targetDate + 'T23:59:59') - new Date()) / 86400000)
+    : null;
   const data = {
     连续打卡天数: streakDays(),
     各分类掌握度: cats.map((c) => `${c.name}: ${c.mastered}/${c.total}（${c.pct}%）`),
     待复习题数: dueList().length,
+    错题数: wrongList().length,
     已学题目数: Object.keys(S.srs).length,
     模拟面试: mocks.length ? `共 ${mocks.length} 场均分 ${avg}，最近三场：${mocks.slice(0, 3).map((m) => `${m.score}分`).join('、')}` : '暂无',
     知识库条目: S.knowledge.length,
+    目标面试日期: daysLeft != null ? `${S.targetDate}（${daysLeft >= 0 ? `还剩 ${daysLeft} 天` : '已过，请更新' }）` : '未设置',
   };
   if (forTool) return data;
-  return `连续打卡 ${data.连续打卡天数} 天；待复习 ${data.待复习题数} 题；已学 ${data.已学题目数} 题；模拟面试：${data.模拟面试}；分类掌握：${data.各分类掌握度.join('；')}；知识库 ${data.知识库条目} 条。`;
+  return `连续打卡 ${data.连续打卡天数} 天；待复习 ${data.待复习题数} 题；错题 ${data.错题数} 道；已学 ${data.已学题目数} 题；模拟面试：${data.模拟面试}；分类掌握：${data.各分类掌握度.join('；')}；知识库 ${data.知识库条目} 条；目标面试：${data.目标面试日期}。`;
 }
 
 async function execTool(call, allowedTools) {

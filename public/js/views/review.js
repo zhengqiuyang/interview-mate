@@ -1,7 +1,7 @@
 /* 复习中心：间隔重复队列 + 每日挑战 */
 import { $, $$, esc, icon } from '../core.js';
 import { S } from '../state.js';
-import { dueList, learningList, freshList, masteryStats, streakDays, dailyQuestion, isDailyDone } from '../srs.js';
+import { dueList, learningList, freshList, masteryStats, streakDays, dailyQuestion, isDailyDone, wrongList } from '../srs.js';
 import { startFlashcards } from './flashcards.js';
 
 export function init() { /* 静态骨架 */ }
@@ -49,6 +49,17 @@ function render() {
 
   // 复习队列
   const preview = due.slice(0, 6).map(qById).filter(Boolean);
+  // 错题本：挂过科且未掌握
+  const wrong = wrongList().map(qById).filter(Boolean);
+  const wrongHtml = wrong.length ? `
+      ${wrong.slice(0, 6).map((q) => {
+        const c = S.srs[q.id];
+        return `<div class="fu-row"><span class="muted" style="width:52px">✕${c.lapses} 次</span><span style="flex:1">${esc(q.q.slice(0, 34))}${q.q.length > 34 ? '…' : ''}</span><span class="q-cat">${esc(catName(q))}</span></div>`;
+      }).join('')}
+      ${wrong.length > 6 ? `<p class="hint">…还有 ${wrong.length - 6} 道错题</p>` : ''}
+      <div class="actions"><button class="btn primary" id="wrong-drill">${icon('zap')}错题重练（${wrong.length}）</button></div>`
+    : '<p class="hint">没有错题记录。评「不会」的题会自动进入这里，挂科次数越多排越前。</p>';
+
   $('#rev-queue').innerHTML = `
     ${preview.length ? `
       <div class="recent-item" style="cursor:default">
@@ -63,7 +74,12 @@ function render() {
       <button class="btn primary" id="rev-start" ${due.length ? '' : 'disabled'}>${icon('play')}开始复习（${due.length}）</button>
       <button class="btn ghost" id="rev-fresh">${icon('plus')}提前学 10 道新题</button>
       <button class="btn ghost" id="rev-drill">${icon('zap')}限时闪卡挑战</button>
-    </div>`;
+    </div>
+    <h3 style="margin:16px 0 6px;font-size:14px">📕 错题本（${wrong.length}）</h3>
+    ${wrongHtml}`;
+  $('#wrong-drill')?.addEventListener('click', () => {
+    startFlashcards(wrong, { source: 'review', title: '错题重练', onFinish: render });
+  });
   $('#rev-start').onclick = startReview;
   $('#rev-fresh').onclick = () => {
     const ids = freshList(10);

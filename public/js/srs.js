@@ -60,6 +60,15 @@ export function learningList() {
     .map(([qid]) => qid);
 }
 
+/* 错题本：挂过科（lapses>0）且尚未掌握的题，按挂科次数排序 */
+export function wrongList() {
+  return Object.entries(S.srs)
+    .filter(([, c]) => c.lapses > 0 && c.box < 3)
+    .sort((a, b) => b[1].lapses - a[1].lapses)
+    .map(([qid]) => qid)
+    .filter((qid) => S.questions.find((q) => q.id === qid));
+}
+
 /* 随机挑 n 道未学过的题（无卡片记录） */
 export function freshList(n, filterFn) {
   const pool = S.questions.filter((q) => !S.srs[q.id] && (filterFn ? filterFn(q) : true));

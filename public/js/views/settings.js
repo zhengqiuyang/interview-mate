@@ -26,6 +26,7 @@ export function init() {
   $('#set-baseurl').value = S.settings.baseURL || '';
   $('#set-model').value = S.settings.model || '';
   $('#set-key').value = S.settings.apiKey || '';
+  $('#set-target-date').value = S.targetDate || '';
   const temp = Math.round((S.settings.temperature ?? 0.7) * 10);
   $('#set-temp').value = temp;
   $('#set-temp-out').textContent = (temp / 10).toFixed(1);
@@ -49,6 +50,8 @@ export function init() {
       temperature: Number($('#set-temp').value) / 10,
     };
     persist('settings');
+    S.targetDate = $('#set-target-date').value || '';
+    persist('targetDate');
     toast('设置已保存', 'ok');
     $('#mock-nokey').classList.toggle('hidden', hasKey());
   };

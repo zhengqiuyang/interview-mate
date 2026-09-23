@@ -452,6 +452,114 @@ export function confetti(duration = 1600) {
   })(start);
 }
 
+/* ---------- 分享卡片：Canvas 生成可分享的成绩图 ---------- */
+
+export function drawShareCard({ title, subtitle, score, max = 100, dims = [], footer = 'InterviewMate · AI 面试陪练' }) {
+  const W = 1200, H = 675;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  const FONT = '"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif';
+
+  // 背景：深色渐变 + 两团光斑
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, '#0d1526');
+  bg.addColorStop(1, '#1b1f4b');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+  for (const [x, y, r, c] of [[W * 0.85, H * 0.1, 340, 'rgba(79,107,240,0.35)'], [W * 0.05, H * 0.95, 300, 'rgba(124,92,245,0.28)']]) {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, c);
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // 左侧：评分环
+  const cx = 250, cy = H / 2 + 14, R = 150;
+  ctx.lineWidth = 26;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = 'rgba(255,255,255,0.09)';
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
+  const ring = ctx.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
+  ring.addColorStop(0, '#4f6bf0');
+  ring.addColorStop(1, '#9a7cf8');
+  ctx.strokeStyle = ring;
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(score / max, 1));
+  ctx.stroke();
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `800 92px ${FONT}`;
+  ctx.fillText(String(score), cx, cy + 18);
+  ctx.font = `500 26px ${FONT}`;
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.fillText('/ ' + max, cx, cy + 58);
+
+  // 右侧：标题 + 副标题 + 维度条
+  const RX = 500, RW = W - RX - 80;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `800 46px ${FONT}`;
+  ctx.fillText(title.slice(0, 14), RX, 150);
+  if (subtitle) {
+    ctx.font = `400 24px ${FONT}`;
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.fillText(subtitle.slice(0, 26), RX, 196);
+  }
+  ctx.font = `400 22px ${FONT}`;
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fillText(new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' }), RX, H - 92);
+
+  let y = 260;
+  for (const d of dims.slice(0, 6)) {
+    ctx.font = `600 24px ${FONT}`;
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillText(String(d.name).slice(0, 6), RX, y + 8);
+    const barX = RX + 120, barW = RW - 200;
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    roundRect(ctx, barX, y - 10, barW, 16, 8); ctx.fill();
+    const g2 = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+    g2.addColorStop(0, '#4f6bf0'); g2.addColorStop(1, '#9a7cf8');
+    ctx.fillStyle = g2;
+    roundRect(ctx, barX, y - 10, Math.max(barW * Math.min(d.score / 10, 1), 16), 16, 8); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = `700 22px ${FONT}`;
+    ctx.fillText(`${d.score}/10`, barX + barW + 16, y + 8);
+    y += 52;
+  }
+
+  // 底部水印
+  ctx.font = `700 22px ${FONT}`;
+  const grad = ctx.createLinearGradient(RX, 0, W - 80, 0);
+  grad.addColorStop(0, '#8ea2ff'); grad.addColorStop(1, '#c0aefb');
+  ctx.fillStyle = grad;
+  ctx.textAlign = 'right';
+  ctx.fillText(footer, W - 80, H - 60);
+
+  return cv.toDataURL('image/png');
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+export function downloadShareCard(opts, filename = 'interview-mate-成绩单.png') {
+  const url = drawShareCard(opts);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
 /* 在新窗口打印（用于报告导出 PDF） */
 export function printHtml(title, bodyHtml) {
   const win = window.open('', '_blank');
