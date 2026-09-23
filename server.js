@@ -208,6 +208,20 @@ function buildBriefSystemPrompt() {
   ].join('\n');
 }
 
+function buildParseResumePrompt() {
+  return [
+    '你是简历结构化专家。用户会提供简历原文（可能来自 PDF/Word 提取，含噪音），请解析为结构化 JSON。严格只输出一个 JSON 对象（不要其他文字、不要代码块包裹），格式：',
+    '{',
+    '"name": "姓名",',
+    '"headline": "一句话头衔（如：后端工程师 · 3 年经验）",',
+    '"contacts": ["电话/邮箱/GitHub 等联系方式，逐项"]',
+    '"skills": ["技能点，拆分到词"]',
+    '"sections": [{"heading": "小节名（教育背景/工作经历/项目经历…用原文语义）", "lines": ["该节下的每一行内容，去掉装饰符号，保留时间与量化数据"]}]',
+    '}',
+    '要求：保持原文事实不改动；噪音行（页码/纯符号）丢弃；无对应内容用空数组；行内不要加 Markdown 符号。',
+  ].join('\n');
+}
+
 function buildJdSystemPrompt() {
   return [
     '你是一位资深技术招聘官。用户会提供一段招聘 JD（岗位描述），请输出结构化分析，严格使用如下 Markdown 格式：',
@@ -370,6 +384,9 @@ async function proxyChat(res, body) {
     }
     case 'brief':
       system = buildBriefSystemPrompt();
+      break;
+    case 'parse-resume':
+      system = buildParseResumePrompt();
       break;
     case 'jd':
       system = buildJdSystemPrompt();

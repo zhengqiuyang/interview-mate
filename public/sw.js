@@ -1,5 +1,5 @@
 /* InterviewMate Service Worker：网络优先 + 缓存兜底（保证更新即时生效，离线时回退缓存） */
-const CACHE = 'interview-mate-v0.15.0';
+const CACHE = 'interview-mate-v0.16.0';
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
