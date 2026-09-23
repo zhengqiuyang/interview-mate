@@ -82,7 +82,7 @@
 | 📚 **题库练习** | **90+ 内置高频题、11 大分类**（含 Java 专项、手写代码模板），相关题目推荐、多维筛选、收藏、**题目笔记**、掌握标记、AI 追问、题库导出 | 部分（AI 追问需要） |
 | 📡 **岗位雷达** | 订阅公开源（RemoteOK / HN 招聘帖 / 自定义 JSON / RSS）**定时自动抓取**，关键词过滤 + 去重 + 未读徽标；**选择简历后本地匹配分自动排序**；AI 岗位情报 | 抓取/匹配❌ / AI 分析✅ |
 | 🧠 **知识库** | Markdown 知识条目 + 标签 + 全文检索；**AI 剪藏生成学习卡**：贴一篇文章 → 摘要 + 3-8 张问答卡 → 一键进题库与间隔重复 | 新建❌ / AI 生成✅ |
-| 📋 **简历工坊 2.0** | **上传 PDF / Word（.docx）即刻在线文档式展示**（AI 智能结构化：姓名/头衔/联系方式/技能/分节渲染，无 Key 启发式兜底）；左侧**简历库**管理多份简历（来源标记/字数/切换）；每份简历直接挂 AI 操作：**智能解析 / 润色 / JD 诊断 / 匹配岗位**；结构化诊断报告 + 追问转练习题 | 解析/展示❌ / AI✅ |
+| 📋 **简历工坊 2.0** | **上传 PDF / Word 后原生文档展示**——PDF 内嵌浏览器原生查看器（带页面/缩放），DOCX 由内置 docx-preview 渲染成带页面的 Word 视图；原文件存本地服务端；另有 AI 智能结构化视图（无 Key 启发式兜底）双标签切换；左侧**简历库**管理多份简历（来源标记/字数/切换）；每份简历直接挂 AI 操作：**智能解析 / 润色 / JD 诊断 / 匹配岗位**；结构化诊断报告 + 追问转练习题 | 解析/展示❌ / AI✅ |
 | 🗂️ **面试记录** | 分类筛选、回看、**导出 Markdown**、**打印/保存 PDF** | ❌ |
 
 ### 🎨 界面与体验
@@ -239,7 +239,7 @@ server.js 职责单一（静态 + API 网关），前端是纯静态 ES Modules�
 
 ## 📄 License
 
-[MIT](LICENSE)。内置的 [pdf.js](public/vendor/pdfjs/)（PDF 文本提取）为 Mozilla 出品，遵循 [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0)，版权归 Mozilla 及贡献者所有。
+[MIT](LICENSE)。内置的 [pdf.js](public/vendor/pdfjs/)（PDF 文本提取）为 Mozilla 出品，遵循 [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0)，版权归 Mozilla 及贡献者所有；[JSZip](https://stuk.github.io/jszip/)（MIT）与 [docx-preview](https://github.com/VolodymyrBaydalka/docxjs)（Apache-2.0）用于 Word 原样渲染。
 
 ## 🤝 贡献
 
