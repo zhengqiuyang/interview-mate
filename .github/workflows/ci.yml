@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 服务端语法检查
+        run: |
+          node --check server.js
+          node --check lib/jobs.js
+          node --check lib/briefs.js
+          node --check public/sw.js
+      - name: 题库完整性
+        run: |
+          node -e "
+            const q = require('./data/questions.json');
+            const cats = new Set(q.categories.map(c => c.key));
+            const ids = new Set();
+            for (const x of q.questions) {
+              if (!cats.has(x.cat)) throw new Error('未分类题目: ' + x.id);
+              if (ids.has(x.id)) throw new Error('重复 ID: ' + x.id);
+              ids.add(x.id);
+              if (!x.q || !x.a) throw new Error('题干/答案缺失: ' + x.id);
+            }
+            console.log('题库', q.questions.length, '题，', q.categories.length, '个分类，校验通过');
+          "
+      - name: 前端模块导入自检（ESM 链接完整性）
+        run: |
+          node -e "
+            const { pathToFileURL } = require('url');
+            const path = require('path');
+            const mods = [
+              './public/js/app.js', './public/js/router.js', './public/js/state.js',
+              './public/js/core.js', './public/js/api.js', './public/js/srs.js', './public/js/gamify.js',
+              ...['dashboard','mock','bank','review','jobs','knowledge','resume','history','settings','agent','flashcards']
+                .map(v => './public/js/views/' + v + '.js'),
+            ];
+            (async () => {
+              for (const m of mods) await import(pathToFileURL(path.resolve(m)).href);
+              console.log(mods.length + ' 个模块导入通过');
+            })();
+          "
+      - name: manifest 校验
+        run: node -e "JSON.parse(require('fs').readFileSync('public/manifest.json','utf8')); console.log('manifest OK')"

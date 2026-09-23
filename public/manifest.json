@@ -1,0 +1,13 @@
+{
+  "name": "InterviewMate · AI 面试陪练",
+  "short_name": "InterviewMate",
+  "description": "AI Agent 面试训练系统：模拟面试、间隔重复、岗位雷达、简历工坊",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0d1526",
+  "theme_color": "#4f6bf0",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

@@ -1,0 +1,29 @@
+[
+  {
+    "title": "高级后端工程师 - 交易平台（Go/Java）",
+    "company": "示例科技公司",
+    "location": "上海",
+    "salary": "35-60K·16薪",
+    "url": "https://example.com/jobs/1",
+    "description": "负责核心交易系统设计与开发。要求：3 年以上后端经验；熟悉 Go 或 Java；深入理解 MySQL 索引优化与 Redis；有高并发（秒杀/抢购）实战经验优先；熟悉 Kafka 或 RabbitMQ。",
+    "date": "2026-09-20"
+  },
+  {
+    "title": "前端工程师 - 性能优化方向",
+    "company": "示例互联网公司",
+    "location": "杭州",
+    "salary": "25-45K",
+    "url": "https://example.com/jobs/2",
+    "description": "负责电商前端性能治理。要求：扎实的前端基础（事件循环/渲染原理）；有首屏优化、虚拟列表、Core Web Vitals 治理经验；熟悉 React 或 Vue；能独立排查内存泄漏。",
+    "date": "2026-09-19"
+  },
+  {
+    "title": "基础架构工程师 - 存储方向",
+    "company": "示例基础软件公司",
+    "location": "北京",
+    "salary": "40-70K",
+    "url": "https://example.com/jobs/3",
+    "description": "参与分布式存储研发。要求：精通 C++ 或 Rust；理解 B+ 树/LSM-Tree 与 MVCC；有 RocksDB/MySQL 内核经验优先；能读懂论文并落地。",
+    "date": "2026-09-18"
+  }
+]

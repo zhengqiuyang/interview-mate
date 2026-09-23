@@ -1,0 +1,12 @@
+# 运行时状态（用户本地数据，不入库）
+data/jobs-store.json
+data/briefs.json
+
+# 密钥
+.env
+
+# 系统
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
