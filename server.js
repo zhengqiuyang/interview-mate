@@ -65,6 +65,8 @@ const MIME = {
   '.txt': 'text/plain; charset=utf-8',
   '.md': 'text/markdown; charset=utf-8',
   '.woff2': 'font/woff2',
+  '.pdf': 'application/pdf',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 };
 
 /* ---------------- 提示词 ---------------- */
@@ -303,6 +305,25 @@ function readBody(req, limit = 2 * 1024 * 1024) {
       chunks.push(c);
     });
     req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    req.on('error', reject);
+  });
+}
+
+/* 二进制读取（文件上传用） */
+function readBodyRaw(req, limit = 20 * 1024 * 1024) {
+  return new Promise((resolve, reject) => {
+    let size = 0;
+    const chunks = [];
+    req.on('data', (c) => {
+      size += c.length;
+      if (size > limit) {
+        reject(new Error('文件过大（上限 20MB）'));
+        req.destroy();
+        return;
+      }
+      chunks.push(c);
+    });
+    req.on('end', () => resolve(Buffer.concat(chunks)));
     req.on('error', reject);
   });
 }
@@ -568,6 +589,44 @@ async function handleApi(req, res, pathname) {
     } catch (e) {
       return sendJson(res, 400, { error: e.message });
     }
+  }
+
+  /* ---- 简历原文件：上传与展示 ---- */
+  const FILES_DIR = path.join(ROOT, 'data', 'files');
+  if (req.method === 'POST' && pathname === '/api/files/upload') {
+    try {
+      let name = 'file';
+      try { name = decodeURIComponent(req.headers['x-file-name'] || 'file'); } catch (_) { /* ignore */ }
+      const ext = (name.split('.').pop() || '').toLowerCase();
+      if (!['pdf', 'docx', 'txt', 'md'].includes(ext)) {
+        return sendJson(res, 400, { error: '仅支持 pdf / docx / txt / md 文件' });
+      }
+      const buf = await readBodyRaw(req);
+      if (!buf.length) return sendJson(res, 400, { error: '空文件' });
+      fs.mkdirSync(FILES_DIR, { recursive: true });
+      const id = 'f-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      const saved = `${id}.${ext}`;
+      fs.writeFileSync(path.join(FILES_DIR, saved), buf);
+      return sendJson(res, 200, { ok: true, url: '/api/files/' + saved, name, size: buf.length });
+    } catch (e) {
+      return sendJson(res, 400, { error: e.message });
+    }
+  }
+  if (req.method === 'GET' && pathname.startsWith('/api/files/')) {
+    const rel = pathname.replace('/api/files/', '');
+    if (!/^[\w.-]+$/.test(rel)) { res.writeHead(400); res.end('Bad file name'); return; }
+    const fp = path.join(FILES_DIR, rel);
+    if (!fp.startsWith(FILES_DIR) || !fs.existsSync(fp) || !fs.statSync(fp).isFile()) {
+      res.writeHead(404); res.end('Not Found'); return;
+    }
+    const ext = path.extname(fp).toLowerCase();
+    res.writeHead(200, {
+      'Content-Type': MIME[ext] || 'application/octet-stream',
+      'Content-Disposition': 'inline',
+      'Cache-Control': 'private, max-age=86400',
+    });
+    fs.createReadStream(fp).pipe(res);
+    return;
   }
 
   /* ---- 智能体简报 ---- */

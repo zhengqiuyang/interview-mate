@@ -167,6 +167,8 @@ function renderViewer() {
   }
 
   const parsed = r.parsed || heuristicParse(r.content || '');
+  const hasFile = Boolean(r.fileUrl && r.fileType);
+  const view = r.view === 'doc' || !hasFile ? 'doc' : 'native';
   const secHtml = (parsed.sections || []).map((sec) => `
     <div class="rs-doc-sec">
       ${sec.heading ? `<div class="rs-doc-h">${esc(sec.heading)}</div>` : ''}
@@ -188,19 +190,40 @@ function renderViewer() {
           <button class="btn small ghost" id="rs-match">${icon('radar', 13)}匹配岗位</button>
         </span>
       </div>
-      <div class="rs-doc">
-        <div class="rs-doc-head">
-          <div class="rs-doc-name">${esc(parsed.name || r.name)}</div>
-          ${parsed.headline ? `<div class="rs-doc-title">${esc(parsed.headline)}</div>` : ''}
-          ${parsed.contacts?.length ? `<div class="rs-doc-contact">${parsed.contacts.map(esc).join('　·　')}</div>` : ''}
+      ${hasFile ? `
+      <div class="seg" id="rs-view-tabs" style="margin-bottom:14px">
+        <button data-v="native" class="${view === 'native' ? 'active' : ''}">📄 原文预览</button>
+        <button data-v="doc" class="${view === 'doc' ? 'active' : ''}">🧩 结构化</button>
+      </div>` : ''}
+      <div id="rs-doc-pane" style="display:${view === 'doc' ? 'block' : 'none'}">
+        <div class="rs-doc">
+          <div class="rs-doc-head">
+            <div class="rs-doc-name">${esc(parsed.name || r.name)}</div>
+            ${parsed.headline ? `<div class="rs-doc-title">${esc(parsed.headline)}</div>` : ''}
+            ${parsed.contacts?.length ? `<div class="rs-doc-contact">${parsed.contacts.map(esc).join('　·　')}</div>` : ''}
+          </div>
+          ${parsed.skills?.length ? `
+          <div class="rs-doc-skills">
+            ${(parsed.skills).slice(0, 18).map((s) => `<span class="q-tag">${esc(String(s).slice(0, 18))}</span>`).join('')}
+          </div>` : ''}
+          ${secHtml || '<p class="hint">这份简历还没有内容，点「编辑原文」开始写。</p>'}
         </div>
-        ${parsed.skills?.length ? `
-        <div class="rs-doc-skills">
-          ${(parsed.skills).slice(0, 18).map((s) => `<span class="q-tag">${esc(String(s).slice(0, 18))}</span>`).join('')}
-        </div>` : ''}
-        ${secHtml || '<p class="hint">这份简历还没有内容，点「编辑原文」开始写。</p>'}
       </div>
+      ${hasFile ? `<div id="rs-native-pane" style="display:${view === 'native' ? 'block' : 'none'}"></div>` : ''}
     </div>`;
+
+  const nativePane = $('#rs-native-pane');
+  if (nativePane && view === 'native') renderNativeDoc(nativePane, r);
+  $$('#rs-view-tabs button').forEach((b) => {
+    b.onclick = () => {
+      r.view = b.dataset.v;
+      persist('resumes');
+      $$('#rs-view-tabs button').forEach((x) => x.classList.toggle('active', x === b));
+      $('#rs-doc-pane').style.display = b.dataset.v === 'doc' ? 'block' : 'none';
+      nativePane.style.display = b.dataset.v === 'native' ? 'block' : 'none';
+      if (b.dataset.v === 'native' && !nativePane.childElementCount) renderNativeDoc(nativePane, r);
+    };
+  });
 
   $('#rs-edit').onclick = () => { editMode = true; renderViewer(); };
   $('#rs-ai-parse').onclick = () => aiParse(r);
@@ -404,12 +427,28 @@ async function handleResumeFile(file) {
       toast('解析成功但文本太少——这份文件可能是扫描件（图片型 PDF），请上传文字版', 'err');
       return;
     }
-    // 直接创建并展示
+    // 原文件上传到本地服务端（供原文预览）
+    let fileUrl = null;
+    try {
+      const up = await fetch('/api/files/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/octet-stream',
+          'X-File-Name': encodeURIComponent(name),
+        },
+        body: file,
+      });
+      const j = await up.json();
+      if (up.ok && j.url) fileUrl = j.url;
+    } catch (_) { /* 文件保存失败不影响文本导入 */ }
+
     const r = {
       id: 'rs-' + Date.now(),
       name: name.replace(/\.(pdf|docx|doc|txt|md)$/i, '').slice(0, 24) || '上传简历',
       content: text, parsed: null, source: ext === 'md' ? 'txt' : ext,
+      fileUrl, fileType: fileUrl ? ext : null,
       updated: Date.now(),
+      view: 'native',
     };
     S.resumes.push(r);
     persist('resumes');
@@ -417,11 +456,57 @@ async function handleResumeFile(file) {
     editMode = false;
     renderLibrary();
     renderViewer();
-    toast(`已导入「${r.name}」（${text.length} 字）`, 'ok');
+    toast(`已导入「${r.name}」${fileUrl ? '，原文预览已就绪' : ''}`, 'ok');
     // 有 Key 时自动做 AI 结构化
     if (hasKey()) aiParse(r);
   } catch (e) {
     toast('解析失败：' + e.message, 'err');
+  }
+}
+
+/* ---------- 原生文档展示 ---------- */
+
+let docxLibLoading = null;
+function ensureDocxLib() {
+  if (window.docx) return Promise.resolve(window.docx);
+  if (docxLibLoading) return docxLibLoading;
+  const load = (src) => new Promise((ok, no) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = ok;
+    s.onerror = () => no(new Error('加载 ' + src + ' 失败'));
+    document.head.appendChild(s);
+  });
+  docxLibLoading = load('/vendor/docx/jszip.min.js')
+    .then(() => load('/vendor/docx/docx-preview.min.js'))
+    .then(() => {
+      if (!window.docx) throw new Error('docx-preview 加载异常');
+      return window.docx;
+    });
+  return docxLibLoading;
+}
+
+async function renderNativeDoc(container, r) {
+  if (r.fileType === 'pdf') {
+    container.innerHTML = `<iframe class="rs-native-pdf" src="${esc(r.fileUrl)}#zoom=page-fit" title="简历原文"></iframe>`;
+    return;
+  }
+  if (r.fileType === 'docx') {
+    container.innerHTML = '<div class="skeleton-lines"><i></i><i></i><i></i></div>';
+    try {
+      const lib = await ensureDocxLib();
+      const buf = await (await fetch(r.fileUrl)).arrayBuffer();
+      container.innerHTML = '<div class="rs-native-docx"></div>';
+      await lib.renderAsync(buf, container.firstElementChild, null, {
+        inWrapper: true,
+        ignoreWidth: false,
+        ignoreHeight: false,
+        renderHeaders: true,
+        renderFooters: true,
+      });
+    } catch (e) {
+      container.innerHTML = `<p style="color:var(--danger)">原文渲染失败：${esc(e.message)}（可切到「结构化」标签继续使用 AI 功能）</p>`;
+    }
   }
 }
 
