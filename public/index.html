@@ -8,7 +8,7 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="/icon.svg">
-  <link rel="stylesheet" href="/css/style.css?v=0.14.0">
+  <link rel="stylesheet" href="/css/style.css?v=0.15.0">
 </head>
 <body>
   <div class="aurora"></div>
@@ -39,7 +39,7 @@
         <button class="tool-btn" id="palette-btn" title="命令面板 Ctrl+K"><span data-icon="command"></span><em>命令面板</em></button>
       </div>
       <div class="sidebar-foot">
-        v0.14.0 · 本地运行 · 数据自持<br>
+        v0.15.0 · 本地运行 · 数据自持<br>
         题库体系参考
         <a href="https://github.com/Snailclimb/JavaGuide" target="_blank" rel="noopener">JavaGuide</a> ·
         <a href="https://github.com/CyC2018/CS-Notes" target="_blank" rel="noopener">CS-Notes</a> ·
@@ -392,11 +392,13 @@
             <h3><span class="ico" data-icon="clipboard"></span>我的简历</h3>
             <div class="chips" id="rs-list" style="margin:0 0 12px"></div>
             <div class="actions" style="margin:0 0 12px">
+              <button class="btn small primary" id="btn-rs-upload"><span class="ico" data-icon="upload"></span>上传 PDF / Word</button>
               <button class="btn small" id="btn-rs-add"><span class="ico" data-icon="plus"></span>新建版本</button>
               <button class="btn small ghost" id="btn-rs-save"><span class="ico" data-icon="check"></span>保存</button>
               <button class="btn small ghost" id="btn-rs-polish"><span class="ico" data-icon="sparkles"></span>AI 润色</button>
               <button class="btn small danger" id="btn-rs-del"><span class="ico" data-icon="trash"></span>删除</button>
             </div>
+            <input type="file" id="file-rs-upload" accept=".pdf,.docx,.doc,.txt,.md" class="hidden">
             <textarea id="resume-text" rows="16" placeholder="教育经历、工作经历、项目经历、技能清单…&#10;&#10;支持多版本：校招版 / 社招版 / 针对某公司的定制版。"></textarea>
             <p class="hint" id="rs-meta"></p>
           </div>
@@ -519,7 +521,7 @@
 
         <div class="card settings-card about">
           <h3><span class="ico" data-icon="info"></span>关于</h3>
-          <p>InterviewMate v0.14.0 · 零依赖本地运行 · 数据不出本机（除 LLM 请求本身）</p>
+          <p>InterviewMate v0.15.0 · 零依赖本地运行 · 数据不出本机（除 LLM 请求本身）</p>
           <div class="actions">
             <button class="btn ghost" id="btn-onboarding">🚀 重看新手引导</button>
           </div>
@@ -544,6 +546,6 @@
   <div id="toast-root"></div>
   <div id="fatal-error" class="banner warn hidden" style="position:fixed;left:50%;transform:translateX(-50%);bottom:24px;z-index:200"></div>
 
-  <script type="module" src="/js/app.js?v=0.14.0"></script>
+  <script type="module" src="/js/app.js?v=0.15.0"></script>
 </body>
 </html>

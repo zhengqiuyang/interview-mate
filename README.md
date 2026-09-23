@@ -1,6 +1,6 @@
 # 🎯 InterviewMate · AI 面试陪练
 
-![version](https://img.shields.io/badge/version-0.14.0-4f6bf0) ![license](https://img.shields.io/badge/license-MIT-green) ![deps](https://img.shields.io/badge/dependencies-0-brightgreen) ![node](https://img.shields.io/badge/node-%3E%3D18-339933)
+![version](https://img.shields.io/badge/version-0.15.0-4f6bf0) ![license](https://img.shields.io/badge/license-MIT-green) ![deps](https://img.shields.io/badge/dependencies-0-brightgreen) ![node](https://img.shields.io/badge/node-%3E%3D18-339933)
 
 > 你的私人 AI 面试官 —— **智能体教练**、模拟面试、间隔重复复习、岗位雷达、简历工坊、个人知识库，本地运行、数据自持。
 
@@ -82,7 +82,7 @@
 | 📚 **题库练习** | **90+ 内置高频题、11 大分类**（含 Java 专项、手写代码模板），相关题目推荐、多维筛选、收藏、**题目笔记**、掌握标记、AI 追问、题库导出 | 部分（AI 追问需要） |
 | 📡 **岗位雷达** | 订阅公开源（RemoteOK / HN 招聘帖 / 自定义 JSON / RSS）**定时自动抓取**，关键词过滤 + 去重 + 未读徽标；**选择简历后本地匹配分自动排序**；AI 岗位情报 | 抓取/匹配❌ / AI 分析✅ |
 | 🧠 **知识库** | Markdown 知识条目 + 标签 + 全文检索；**AI 剪藏生成学习卡**：贴一篇文章 → 摘要 + 3-8 张问答卡 → 一键进题库与间隔重复 | 新建❌ / AI 生成✅ |
-| 📋 **简历工坊** | **多版本简历管理**；结构化诊断报告：动画评分环 + 能力雷达 + JD 要求覆盖清单 + 风险点改写示例；**追问预测一键转为练习题**；**AI 润色**（前后对照） | ✅ |
+| 📋 **简历工坊** | **上传 PDF / Word（.docx）直接解析**（PDF 由内置 pdf.js 本地提取，DOCX 为零依赖 ZIP 解析，支持拖拽上传）；多版本简历管理；结构化诊断报告：动画评分环 + 能力雷达 + JD 要求覆盖清单 + 风险点改写示例；**追问预测一键转为练习题**；**AI 润色**（前后对照） | 解析❌ / AI✅ |
 | 🗂️ **面试记录** | 分类筛选、回看、**导出 Markdown**、**打印/保存 PDF** | ❌ |
 
 ### 🎨 界面与体验
@@ -239,7 +239,7 @@ server.js 职责单一（静态 + API 网关），前端是纯静态 ES Modules�
 
 ## 📄 License
 
-[MIT](LICENSE)
+[MIT](LICENSE)。内置的 [pdf.js](public/vendor/pdfjs/)（PDF 文本提取）为 Mozilla 出品，遵循 [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0)，版权归 Mozilla 及贡献者所有。
 
 ## 🤝 贡献
 

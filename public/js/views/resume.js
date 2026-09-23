@@ -48,6 +48,24 @@ export function init() {
     renderList();
     toast('已填入示例，可直接生成报告', 'ok');
   });
+  $('#btn-rs-upload')?.addEventListener('click', () => $('#file-rs-upload')?.click());
+  $('#file-rs-upload')?.addEventListener('change', (e) => {
+    const f = e.target.files?.[0];
+    if (f) handleResumeFile(f);
+    e.target.value = '';
+  });
+  // 拖放到左侧卡片直接解析
+  const dropZone = $('.rs-left');
+  if (dropZone) {
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = 'var(--brand)'; });
+    dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = ''; });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.style.borderColor = '';
+      const f = e.dataTransfer?.files?.[0];
+      if (f) handleResumeFile(f);
+    });
+  }
   $('#btn-rs-add').addEventListener('click', () => {
     const name = prompt('新版本名称：', `简历 v${S.resumes.length + 1}`);
     if (name === null) return;
@@ -306,6 +324,151 @@ function importFollowups(followups) {
   switchView('bank');
   S.bankFilter = { cat: 'custom', q: '', diff: 'all', flag: 'all' };
   renderBank();
+}
+
+/* ---------- 文档上传解析：PDF / DOCX / TXT ---------- */
+
+let pdfjsLoading = null;
+function ensurePdfJs() {
+  if (window.pdfjsLib) {
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/pdf.worker.min.js';
+    return Promise.resolve(window.pdfjsLib);
+  }
+  if (pdfjsLoading) return pdfjsLoading;
+  pdfjsLoading = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = '/vendor/pdfjs/pdf.min.js';
+    s.onload = () => {
+      const lib = window.pdfjsLib;
+      if (!lib) return reject(new Error('pdf.js 加载异常'));
+      lib.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/pdf.worker.min.js';
+      resolve(lib);
+    };
+    s.onerror = () => reject(new Error('pdf.js 加载失败'));
+    document.head.appendChild(s);
+  });
+  return pdfjsLoading;
+}
+
+async function extractPdfText(file) {
+  const lib = await ensurePdfJs();
+  const doc = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+  const parts = [];
+  for (let p = 1; p <= doc.numPages; p++) {
+    const page = await doc.getPage(p);
+    const tc = await page.getTextContent();
+    let line = '';
+    for (const item of tc.items) {
+      line += item.str;
+      if (item.hasEOL) { parts.push(line); line = ''; }
+    }
+    if (line) parts.push(line);
+    if (p < doc.numPages) parts.push('');
+  }
+  return parts.join('\n');
+}
+
+/* DOCX = ZIP：定位 word/document.xml → 解压（deflate-raw / stored）→ XML 转文本 */
+async function extractDocxText(file) {
+  if (typeof DecompressionStream === 'undefined') {
+    throw new Error('当前浏览器不支持解压（请用 Chrome / Edge）');
+  }
+  const buf = new Uint8Array(await file.arrayBuffer());
+  // 找 EOCD（文件尾 PK\x05\x06）
+  let eocd = -1;
+  for (let i = buf.length - 22; i >= Math.max(0, buf.length - 66000); i--) {
+    if (buf[i] === 0x50 && buf[i + 1] === 0x4b && buf[i + 2] === 0x05 && buf[i + 3] === 0x06) { eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error('不是有效的 docx 文件');
+  const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+  const cdOffset = dv.getUint32(eocd + 16, true);
+  // 遍历中央目录找目标文件
+  let p = cdOffset;
+  let docEntry = null;
+  while (p < eocd && buf[p] === 0x50 && buf[p + 1] === 0x4b) {
+    const nameLen = dv.getUint16(p + 28, true);
+    const extraLen = dv.getUint16(p + 30, true);
+    const commentLen = dv.getUint16(p + 32, true);
+    const localOffset = dv.getUint32(p + 42, true);
+    const name = new TextDecoder().decode(buf.slice(p + 46, p + 46 + nameLen));
+    if (name === 'word/document.xml') { docEntry = { localOffset }; break; }
+    p += 46 + nameLen + extraLen + commentLen;
+  }
+  if (!docEntry) throw new Error('docx 中未找到正文（word/document.xml）');
+  // 本地头：method / 压缩大小 / 数据起点
+  const lo = docEntry.localOffset;
+  const method = dv.getUint16(lo + 8, true);
+  const compSize = dv.getUint32(lo + 18, true);
+  const nameLen = dv.getUint16(lo + 26, true);
+  const extraLen = dv.getUint16(lo + 28, true);
+  const dataStart = lo + 30 + nameLen + extraLen;
+  const raw = buf.slice(dataStart, dataStart + compSize);
+  const xmlBytes = method === 0
+    ? raw
+    : new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
+  const xml = new TextDecoder('utf-8').decode(xmlBytes);
+  // WordprocessingML → 纯文本
+  return xml
+    .replace(/<w:p[^>]*>/g, '\n')
+    .replace(/<w:tab[^>]*\/>/g, '\t')
+    .replace(/<w:br[^>]*\/>/g, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'").replace(/&amp;/g, '&')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+async function handleResumeFile(file) {
+  const name = file.name || '上传文档';
+  const ext = name.split('.').pop().toLowerCase();
+  toast(`正在解析 ${name} …`);
+  try {
+    let text = '';
+    if (ext === 'pdf') text = await extractPdfText(file);
+    else if (ext === 'docx') text = await extractDocxText(file);
+    else if (ext === 'txt' || ext === 'md') text = await file.text();
+    else if (ext === 'doc') {
+      toast('旧版 .doc 暂不支持：请用 Word 另存为 .docx 后再上传', 'err');
+      return;
+    } else {
+      toast('仅支持 PDF / DOCX / TXT', 'err');
+      return;
+    }
+    text = (text || '').trim();
+    if (text.length < 20) {
+      toast('解析成功但文本太少——这份文件可能是扫描件（图片型 PDF），请上传文字版', 'err');
+      return;
+    }
+    openUploadPreview(name, text);
+  } catch (e) {
+    toast('解析失败：' + e.message, 'err');
+  }
+}
+
+function openUploadPreview(fileName, text) {
+  const m = openModal(`
+    <div class="polish-grid" style="grid-template-columns:1fr 240px">
+      <div>
+        <div class="polish-label">解析结果（${text.length} 字）</div>
+        <div class="polish-pane" style="max-height:320px"><pre>${esc(text.slice(0, 6000))}${text.length > 6000 ? '\n…（已截断预览，载入后为全文）' : ''}</pre></div>
+      </div>
+      <div>
+        <div class="polish-label">下一步</div>
+        <p class="hint" style="margin:4px 0 10px">载入后自动创建新版本「${esc(fileName.slice(0, 16))}」，可直接 AI 诊断、润色或匹配岗位。</p>
+        <button class="btn primary" id="up-load" style="width:100%">${icon('check', 14)}载入为简历版本</button>
+      </div>
+    </div>`,
+    { title: `📄 ${fileName}`, icon: 'clipboard', width: 780 });
+  $('#up-load', m.el).onclick = () => {
+    const r = { id: 'rs-' + Date.now(), name: fileName.replace(/\.(pdf|docx|doc|txt|md)$/i, '').slice(0, 24) || '上传简历', content: text, updated: Date.now() };
+    S.resumes.push(r);
+    persist('resumes');
+    currentId = r.id;
+    renderList();
+    m.close();
+    toast(`已载入「${r.name}」（${text.length} 字）`, 'ok');
+  };
 }
 
 /* ---------- AI 润色 ---------- */
