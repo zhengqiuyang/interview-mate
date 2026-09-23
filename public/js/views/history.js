@@ -30,14 +30,14 @@ function render() {
   const box = $('#history-list');
   box.innerHTML = '';
   if (!list.length) {
-    box.innerHTML = '<div class="empty"><div class="empty-ico">🗂️</div>还没有记录，去来一场模拟面试吧</div>';
+    box.innerHTML = `<div class="empty"><div class="empty-ico">${icon('folder', 36)}</div>还没有记录，去来一场模拟面试吧</div>`;
     return;
   }
   for (const s of list) {
     const el = document.createElement('div');
     el.className = 'h-item';
     el.innerHTML = `
-      <div class="h-kind">${s.kind === 'mock' ? '🎙️' : '📋'}</div>
+      <div class="h-kind">${isMock ? icon('mic', 18) : icon('clipboard', 18)}</div>
       <div class="h-main">
         <div class="h-title">${esc(s.title)}</div>
         <div class="h-sub">${fmtDate(s.date)}${s.elapsed ? ` · 时长 ${fmtTime(s.elapsed)}` : ''}</div>

@@ -313,7 +313,7 @@ export function onShow() {
   if (!history.length && !$('.msg', $('#agent-messages'))) {
     $('#agent-messages').innerHTML = `
       <div class="msg ai" id="agent-welcome">
-        <div class="avatar">🤖</div>
+        <div class="avatar">${icon('bot')}</div>
         <div class="bubble md">
           <p><strong>我是 Mentor，你的智能体教练。</strong>我可以调用工具读取你的真实数据——题库掌握度、简历、岗位库——然后多步执行任务：制定冲刺计划、匹配岗位、生成特训清单并直接写入你的题库和知识库。</p>
           <p>👉 从下面的任务卡开始，或直接输入指令（如「帮我看看 MySQL 方面我有哪些弱项」）。也可以切到「多 Agent 会诊」让三位专家同时给你看病。</p>
@@ -348,7 +348,7 @@ function addMsg(role, html) {
   $('#agent-welcome')?.remove();
   const el = document.createElement('div');
   el.className = `msg ${role === 'user' ? 'user' : 'ai'}`;
-  el.innerHTML = `<div class="avatar">${role === 'user' ? '🙋' : '🤖'}</div><div class="bubble md"></div>${role === 'user' ? '' : '<button class="msg-copy" title="复制本条">⧉ 复制</button>'}`;
+  el.innerHTML = `<div class="avatar">${role === 'user' ? icon('user') : icon('bot')}</div><div class="bubble md"></div>${role === 'user' ? '' : '<button class="msg-copy" title="复制本条">⧉ 复制</button>'}`;
   $('.bubble', el).innerHTML = html;
   box.appendChild(el);
   box.scrollTop = box.scrollHeight;

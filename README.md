@@ -1,6 +1,6 @@
 # 🎯 InterviewMate · AI 面试陪练
 
-![version](https://img.shields.io/badge/version-0.11.0-4f6bf0) ![license](https://img.shields.io/badge/license-MIT-green) ![deps](https://img.shields.io/badge/dependencies-0-brightgreen) ![node](https://img.shields.io/badge/node-%3E%3D18-339933)
+![version](https://img.shields.io/badge/version-0.12.0-4f6bf0) ![license](https://img.shields.io/badge/license-MIT-green) ![deps](https://img.shields.io/badge/dependencies-0-brightgreen) ![node](https://img.shields.io/badge/node-%3E%3D18-339933)
 
 > 你的私人 AI 面试官 —— **智能体教练**、模拟面试、间隔重复复习、岗位雷达、简历工坊、个人知识库，本地运行、数据自持。
 

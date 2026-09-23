@@ -74,7 +74,7 @@ export function render() {
   const box = $('#bank-list');
   box.innerHTML = '';
   if (!list.length) {
-    box.innerHTML = '<div class="empty"><div class="empty-ico">🔍</div>没有匹配的题目，换个关键词试试</div>';
+    box.innerHTML = `<div class="empty"><div class="empty-ico">${icon('search', 36)}</div>没有匹配的题目，换个关键词试试</div>`;
     return;
   }
   for (const q of list) {
@@ -275,7 +275,7 @@ function openDeepdive(q) {
     const el = document.createElement('div');
     el.className = `msg ${role === 'user' ? 'user' : 'ai'}`;
     el.style.maxWidth = '100%';
-    el.innerHTML = `<div class="avatar">${role === 'user' ? '🙋' : '🎙️'}</div><div class="bubble md"></div>`;
+    el.innerHTML = `<div class="avatar">${role === 'user' ? icon('user') : icon('mic')}</div><div class="bubble md"></div>`;
     $('.bubble', el).innerHTML = text ? md(text) : '<span class="typing"><i></i><i></i><i></i></span>';
     ddBox.appendChild(el);
     ddBox.scrollIntoView(false);

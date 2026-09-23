@@ -1,6 +1,6 @@
 {
   "name": "interview-mate",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "private": true,
   "description": "InterviewMate · AI 面试陪练 —— 模拟面试、题库练习、简历/JD 诊断，本地零依赖运行",
   "scripts": {

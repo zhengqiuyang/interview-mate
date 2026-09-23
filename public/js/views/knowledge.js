@@ -51,7 +51,7 @@ export function render() {
   const box = $('#kn-list');
   box.innerHTML = '';
   if (!list.length) {
-    box.innerHTML = `<div class="empty"><div class="empty-ico">🧠</div>${S.knowledge.length ? '没有匹配的知识条目' : '还没有知识条目<br><small>贴一篇文章给 AI，自动生成摘要和闪卡</small>'}</div>`;
+    box.innerHTML = `<div class="empty"><div class="empty-ico">${icon('brain', 36)}</div>${S.knowledge.length ? '没有匹配的知识条目' : '还没有知识条目<br><small>贴一篇文章给 AI，自动生成摘要和闪卡</small>'}</div>`;
     return;
   }
   for (const k of list) {

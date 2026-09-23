@@ -263,7 +263,7 @@ function addBubble(role, text = '') {
   const wrap = document.createElement('div');
   wrap.className = `msg ${role === 'user' ? 'user' : 'ai'}`;
   wrap.innerHTML = `
-    <div class="avatar">${role === 'user' ? '🙋' : '🎙️'}</div>
+    <div class="avatar">${role === 'user' ? icon('user') : icon('mic')}</div>
     <div class="bubble md"></div>
     ${role === 'user' ? '' : '<button class="msg-copy" title="复制本条">⧉ 复制</button>'}`;
   $('.bubble', wrap).innerHTML = text ? md(text) : '<span class="typing"><i></i><i></i><i></i></span>';

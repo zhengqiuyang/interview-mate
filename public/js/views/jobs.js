@@ -141,7 +141,7 @@ function renderList() {
   const box = $('#jobs-list');
   box.innerHTML = '';
   if (!list.length) {
-    box.innerHTML = `<div class="empty"><div class="empty-ico">📡</div>${jobsCache.jobs.length ? '没有匹配的岗位' : '还没有汇集到岗位<br><small>添加订阅源 → 点「立即抓取」，或手动粘贴一个 JD</small>'}</div>`;
+    box.innerHTML = `<div class="empty"><div class="empty-ico">${icon('radar', 36)}</div>${jobsCache.jobs.length ? '没有匹配的岗位' : '还没有汇集到岗位<br><small>添加订阅源 → 点「立即抓取」，或手动粘贴一个 JD</small>'}</div>`;
     return;
   }
   for (const j of list) {
@@ -160,10 +160,10 @@ function renderList() {
       </div>
       <div class="job-sub-line">
         ${j.__match != null ? `<span class="badge ${j.__match >= 60 ? 'ok' : j.__match >= 35 ? 'warn' : ''}">匹配 ${j.__match}%</span>` : ''}
-        ${j.company ? `<span>🏢 ${esc(j.company)}</span>` : ''}
-        ${j.location ? `<span>📍 ${esc(j.location)}</span>` : ''}
-        ${j.salary ? `<span>💰 ${esc(j.salary)}</span>` : ''}
-        ${j.publishedAt ? `<span>🕐 ${new Date(j.publishedAt).toLocaleDateString('zh-CN')}</span>` : ''}
+        ${j.company ? `<span>${icon('building', 13)} ${esc(j.company)}</span>` : ''}
+        ${j.location ? `<span>${icon('pin', 13)} ${esc(j.location)}</span>` : ''}
+        ${j.salary ? `<span>${icon('coins', 13)} ${esc(j.salary)}</span>` : ''}
+        ${j.publishedAt ? `<span>${icon('clock', 13)} ${new Date(j.publishedAt).toLocaleDateString('zh-CN')}</span>` : ''}
         ${(j.keywords || []).map((k) => `<span class="badge ok">✓ ${esc(k)}</span>`).join('')}
       </div>
       <div class="job-body hidden md"></div>

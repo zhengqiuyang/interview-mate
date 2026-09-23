@@ -142,15 +142,15 @@ function openGlobalSearch() {
       return;
     }
     box.innerHTML = `
-      ${qs.length ? `<div class="gs-group">📚 题库</div>${qs.map((q) => `
+      ${qs.length ? `<div class="gs-group">题库</div>${qs.map((q) => `
         <div class="palette-item gs-item" data-q="${esc(q.id)}">
           <span class="ico">${icon('book')}</span><span>${esc(q.q.slice(0, 60))}</span>
         </div>`).join('')}` : ''}
-      ${kn.length ? `<div class="gs-group">🧠 知识库</div>${kn.map((x) => `
+      ${kn.length ? `<div class="gs-group">知识库</div>${kn.map((x) => `
         <div class="palette-item gs-item" data-k="${esc(x.id)}">
           <span class="ico">${icon('brain')}</span><span>${esc(x.title.slice(0, 60))}</span>
         </div>`).join('')}` : ''}
-      ${notes.length ? `<div class="gs-group">📝 带笔记的题目</div>${notes.map((q) => `
+      ${notes.length ? `<div class="gs-group">笔记</div>${notes.map((q) => `
         <div class="palette-item gs-item" data-q="${esc(q.id)}">
           <span class="ico">${icon('note')}</span><span>${esc(q.q.slice(0, 60))}</span>
         </div>`).join('')}` : ''}`;
