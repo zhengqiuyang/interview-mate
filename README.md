@@ -1,6 +1,6 @@
 # 🎯 InterviewMate · AI 面试陪练
 
-![version](https://img.shields.io/badge/version-0.13.0-4f6bf0) ![license](https://img.shields.io/badge/license-MIT-green) ![deps](https://img.shields.io/badge/dependencies-0-brightgreen) ![node](https://img.shields.io/badge/node-%3E%3D18-339933)
+![version](https://img.shields.io/badge/version-0.14.0-4f6bf0) ![license](https://img.shields.io/badge/license-MIT-green) ![deps](https://img.shields.io/badge/dependencies-0-brightgreen) ![node](https://img.shields.io/badge/node-%3E%3D18-339933)
 
 > 你的私人 AI 面试官 —— **智能体教练**、模拟面试、间隔重复复习、岗位雷达、简历工坊、个人知识库，本地运行、数据自持。
 
@@ -11,6 +11,12 @@
 | ![数据看板](docs/screenshots/dashboard.png) | ![岗位雷达](docs/screenshots/jobs.png) |
 | **多 Agent 会诊** | **技能市场** |
 | ![多 Agent 会诊](docs/screenshots/panel.png) | ![技能市场](docs/screenshots/skill-market.png) |
+
+**🎨 三套设计风格一键切换**（v0.14，设置 → 设计风格）：✨ **极光**（玻璃质感渐变）/ 📰 **编辑部**（衬线大标题·纸张底色·朱砂点睛，像一本高级求职杂志）/ 🧱 **粗野主义**（墨线描边·硬投影·荧光黄高亮，大胆外放）
+
+| 编辑部风格 | 粗野主义风格 |
+| --- | --- |
+| ![编辑部风格](docs/screenshots/style-editorial.png) | ![粗野主义风格](docs/screenshots/style-brutal.png) |
 
 ## ✨ 功能特性
 

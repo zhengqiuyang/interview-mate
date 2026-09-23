@@ -134,6 +134,19 @@ export function init() {
   const syncSeg = () => $$('#theme-choice button').forEach((b) =>
     b.classList.toggle('active', b.dataset.themeVal === S.theme));
   syncSeg();
+  const syncStyleSeg = () => $$('#style-choice button').forEach((b) =>
+    b.classList.toggle('active', b.dataset.styleVal === S.style));
+  syncStyleSeg();
+  $('#style-choice')?.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    S.style = b.dataset.styleVal;
+    persist('style');
+    applyTheme(S.theme);
+    syncStyleSeg();
+    window.dispatchEvent(new CustomEvent('themechange'));
+    toast(`已切换到「${{ aurora: '极光', editorial: '编辑部', brutal: '粗野主义' }[S.style] || S.style}」风格`, 'ok');
+  });
   $('#theme-choice').addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b) return;

@@ -224,12 +224,23 @@ export function effectiveTheme(pref) {
 export function applyTheme(pref) {
   const real = effectiveTheme(pref);
   document.documentElement.dataset.theme = real;
+  // 设计风格（aurora / editorial / brutal），与明暗主题正交
+  try { document.documentElement.dataset.style = S_STYLE(); } catch (_) { /* state 未就绪时忽略 */ }
   const btn = $('#theme-toggle');
   if (btn) {
     const icoEl = $('span[data-icon], span.ico', btn) || btn.firstElementChild;
     if (icoEl) icoEl.innerHTML = icon(real === 'dark' ? 'sun' : 'moon');
     const em = $('em', btn);
     if (em) em.textContent = real === 'dark' ? '浅色模式' : '深色模式';
+  }
+}
+
+/* 延迟读取风格设置，规避 core ↔ state 循环依赖 */
+function S_STYLE() {
+  try {
+    return JSON.parse(localStorage.getItem('im_style'))?.replace(/"/g, '') || 'aurora';
+  } catch (_) {
+    return (localStorage.getItem('im_style') || '"aurora"').replace(/"/g, '') || 'aurora';
   }
 }
 

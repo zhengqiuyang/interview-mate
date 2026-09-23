@@ -31,6 +31,7 @@
   --radius: 16px;
   --radius-sm: 10px;
   --font: "Inter", "HarmonyOS Sans SC", "MiSans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: var(--font);
   --mono: "Cascadia Code", Consolas, "JetBrains Mono", monospace;
 }
 
@@ -178,6 +179,7 @@ kbd {
 .page-head { margin-bottom: 22px; }
 .page-head h1 {
   margin: 0 0 7px; font-size: 24px; font-weight: 800; letter-spacing: -0.02em;
+  font-family: var(--font-display);
   background: linear-gradient(120deg, var(--ink) 30%, var(--brand) 95%);
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -214,6 +216,7 @@ kbd {
 }
 .card h3 {
   margin: 0 0 14px; font-size: 14px; font-weight: 700; letter-spacing: 0.01em;
+  font-family: var(--font-display);
   display: flex; align-items: center; gap: 8px;
 }
 .card h3 .ico svg { width: 16px; height: 16px; color: var(--brand); }
@@ -984,3 +987,192 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: non
   .chat-messages { border: 0; overflow: visible; padding: 0; }
   .report-card { box-shadow: none; border: 1px solid #ddd; }
 }
+
+/* ============================================================
+   设计风格系统：「编辑部」Editorial —— 衬线大标题 / 纸张 / 朱砂
+   ============================================================ */
+:root[data-style="editorial"] {
+  --font-display: Georgia, "Times New Roman", "Noto Serif SC", "Source Han Serif SC", SimSun, serif;
+  --bg: #f7f4ee;
+  --bg-grad-1: rgba(179, 64, 42, 0.05);
+  --bg-grad-2: rgba(179, 64, 42, 0.04);
+  --card: #fffdf9;
+  --card-2: #f6f2ea;
+  --line: #ddd6c8;
+  --ink: #1c1812;
+  --muted: #6f675a;
+  --brand: #b3402a;
+  --brand-2: #8f5b2e;
+  --brand-soft: #f4e5e0;
+  --gold: #8f5b2e;
+  --chart-grid: #e6e0d2;
+  --chart-ink: #948b7a;
+  --shadow: none;
+  --shadow-lg: 0 14px 44px -18px rgba(60, 45, 25, 0.25);
+  --radius: 3px;
+  --radius-sm: 2px;
+}
+[data-style="editorial"] .aurora { opacity: 0.5; }
+[data-style="editorial"] body::after { opacity: 0.05; }
+[data-style="editorial"] .page-head h1 {
+  font-family: var(--font-display);
+  font-weight: 700; letter-spacing: 0; font-size: 29px;
+  background: none; -webkit-text-fill-color: currentColor;
+}
+[data-style="editorial"] .page-head h1::after {
+  content: ""; display: block; width: 52px; height: 3px;
+  background: var(--brand); margin-top: 10px;
+}
+[data-style="editorial"] .dash-hello h1 { font-family: var(--font-display); font-size: 27px; }
+[data-style="editorial"] .card h3 { font-family: var(--font-display); font-size: 15px; }
+[data-style="editorial"] .card { box-shadow: none; }
+[data-style="editorial"] .card:hover { box-shadow: none; }
+[data-style="editorial"] .tile, [data-style="editorial"] .q-card, [data-style="editorial"] .kn-card,
+[data-style="editorial"] .job-card, [data-style="editorial"] .panel-card, [data-style="editorial"] .pack-card {
+  box-shadow: none;
+}
+[data-style="editorial"] .btn { box-shadow: none; border-radius: 2px; font-weight: 700; }
+[data-style="editorial"] .btn.primary {
+  background: var(--brand); color: #fdf9f3; box-shadow: none;
+}
+[data-style="editorial"] .btn.primary:hover { background: #9c3622; }
+[data-style="editorial"] .sidebar { background: #191510; }
+[data-style="editorial"] .brand-name { font-family: var(--font-display); font-weight: 700; }
+[data-style="editorial"] .nav-item.active {
+  background: rgba(251, 246, 238, 0.06);
+  box-shadow: inset 3px 0 0 var(--brand);
+}
+[data-style="editorial"] .badge { border-radius: 2px; }
+[data-style="editorial"] .chip { border-radius: 2px; }
+[data-style="editorial"] .seg button.active { color: var(--brand); }
+[data-style="editorial"] .score-ring { border-radius: 50%; }
+[data-style="editorial"] .level-chip { background: rgba(179, 64, 42, 0.16); border-color: rgba(179, 64, 42, 0.4); }
+[data-style="editorial"] .tile-ico { border-radius: 3px; }
+[data-style="editorial"] .mission-ico { border-radius: 3px; }
+[data-style="editorial"] .dash-hero::before {
+  background: linear-gradient(120deg, rgba(179, 64, 42, 0.06), transparent 45%);
+}
+[data-style="editorial"] .md h1, [data-style="editorial"] .md h2 { font-family: var(--font-display); }
+[data-theme="dark"][data-style="editorial"] {
+  --bg: #171310; --card: #1f1a15; --card-2: #1a1611; --line: #38302a;
+  --ink: #ece5d8; --muted: #a1988a; --brand: #d96a4f; --brand-2: #c98d5e;
+  --brand-soft: #33221c; --chart-grid: #332c25; --chart-ink: #7d7466;
+  --sidebar-bg: #12100c;
+}
+[data-theme="dark"][data-style="editorial"] .sidebar { background: #12100c; }
+
+/* ============================================================
+   设计风格系统：「粗野主义」Brutal —— 墨线 / 硬投影 / 荧光黄
+   ============================================================ */
+:root[data-style="brutal"] {
+  --bg: #f4f0e6;
+  --card: #fffef9;
+  --card-2: #faf6ec;
+  --line: #141414;
+  --ink: #141414;
+  --muted: #55524a;
+  --brand: #4d7cfe;
+  --brand-2: #ff5d8f;
+  --brand-soft: #e4ebff;
+  --gold: #b8860b;
+  --chart-grid: #e3ddce;
+  --chart-ink: #8b8674;
+  --shadow: 4px 4px 0 #141414;
+  --shadow-lg: 7px 7px 0 #141414;
+  --radius: 4px;
+  --radius-sm: 3px;
+}
+[data-style="brutal"] .aurora { display: none; }
+[data-style="brutal"] body::after { opacity: 0.05; }
+[data-style="brutal"] .page-head h1 {
+  font-family: var(--font-display);
+  font-weight: 900; letter-spacing: -0.01em;
+  background: linear-gradient(transparent 60%, #ffd23f 60%, #ffd23f 92%, transparent 92%);
+  -webkit-text-fill-color: var(--ink);
+  padding: 0 4px;
+}
+[data-style="brutal"] .dash-hello h1 {
+  background: linear-gradient(transparent 60%, #ffd23f 60%, #ffd23f 92%, transparent 92%);
+  -webkit-text-fill-color: var(--ink);
+  padding: 0 4px;
+}
+[data-style="brutal"] .card {
+  border: 2px solid #141414; box-shadow: 5px 5px 0 #141414;
+}
+[data-style="brutal"] .card::before { display: none; }
+[data-style="brutal"] .tile, [data-style="brutal"] .q-card, [data-style="brutal"] .kn-card,
+[data-style="brutal"] .job-card, [data-style="brutal"] .panel-card, [data-style="brutal"] .pack-card,
+[data-style="brutal"] .mission-card, [data-style="brutal"] .h-item {
+  border: 2px solid #141414; box-shadow: 4px 4px 0 #141414;
+}
+[data-style="brutal"] .tile::before, [data-style="brutal"] .q-card::before,
+[data-style="brutal"] .kn-card::before, [data-style="brutal"] .job-card::before,
+[data-style="brutal"] .mission-card::before, [data-style="brutal"] .pack-card::before,
+[data-style="brutal"] .h-item::before { display: none; }
+[data-style="brutal"] .tile.clickable:hover, [data-style="brutal"] .mission-card:hover,
+[data-style="brutal"] .kn-card:hover, [data-style="brutal"] .pack-card:hover, [data-style="brutal"] .h-item:hover {
+  transform: translate(-2px, -2px); box-shadow: 6px 6px 0 #141414;
+}
+[data-style="brutal"] .btn {
+  border: 2px solid #141414; box-shadow: 3px 3px 0 #141414;
+  border-radius: 3px; font-weight: 800;
+}
+[data-style="brutal"] .btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 #141414; filter: none; }
+[data-style="brutal"] .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #141414; }
+[data-style="brutal"] .btn.primary { background: #ffd23f; color: #141414; border-color: #141414; }
+[data-style="brutal"] .btn.danger { background: #ff5d8f; color: #141414; }
+[data-style="brutal"] .btn.ghost { background: var(--card); }
+[data-style="brutal"] .btn.ok { background: #7ee081; color: #141414; }
+[data-style="brutal"] .sidebar { background: #141414; }
+[data-style="brutal"] .brand-logo { background: #ffd23f; box-shadow: 3px 3px 0 rgba(255, 255, 255, 0.25); }
+[data-style="brutal"] .brand-logo svg { color: #141414; }
+[data-style="brutal"] .nav-item { border: 2px solid transparent; }
+[data-style="brutal"] .nav-item.active {
+  background: #ffd23f; color: #141414; box-shadow: inset 0 0 0 2px #141414;
+}
+[data-style="brutal"] .chip { border: 2px solid #141414; border-radius: 3px; background: var(--card); }
+[data-style="brutal"] .chip.active { background: #4d7cfe; color: #fff; }
+[data-style="brutal"] .badge { border: 1.5px solid currentColor; border-radius: 3px; font-weight: 800; }
+[data-style="brutal"] .badge.ok { background: #7ee081; color: #141414; }
+[data-style="brutal"] .badge.warn { background: #ffd23f; color: #141414; }
+[data-style="brutal"] .seg { border: 2px solid #141414; box-shadow: 2px 2px 0 #141414; }
+[data-style="brutal"] .seg button.active { background: #ffd23f; color: #141414; }
+[data-style="brutal"] .search-wrap, [data-style="brutal"] .input, [data-style="brutal"] select, [data-style="brutal"] textarea {
+  border: 2px solid #141414; border-radius: 3px;
+}
+[data-style="brutal"] .modal { border: 2px solid #141414; box-shadow: 10px 10px 0 #141414; }
+[data-style="brutal"] .toast { border: 2px solid #141414; box-shadow: 4px 4px 0 #141414; background: #ffd23f; color: #141414; }
+[data-style="brutal"] .toast.ok { background: #7ee081; }
+[data-style="brutal"] .toast.err { background: #ff5d8f; }
+[data-style="brutal"] .palette { border: 2px solid #141414; box-shadow: 8px 8px 0 #141414; }
+[data-style="brutal"] .level-chip { background: #ffd23f; border: 2px solid #141414; color: #141414; }
+[data-style="brutal"] .level-chip .lv-title, [data-style="brutal"] .level-chip .lv-sub { color: #141414; }
+[data-style="brutal"] .tool-btn { border: 2px solid rgba(255, 255, 255, 0.27); }
+[data-style="brutal"] .streak-flame { box-shadow: 3px 3px 0 #141414; }
+[data-style="brutal"] .tile-ico, [data-style="brutal"] .mission-ico { border: 2px solid #141414; border-radius: 3px; }
+[data-style="brutal"] .dash-hero::before { display: none; }
+[data-style="brutal"] .heat-cell { border: 1px solid rgba(20, 20, 20, 0.13); }
+
+[data-theme="dark"][data-style="brutal"] {
+  --bg: #16130d; --card: #211d14; --card-2: #1b1811; --ink: #f2ecdd; --muted: #a39c8a;
+  --line: #f2ecdd; --brand: #6f95ff; --brand-soft: #2a2c3d; --chart-grid: #2e2a20; --chart-ink: #857e6d;
+  --shadow: 4px 4px 0 #000; --shadow-lg: 7px 7px 0 #000;
+}
+[data-theme="dark"][data-style="brutal"] .card,
+[data-theme="dark"][data-style="brutal"] .tile,
+[data-theme="dark"][data-style="brutal"] .btn,
+[data-theme="dark"][data-style="brutal"] .q-card,
+[data-theme="dark"][data-style="brutal"] .job-card,
+[data-theme="dark"][data-style="brutal"] .kn-card,
+[data-theme="dark"][data-style="brutal"] .panel-card,
+[data-theme="dark"][data-style="brutal"] .pack-card,
+[data-theme="dark"][data-style="brutal"] .mission-card,
+[data-theme="dark"][data-style="brutal"] .h-item,
+[data-theme="dark"][data-style="brutal"] .modal,
+[data-theme="dark"][data-style="brutal"] .palette,
+[data-theme="dark"][data-style="brutal"] .toast {
+  border-color: #f2ecdd; box-shadow: 4px 4px 0 #000;
+}
+[data-theme="dark"][data-style="brutal"] .sidebar { background: #0d0b07; border-right: 2px solid rgba(242, 236, 221, 0.2); }
+[data-theme="dark"][data-style="brutal"] .btn.primary { background: #ffd23f; color: #141414; }
+[data-theme="dark"][data-style="brutal"] .nav-item.active { background: #ffd23f; color: #141414; box-shadow: inset 0 0 0 2px #141414; }

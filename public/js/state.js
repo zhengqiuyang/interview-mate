@@ -34,6 +34,7 @@ export const S = {
     temperature: 0.7,
   }),
   theme: store.get('im_theme', 'auto'),
+  style: store.get('im_style', 'aurora'),
   questions: [],
   categories: [],
   custom: store.get('im_custom', []),
@@ -60,6 +61,7 @@ export const S = {
 const KEYMAP = {
   settings: 'im_settings',
   theme: 'im_theme',
+  style: 'im_style',
   srs: 'im_srs',
   notes: 'im_notes',
   favs: 'im_bank_favs',
