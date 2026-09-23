@@ -49,6 +49,10 @@ function commands() {
       run: openGlobalSearch,
     },
     {
+      name: 'Token 用量面板', icon: 'cpu', keys: ['token', 'usage', '用量', '费用', '成本'],
+      run: () => import('./views/usage.js').then((m) => m.openUsagePanel()),
+    },
+    {
       name: '键盘快捷键说明', icon: 'keyboard', keys: ['shortcuts', 'help', '快捷键'],
       run: showShortcuts,
     },
@@ -311,6 +315,7 @@ async function init() {
   document.addEventListener('keydown', onGlobalKey);
   // 新手引导（首次使用且无学习数据时弹出；设置页可重看）
   window.addEventListener('im:show-onboarding', showOnboarding);
+  window.addEventListener('im:show-usage', () => import('./views/usage.js').then((m) => m.openUsagePanel()));
   if (!store.get('im_onboarded', false)) {
     const hasData = S.sessions.length || Object.keys(S.srs).length;
     if (!hasData) {

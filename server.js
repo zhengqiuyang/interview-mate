@@ -416,6 +416,7 @@ async function proxyChat(res, body) {
       body: JSON.stringify({
         model,
         stream: true,
+        stream_options: { include_usage: true },
         temperature,
         messages: [{ role: 'system', content: system }, ...messages],
       }),
@@ -576,7 +577,7 @@ async function handleApi(req, res, pathname) {
   return sendJson(res, 404, { error: 'Not Found' });
 }
 
-/* ---------------- LLM 非流式调用（服务端定时简报用） ---------------- */
+/* ---------------- LLM 非流式调用（服务端定时简报用，返回用量） ---------------- */
 async function callLLM(system, user) {
   if (!DEFAULTS.apiKey) throw new Error('服务端未配置 API Key');
   const endpoint = DEFAULTS.baseURL.replace(/\/+$/, '') + '/chat/completions';
@@ -590,7 +591,9 @@ async function callLLM(system, user) {
   });
   if (!res.ok) throw new Error(`LLM HTTP ${res.status}`);
   const j = await res.json();
-  return (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
+  const text = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
+  const usage = j.usage || {};
+  return { text, usage: { p: usage.prompt_tokens || 0, c: usage.completion_tokens || 0 } };
 }
 
 /* ---------------- 启动 ---------------- */

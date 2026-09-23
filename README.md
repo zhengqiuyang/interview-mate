@@ -1,6 +1,6 @@
 # 🎯 InterviewMate · AI 面试陪练
 
-![version](https://img.shields.io/badge/version-0.12.0-4f6bf0) ![license](https://img.shields.io/badge/license-MIT-green) ![deps](https://img.shields.io/badge/dependencies-0-brightgreen) ![node](https://img.shields.io/badge/node-%3E%3D18-339933)
+![version](https://img.shields.io/badge/version-0.13.0-4f6bf0) ![license](https://img.shields.io/badge/license-MIT-green) ![deps](https://img.shields.io/badge/dependencies-0-brightgreen) ![node](https://img.shields.io/badge/node-%3E%3D18-339933)
 
 > 你的私人 AI 面试官 —— **智能体教练**、模拟面试、间隔重复复习、岗位雷达、简历工坊、个人知识库，本地运行、数据自持。
 
@@ -37,6 +37,8 @@
 - **错题本**：评「不会」的题自动聚合，按挂科次数排序，一键「错题重练」
 - **分享成绩单**：面试报告一键生成 1200×675 精美成绩卡（评分环 + 维度条 + 渐变光斑），下载即发朋友圈
 - **新手引导**：首次访问三步上手（v0.9）
+
+**💰 Token 用量面板**（v0.13）：每个 AI 请求自动记账——优先读取接口返回的真实 `usage`（精确），缺失时按中英文加权本地估算并标注；累计/今日/本月/费用粗估（内置常见模型价目表）、14 天输入输出双柱趋势、场景分布、逐笔明细（最多 600 条），支持导出与清空。看板瓦片、设置页、命令面板（搜「用量」）三处可达；服务端定时简报的用量单独统计展示。
 
 **🛒 Agent 技能市场**（v0.8）：把 Agent 从固定功能变成可扩展平台——
 
@@ -214,6 +216,8 @@ INTERVIEW_MATE_JOB_REFRESH_MIN=30
 - [x] 新手引导 + 开源工程化（CI / 贡献指南 / 截图），上线 GitHub（v0.9）
 - [x] 冲刺与复盘套件（面试倒计时 / 错题本 / 分享成绩单 / Agent 新工具）（v0.10）
 - [x] **UI 微交互包**（聚光灯 / 噪点 / 涟漪 / 流式进度条 / 复制 / 高亮）（v0.11）
+- [x] 高级感改造：图标统一 / 排版层级 / 质感升级（v0.12）
+- [x] **Token 用量面板**（真实 usage + 本地估算兜底，趋势/分布/费用）（v0.13）
 - [ ] 团队部署模式（服务端统一密钥、多用户数据隔离）——按需启动
 
 ## ❓ FAQ

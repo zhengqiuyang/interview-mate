@@ -1,16 +1,20 @@
-/* LLM API 层：流式对话 + 健康检查 */
+/* LLM API 层：流式对话 + 健康检查 + Token 用量捕获 */
 import { S } from './state.js';
 import { showProgress, hideProgress } from './core.js';
+import { recordTokens, estimateTokens } from './tokens.js';
 
 export const hasKey = () => Boolean(S.settings.apiKey) || S.serverKey;
 
 /**
  * 调用 /api/chat 并以回调逐段返回文本。
- * 服务端透传 SSE 原文，这里解析出 delta.content。
+ * 服务端透传 SSE 原文，这里解析出 delta.content；
+ * 同时捕获 usage（精确）或按字符估算，写入用量统计。
  */
 export async function streamChat(payload, onDelta, signal) {
   const cfg = S.settings;
   showProgress();
+  let usage = null;        // 接口返回的精确 usage
+  let outText = '';        // 用于估算的累计输出
   try {
     const res = await fetch('/api/chat', {
       method: 'POST',
@@ -31,6 +35,7 @@ export async function streamChat(payload, onDelta, signal) {
       throw new Error(msg);
     }
 
+    const promptText = (payload.messages || []).map((x) => x.content || '').join('\n');
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buf = '';
@@ -47,11 +52,21 @@ export async function streamChat(payload, onDelta, signal) {
         if (data === '[DONE]') continue;
         try {
           const j = JSON.parse(data);
+          if (j.usage) usage = j.usage;
           const delta = j.choices?.[0]?.delta?.content ?? j.choices?.[0]?.message?.content ?? '';
-          if (delta) onDelta(delta);
+          if (delta) { outText += delta; onDelta(delta); }
         } catch (_) { /* 半包或非 JSON 行，忽略 */ }
       }
     }
+
+    // 记录用量：优先精确，否则本地估算
+    try {
+      if (usage && (usage.prompt_tokens || usage.completion_tokens)) {
+        recordTokens(payload.mode, cfg.model, usage.prompt_tokens, usage.completion_tokens, false);
+      } else if (outText) {
+        recordTokens(payload.mode, cfg.model, estimateTokens(promptText), estimateTokens(outText), true);
+      }
+    } catch (_) { /* 统计失败不影响主流程 */ }
   } finally {
     hideProgress();
   }

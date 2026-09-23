@@ -944,6 +944,19 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: non
 .nav-item:hover .ico svg { transform: scale(1.15) rotate(-5deg); }
 .tool-btn:hover .ico svg { transform: scale(1.12); }
 
+/* ---------- Token 用量面板 ---------- */
+.tok-col { flex: 1; display: flex; align-items: flex-end; height: 100%; }
+.tok-stack { width: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch; gap: 2px; }
+.tok-stack i { display: block; border-radius: 3px; min-height: 0; }
+.tok-p { background: var(--brand); opacity: 0.85; }
+.tok-c { background: var(--brand-2); opacity: 0.85; }
+.tok-table { display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; }
+.tok-row {
+  display: grid; grid-template-columns: 108px 90px 1fr 70px 70px 52px; gap: 8px;
+  align-items: center; font-size: 12.5px; padding: 6px 10px;
+  background: var(--card-2); border-radius: 8px;
+}
+
 /* ---------- 响应式 ---------- */
 @media (max-width: 980px) {
   .dash-grid, .dash-grid2, .mission-grid, .polish-grid, .panel-grid { grid-template-columns: 1fr; }

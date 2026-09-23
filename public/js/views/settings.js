@@ -126,6 +126,10 @@ export function init() {
     };
   };
 
+  /* ---- Token 用量面板 ---- */
+  $('#btn-usage')?.addEventListener('click', () =>
+    window.dispatchEvent(new CustomEvent('im:show-usage')));
+
   /* ---- 外观 ---- */
   const syncSeg = () => $$('#theme-choice button').forEach((b) =>
     b.classList.toggle('active', b.dataset.themeVal === S.theme));

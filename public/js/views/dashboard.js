@@ -132,6 +132,10 @@ export function render() {
     <div class="tile clickable" id="d-tile-xp">
       <div class="tile-ico gold">${levelInfo(S.gamify.xp).icon}</div>
       <div><div class="tile-num">Lv.${levelInfo(S.gamify.xp).level}</div><div class="tile-label">${levelInfo(S.gamify.xp).title} · ${S.gamify.xp} XP</div></div>
+    </div>
+    <div class="tile clickable" id="d-tile-tokens">
+      <div class="tile-ico">${icon('cpu', 20)}</div>
+      <div><div class="tile-num" id="d-tile-tokens-num">0</div><div class="tile-label">本月 Token 用量</div></div>
     </div>`;
 
   $$('[data-count]', $('#dash-tiles')).forEach((el) =>
@@ -146,6 +150,18 @@ export function render() {
     const el = document.getElementById('d-tile-jobs');
     if (el) el.textContent = '—';
   });
+
+  // 本月 Token 用量瓦片（点击开面板）
+  import('../tokens.js').then(({ tokenStats }) => {
+    const st = tokenStats();
+    const num = document.getElementById('d-tile-tokens-num');
+    if (num) {
+      const v = st.month.p + st.month.c;
+      num.textContent = v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : v >= 1e3 ? (v / 1e3).toFixed(1) + 'k' : String(v);
+    }
+  });
+  document.getElementById('d-tile-tokens')?.addEventListener('click', () =>
+    window.dispatchEvent(new CustomEvent('im:show-usage')));
 
   $$('[data-goto]', $('#dash-tiles')).forEach((t) => {
     t.onclick = () => switchView(t.dataset.goto);
