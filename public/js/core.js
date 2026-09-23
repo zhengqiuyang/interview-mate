@@ -452,6 +452,77 @@ export function confetti(duration = 1600) {
   })(start);
 }
 
+/* ---------- 微交互引擎：卡片聚光灯 / 按钮涟漪 / AI 消息复制 ---------- */
+
+export function initMicroInteractions() {
+  // 卡片聚光灯：光斑跟随指针（Linear/Vercel 风格）
+  document.addEventListener('pointermove', (e) => {
+    const card = e.target.closest('.card, .tile, .q-card, .kn-card, .job-card, .panel-card, .mission-card, .pack-card, .h-item');
+    if (!card) return;
+    const r = card.getBoundingClientRect();
+    card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+    card.style.setProperty('--my', (e.clientY - r.top) + 'px');
+  }, { passive: true });
+
+  // 按钮涟漪
+  document.addEventListener('pointerdown', (e) => {
+    const btn = e.target.closest('.btn, .nav-item, .chip, .mission-card, .palette-item');
+    if (!btn || btn.disabled) return;
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height) * 1.2;
+    const r = document.createElement('span');
+    r.className = 'ripple';
+    r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - rect.left - size / 2}px;top:${e.clientY - rect.top - size / 2}px`;
+    btn.appendChild(r);
+    setTimeout(() => r.remove(), 650);
+  }, { passive: true });
+
+  // AI 消息一键复制
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.msg-copy');
+    if (!btn) return;
+    const bubble = btn.closest('.msg')?.querySelector('.bubble');
+    if (!bubble) return;
+    try {
+      await navigator.clipboard.writeText(bubble.innerText);
+      btn.textContent = '✓ 已复制';
+      toast('已复制到剪贴板', 'ok');
+      setTimeout(() => { btn.textContent = '⧉ 复制'; }, 1500);
+    } catch (_) {
+      toast('复制失败', 'err');
+    }
+  });
+}
+
+/* ---------- 顶部流式进度条（nprogress 风格） ---------- */
+
+let progEl = null;
+let progDepth = 0; // 支持并发请求计数
+
+export function showProgress() {
+  progDepth += 1;
+  if (!progEl) {
+    progEl = document.createElement('div');
+    progEl.className = 'top-progress';
+    document.body.appendChild(progEl);
+  }
+  progEl.style.transition = 'none';
+  progEl.style.width = '0%';
+  progEl.style.opacity = '1';
+  requestAnimationFrame(() => {
+    progEl.style.transition = 'width .35s ease';
+    progEl.style.width = '72%';
+  });
+}
+
+export function hideProgress() {
+  progDepth = Math.max(0, progDepth - 1);
+  if (progDepth > 0 || !progEl) return;
+  progEl.style.transition = 'width .25s ease, opacity .4s .2s';
+  progEl.style.width = '100%';
+  setTimeout(() => { progEl.style.opacity = '0'; }, 240);
+}
+
 /* ---------- 分享卡片：Canvas 生成可分享的成绩图 ---------- */
 
 export function drawShareCard({ title, subtitle, score, max = 100, dims = [], footer = 'InterviewMate · AI 面试陪练' }) {

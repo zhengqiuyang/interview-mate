@@ -1,5 +1,5 @@
 /* InterviewMate 主入口：路由 / 命令面板 / 快捷键 / 初始化 */
-import { $, $$, esc, icon, toast, hydrateIcons, applyTheme, openModal, store } from './core.js';
+import { $, $$, esc, icon, toast, hydrateIcons, applyTheme, openModal, store, initMicroInteractions } from './core.js';
 import { S, initMigrations } from './state.js';
 import { checkHealth, loadBank, hasKey } from './api.js';
 import { startFlashcards } from './views/flashcards.js';
@@ -78,15 +78,23 @@ function openPalette() {
   function renderList(kw) {
     const all = commands();
     const k = kw.trim().toLowerCase();
+    // 高亮命中片段
+    const hl = (s) => {
+      if (!k) return esc(s);
+      const i = s.toLowerCase().indexOf(k);
+      if (i < 0) return esc(s);
+      return esc(s.slice(0, i)) + '<mark>' + esc(s.slice(i, i + k.length)) + '</mark>' + esc(s.slice(i + k.length));
+    };
     const items = !k ? all : all.filter((c) =>
       c.name.toLowerCase().includes(k) || (c.keys || []).some((x) => x.toLowerCase().includes(k)));
     if (paletteSel >= items.length) paletteSel = Math.max(0, items.length - 1);
     const list = $('#palette-list');
     list.innerHTML = items.length ? items.map((c, i) => `
       <div class="palette-item ${i === paletteSel ? 'sel' : ''}" data-i="${i}">
-        <span class="ico">${icon(c.icon)}</span><span>${esc(c.name)}</span>
+        <span class="ico">${icon(c.icon)}</span><span>${hl(c.name)}</span>
       </div>`).join('')
       : '<div class="palette-empty">没有匹配的命令</div>';
+    $$('mark', list).forEach((m) => m.closest('.palette-item')?.setAttribute('data-hl', '1'));
     $$('.palette-item', list).forEach((el) => {
       el.onclick = () => { const c = items[Number(el.dataset.i)]; close(); c.run(); };
     });
@@ -285,6 +293,7 @@ if (typeof window !== 'undefined') {
 async function init() {
   initMigrations();
   hydrateIcons();
+  initMicroInteractions();
   applyTheme(S.theme);
 
   // 跟随系统主题变化

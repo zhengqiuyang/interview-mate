@@ -1,6 +1,6 @@
 # 🎯 InterviewMate · AI 面试陪练
 
-![version](https://img.shields.io/badge/version-0.10.0-4f6bf0) ![license](https://img.shields.io/badge/license-MIT-green) ![deps](https://img.shields.io/badge/dependencies-0-brightgreen) ![node](https://img.shields.io/badge/node-%3E%3D18-339933)
+![version](https://img.shields.io/badge/version-0.11.0-4f6bf0) ![license](https://img.shields.io/badge/license-MIT-green) ![deps](https://img.shields.io/badge/dependencies-0-brightgreen) ![node](https://img.shields.io/badge/node-%3E%3D18-339933)
 
 > 你的私人 AI 面试官 —— **智能体教练**、模拟面试、间隔重复复习、岗位雷达、简历工坊、个人知识库，本地运行、数据自持。
 
@@ -81,9 +81,10 @@
 
 - **极光渐变背景**：双光斑缓慢漂移，浅深色主题各有着色
 - **玻璃拟态**：深色模式卡片与侧栏毛玻璃质感（backdrop-filter）
+- **微交互包 v0.11**：卡片**聚光灯**（光斑跟随指针）、全屏噪点质感、按钮涟漪、**顶部流式进度条**（AI 请求自动触发）、Toast 消退进度线、AI 消息悬停复制、命令面板命中高亮、导航图标微动画、tabular-nums 等宽数字
 - **动效体系**：数字滚动、评分环动画、视图转场、列表交错入场、卡片悬浮微交互、高分礼花特效
-- **深色 / 浅色主题**：跟随系统 + 手动切换，图表随之重绘；尊重 `prefers-reduced-motion`
-- **命令面板**：<kbd>Ctrl+K</kbd> 呼出，模糊搜索所有页面与动作
+- **深色 / 浅色主题**：跟随系统 + 手动切换，图表随之重绘；尊重 `prefers-reduced-motion`；`:focus-visible` 键盘焦点环
+- **命令面板**：<kbd>Ctrl+K</kbd> 呼出，模糊搜索所有页面与动作，命中片段高亮
 - **全局搜索**：题库 + 知识库 + 笔记一站检索，点击直达
 - **键盘流**：<kbd>1-9</kbd> 切页、<kbd>/</kbd> 搜题、<kbd>?</kbd> 查看全部快捷键
 - **语音**：面试官提问可朗读（TTS）；回答可语音输入（Chrome/Edge 语音识别）
@@ -212,6 +213,7 @@ INTERVIEW_MATE_JOB_REFRESH_MIN=30
 - [x] **Agent 技能市场**（自定义 HTTP 工具 / 自定义专家 / 官方技能包 / JSON 分享）（v0.8）
 - [x] 新手引导 + 开源工程化（CI / 贡献指南 / 截图），上线 GitHub（v0.9）
 - [x] 冲刺与复盘套件（面试倒计时 / 错题本 / 分享成绩单 / Agent 新工具）（v0.10）
+- [x] **UI 微交互包**（聚光灯 / 噪点 / 涟漪 / 流式进度条 / 复制 / 高亮）（v0.11）
 - [ ] 团队部署模式（服务端统一密钥、多用户数据隔离）——按需启动
 
 ## ❓ FAQ

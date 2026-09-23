@@ -1,5 +1,5 @@
 /* 面试记录：时间线 / 筛选 / 导出 / 打印 */
-import { $, $$, esc, md, icon, toast, openModal, downloadFile, printHtml, fmtDate, fmtTime, downloadShareCard } from '../core.js';
+import { $, $$, esc, md, icon, toast, openModal, downloadFile, printHtml, fmtDate, fmtTime, downloadShareCard, staggerIn } from '../core.js';
 import { S } from '../state.js';
 import { renderReport } from './resume.js';
 import { startFlashcards } from './flashcards.js';
@@ -60,6 +60,7 @@ function render() {
     };
     box.appendChild(el);
   }
+  staggerIn(box, '.h-item');
 }
 
 function viewSession(s) {

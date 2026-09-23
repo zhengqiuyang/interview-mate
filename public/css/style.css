@@ -833,6 +833,103 @@ textarea { resize: vertical; min-height: 90px; }
 .fc-timer { display: flex; align-items: center; gap: 10px; margin-top: auto; color: var(--danger); }
 .fc-cloze { border-left: 3px solid var(--brand); padding: 6px 12px; background: var(--brand-soft); border-radius: 8px; }
 
+/* ---------- 微交互包 v0.11：聚光灯 / 噪点 / 涟漪 / 进度条 ---------- */
+
+/* 噪点质感：全屏细颗粒（feTurbulence） */
+body::after {
+  content: "";
+  position: fixed; inset: 0; z-index: 2; pointer-events: none;
+  opacity: 0.035; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* 卡片聚光灯：光斑跟随指针 */
+.card::before {
+  content: "";
+  position: absolute; inset: 0; border-radius: inherit;
+  pointer-events: none; z-index: 0;
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(79, 107, 240, 0.07), transparent 62%);
+  opacity: 0; transition: opacity 0.3s;
+}
+[data-theme="dark"] .card::before {
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(122, 145, 255, 0.10), transparent 62%);
+}
+.card:hover::before { opacity: 1; }
+.tile, .q-card, .kn-card, .job-card, .panel-card, .mission-card, .pack-card, .h-item { position: relative; }
+.tile::before, .q-card::before, .kn-card::before, .job-card::before, .mission-card::before, .pack-card::before, .h-item::before {
+  content: "";
+  position: absolute; inset: 0; border-radius: inherit;
+  pointer-events: none; z-index: 0;
+  background: radial-gradient(300px circle at var(--mx, 50%) var(--my, 50%), rgba(79, 107, 240, 0.08), transparent 60%);
+  opacity: 0; transition: opacity 0.3s;
+}
+.tile:hover::before, .q-card:hover::before, .kn-card:hover::before, .job-card:hover::before, .mission-card:hover::before, .pack-card:hover::before, .h-item:hover::before { opacity: 1; }
+
+/* 按钮涟漪 */
+.btn, .nav-item, .chip, .mission-card, .palette-item { position: relative; overflow: hidden; }
+.ripple {
+  position: absolute; border-radius: 50%; pointer-events: none;
+  background: currentColor; opacity: 0.14;
+  transform: scale(0);
+  animation: rippleOut 0.6s ease-out forwards;
+}
+@keyframes rippleOut { to { transform: scale(2.4); opacity: 0; } }
+
+/* 顶部流式进度条 */
+.top-progress {
+  position: fixed; top: 0; left: 0; height: 3px; width: 0;
+  z-index: 300; border-radius: 0 3px 3px 0;
+  background: linear-gradient(90deg, var(--brand), var(--brand-2));
+  box-shadow: 0 0 12px rgba(79, 107, 240, 0.8);
+  opacity: 0; transition: opacity 0.3s;
+}
+
+/* AI 消息复制按钮 */
+.msg { position: relative; }
+.msg-copy {
+  position: absolute; top: -10px; right: 0;
+  border: 1px solid var(--line); background: var(--card);
+  color: var(--muted); font-size: 11px; padding: 2px 8px;
+  border-radius: 6px; cursor: pointer; opacity: 0;
+  transition: opacity 0.18s, color 0.15s;
+  box-shadow: var(--shadow);
+}
+.msg:hover .msg-copy { opacity: 1; }
+.msg-copy:hover { color: var(--brand); border-color: var(--brand); }
+
+/* Toast 自动消退进度线 */
+.toast { position: relative; overflow: hidden; }
+.toast::after {
+  content: ""; position: absolute; left: 0; bottom: 0; height: 2.5px;
+  width: 100%; background: rgba(255, 255, 255, 0.5);
+  animation: toastbar 3.2s linear forwards;
+}
+@keyframes toastbar { to { width: 0; } }
+
+/* 数字对齐（统计与得分不跳动） */
+.tile-num, .dim-row .val, .h-score, .fcf-col b, .streak-num, .score-ring span, #chat-timer, .fc-timer b {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 键盘可达性：焦点环 */
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+input:focus-visible, textarea:focus-visible, select:focus-visible { outline: none; }
+
+/* 命令面板命中高亮 */
+.palette-item mark, .gs-item mark {
+  background: var(--brand-soft); color: var(--brand);
+  border-radius: 3px; padding: 0 2px; font-weight: 700;
+}
+
+/* 导航图标微动画 */
+.ico svg { transition: transform 0.2s cubic-bezier(0.2, 0.7, 0.25, 1); }
+.nav-item:hover .ico svg { transform: scale(1.15) rotate(-5deg); }
+.tool-btn:hover .ico svg { transform: scale(1.12); }
+
 /* ---------- 响应式 ---------- */
 @media (max-width: 980px) {
   .dash-grid, .dash-grid2, .mission-grid, .polish-grid, .panel-grid { grid-template-columns: 1fr; }

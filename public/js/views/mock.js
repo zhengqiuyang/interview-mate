@@ -264,7 +264,8 @@ function addBubble(role, text = '') {
   wrap.className = `msg ${role === 'user' ? 'user' : 'ai'}`;
   wrap.innerHTML = `
     <div class="avatar">${role === 'user' ? '🙋' : '🎙️'}</div>
-    <div class="bubble md"></div>`;
+    <div class="bubble md"></div>
+    ${role === 'user' ? '' : '<button class="msg-copy" title="复制本条">⧉ 复制</button>'}`;
   $('.bubble', wrap).innerHTML = text ? md(text) : '<span class="typing"><i></i><i></i><i></i></span>';
   const box = $('#chat-messages');
   $$('.skeleton-lines', box).forEach((s) => s.remove());

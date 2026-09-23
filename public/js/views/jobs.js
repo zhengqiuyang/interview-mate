@@ -1,5 +1,5 @@
 /* 岗位雷达：订阅公开源自动汇集 + 关键词过滤 + AI 解析 JD */
-import { $, $$, esc, md, icon, toast, openModal } from '../core.js';
+import { $, $$, esc, md, icon, toast, openModal, staggerIn } from '../core.js';
 import { S, persist } from '../state.js';
 import { streamChat, hasKey } from '../api.js';
 import { switchView } from '../router.js';
@@ -183,6 +183,7 @@ function renderList() {
     $('.j-ai', card).onclick = () => analyzeJd(j);
     box.appendChild(card);
   }
+  staggerIn(box, '.job-card');
 }
 
 /* ---------- 订阅管理 ---------- */

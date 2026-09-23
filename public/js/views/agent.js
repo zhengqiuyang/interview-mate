@@ -348,7 +348,7 @@ function addMsg(role, html) {
   $('#agent-welcome')?.remove();
   const el = document.createElement('div');
   el.className = `msg ${role === 'user' ? 'user' : 'ai'}`;
-  el.innerHTML = `<div class="avatar">${role === 'user' ? '🙋' : '🤖'}</div><div class="bubble md"></div>`;
+  el.innerHTML = `<div class="avatar">${role === 'user' ? '🙋' : '🤖'}</div><div class="bubble md"></div>${role === 'user' ? '' : '<button class="msg-copy" title="复制本条">⧉ 复制</button>'}`;
   $('.bubble', el).innerHTML = html;
   box.appendChild(el);
   box.scrollTop = box.scrollHeight;
