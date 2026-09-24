@@ -11,3 +11,6 @@ node_modules/
 .DS_Store
 Thumbs.db
 data/files/
+
+# 个人创作内容（博客/推广文案）不入公开仓库
+docs/blog*
