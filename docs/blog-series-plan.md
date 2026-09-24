@@ -27,11 +27,11 @@
 ## B 线：零依赖造轮子（12 篇）—— 反差感强，传播力好
 
 - [ ] 16 为什么 0 个 npm 依赖：决策框架与代价清单
-- [ ] 17 零依赖解析 DOCX：ZIP 结构 + DecompressionStream + WordprocessingML
+- [x] 17 零依赖解析 DOCX：ZIP 结构 + DecompressionStream + WordprocessingML（`docs/blog/17-docx-parser.md`，已存 CSDN 草稿）
 - [ ] 18 内置 pdf.js 的工程化：懒加载、worker 配置、扫描件识别
 - [ ] 19 浏览器端 SSE 解析器：40 行代码搞定流式对话
-- [ ] 20 Canvas 图表零库实现：雷达图/折线图与 DPR 适配
-- [ ] 21 极简 Markdown 渲染器：先转义再渲染的安全顺序
+- [x] 20 Canvas 图表零库实现：雷达图/折线图与 DPR 适配（`docs/blog/20-canvas-charts.md`，已存 CSDN 草稿）
+- [x] 21 极简 Markdown 渲染器：先转义再渲染的安全顺序（`docs/blog/21-md-renderer.md`，已存 CSDN 草稿）
 - [ ] 22 原生 ES Modules 无构建工程：模块拆分与循环依赖治理实录
 - [ ] 23 Canvas 分享卡片生成器：成绩单图片的排版设计
 - [ ] 24 聚光灯/噪点/涟漪：纯 CSS+JS 的微交互包实现
