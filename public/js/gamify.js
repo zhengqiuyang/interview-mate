@@ -35,6 +35,7 @@ export const ACHIEVEMENTS = [
   { id: 'master_all', icon: '🧠', name: '全图鉴', desc: '掌握全部内置题库' },
   { id: 'daily_7', icon: '📅', name: '周挑战者', desc: '累计完成 7 次每日挑战' },
   { id: 'kn_20', icon: '🗂️', name: '第二大脑', desc: '知识库积累 20 条' },
+  { id: 'got_offer', icon: '🎉', name: '上岸时刻', desc: '第一个投递进入 Offer 状态' },
   { id: 'level_5', icon: '🚀', name: 'offer 候选人', desc: '达到 Lv.5' },
 ];
 
@@ -58,6 +59,7 @@ function checkAch() {
     master_all: builtinAll.length > 0 && builtinAll.every((q) => isMastered(q.id)),
     daily_7: Object.keys(S.daily).length >= 7,
     kn_20: S.knowledge.length >= 20,
+    got_offer: S.apps.some((a) => a.status === 'offer'),
     level_5: levelInfo(g.xp).level >= 5,
   };
   let newly = [];

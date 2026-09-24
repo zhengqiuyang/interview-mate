@@ -8,7 +8,7 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="/icon.svg">
-  <link rel="stylesheet" href="/css/style.css?v=0.18.0">
+  <link rel="stylesheet" href="/css/style.css?v=0.19.0">
 </head>
 <body>
   <div class="aurora"></div>
@@ -28,6 +28,7 @@
         <button class="nav-item" data-view="bank"><span class="ico" data-icon="book"></span>题库练习</button>
         <button class="nav-item" data-view="review"><span class="ico" data-icon="repeat"></span>复习中心</button>
         <button class="nav-item" data-view="jobs"><span class="ico" data-icon="radar"></span>岗位雷达<em class="nav-badge hidden" id="nav-jobs-badge"></em></button>
+        <button class="nav-item" data-view="apps"><span class="ico" data-icon="send"></span>投递看板</button>
         <button class="nav-item" data-view="knowledge"><span class="ico" data-icon="brain"></span>知识库</button>
         <button class="nav-item" data-view="resume"><span class="ico" data-icon="clipboard"></span>简历工坊</button>
         <button class="nav-item" data-view="history"><span class="ico" data-icon="folder"></span>面试记录</button>
@@ -39,7 +40,7 @@
         <button class="tool-btn" id="palette-btn" title="命令面板 Ctrl+K"><span data-icon="command"></span><em>命令面板</em></button>
       </div>
       <div class="sidebar-foot">
-        v0.18.0 · 本地运行 · 数据自持<br>
+        v0.19.0 · 本地运行 · 数据自持<br>
         题库体系参考
         <a href="https://github.com/Snailclimb/JavaGuide" target="_blank" rel="noopener">JavaGuide</a> ·
         <a href="https://github.com/CyC2018/CS-Notes" target="_blank" rel="noopener">CS-Notes</a> ·
@@ -366,6 +367,26 @@
         <div id="jobs-list" class="bank-list"></div>
       </section>
 
+      <!-- ============ 投递看板 ============ -->
+      <section id="view-apps" class="view">
+        <div class="page-head">
+          <h1>投递看板</h1>
+          <p>求职中枢台账：状态流转（已投 → 约面 → 各轮面试 → Offer）、面试提醒、转化统计，与岗位雷达 / 模拟面试 / 简历工坊联动。</p>
+        </div>
+        <div id="ap-banner"></div>
+        <div class="tiles" id="ap-tiles"></div>
+        <div class="bank-toolbar">
+          <div class="seg" id="ap-mode">
+            <button data-m="board" class="active">📋 看板</button>
+            <button data-m="list">📃 列表</button>
+          </div>
+          <button class="btn ghost" id="ap-import"><span class="ico" data-icon="radar"></span>从岗位雷达导入</button>
+          <button class="btn primary" id="ap-new"><span class="ico" data-icon="plus"></span>新建投递</button>
+        </div>
+        <div id="ap-board" class="kb-board"></div>
+        <div id="ap-list"></div>
+      </section>
+
       <!-- ============ 知识库 ============ -->
       <section id="view-knowledge" class="view">
         <div class="page-head">
@@ -524,7 +545,7 @@
 
         <div class="card settings-card about">
           <h3><span class="ico" data-icon="info"></span>关于</h3>
-          <p>InterviewMate v0.18.0 · 零依赖本地运行 · 数据不出本机（除 LLM 请求本身）</p>
+          <p>InterviewMate v0.19.0 · 零依赖本地运行 · 数据不出本机（除 LLM 请求本身）</p>
           <div class="actions">
             <button class="btn ghost" id="btn-onboarding">🚀 重看新手引导</button>
           </div>
@@ -549,6 +570,6 @@
   <div id="toast-root"></div>
   <div id="fatal-error" class="banner warn hidden" style="position:fixed;left:50%;transform:translateX(-50%);bottom:24px;z-index:200"></div>
 
-  <script type="module" src="/js/app.js?v=0.18.0"></script>
+  <script type="module" src="/js/app.js?v=0.19.0"></script>
 </body>
 </html>

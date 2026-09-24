@@ -174,6 +174,16 @@ const TOOLS = {
       ? { 画像卡: cards.map((c) => `[${c.type}] ${c.content}`), 说明: '这些是用户历次面试/诊断沉淀的长期画像，出题与建议应据此个性化' }
       : { 画像卡: [], 说明: '用户还没有画像沉淀，按常规处理' };
   },
+  my_applications() {
+    const apps = S.apps.slice(0, 15);
+    if (!apps.length) return { 提示: '用户还没有投递记录' };
+    const today = new Date().toISOString().slice(0, 10);
+    return {
+      投递记录: apps.map((a) => `${a.company}·${a.position}：${a.status}${a.interviewDate ? `，面试 ${a.interviewDate}` : ''}`),
+      统计: `共 ${apps.length} 条，Offer ${apps.filter((a) => a.status === 'offer').length} 条，进行中 ${apps.filter((a) => !['offer', 'rejected', 'paused'].includes(a.status)).length} 条`,
+      即将面试: apps.filter((a) => a.interviewDate && a.interviewDate >= today && a.status !== 'rejected').map((a) => `${a.company} ${a.interviewDate}`),
+    };
+  },
 };
 
 export function collectStatsText(forTool = false) {
@@ -193,6 +203,9 @@ export function collectStatsText(forTool = false) {
     知识库条目: S.knowledge.length,
     目标面试日期: daysLeft != null ? `${S.targetDate}（${daysLeft >= 0 ? `还剩 ${daysLeft} 天` : '已过，请更新' }）` : '未设置',
     长期画像: S.profile.cards.length ? `${S.profile.cards.length} 条（可用 get_profile 读取详情）` : '暂无',
+    投递: S.apps.length
+      ? `共 ${S.apps.length} 条，进行中 ${S.apps.filter((a) => !['offer', 'rejected', 'paused'].includes(a.status)).length} 条，Offer ${S.apps.filter((a) => a.status === 'offer').length} 条（可用 my_applications 读取详情）`
+      : '暂无',
   };
   if (forTool) return data;
   return `连续打卡 ${data.连续打卡天数} 天；待复习 ${data.待复习题数} 题；错题 ${data.错题数} 道；已学 ${data.已学题目数} 题；模拟面试：${data.模拟面试}；分类掌握：${data.各分类掌握度.join('；')}；知识库 ${data.知识库条目} 条；目标面试：${data.目标面试日期}。`;

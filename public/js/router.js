@@ -8,6 +8,7 @@ import * as mock from './views/mock.js';
 import * as bank from './views/bank.js';
 import * as review from './views/review.js';
 import * as jobs from './views/jobs.js';
+import * as apps from './views/apps.js';
 import * as knowledge from './views/knowledge.js';
 import * as resume from './views/resume.js';
 import * as history from './views/history.js';
@@ -20,6 +21,7 @@ export const VIEWS = {
   bank: { label: '题库练习', icon: 'book', mod: bank, keys: ['tiku', 'bank', '题库', '刷题'] },
   review: { label: '复习中心', icon: 'repeat', mod: review, keys: ['fuxi', 'review', '复习', 'srs'] },
   jobs: { label: '岗位雷达', icon: 'radar', mod: jobs, keys: ['gangwei', 'jobs', '岗位', '招聘'] },
+  apps: { label: '投递看板', icon: 'send', mod: apps, keys: ['toumdi', 'apps', '投递', '看板', 'crm'] },
   knowledge: { label: '知识库', icon: 'brain', mod: knowledge, keys: ['zhishi', 'knowledge', '知识', '笔记'] },
   resume: { label: '简历工坊', icon: 'clipboard', mod: resume, keys: ['jianli', 'resume', '简历', 'jd', '工坊'] },
   history: { label: '面试记录', icon: 'folder', mod: history, keys: ['jilu', 'history', '记录', '报告'] },

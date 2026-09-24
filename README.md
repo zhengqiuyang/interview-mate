@@ -1,6 +1,6 @@
 # 🎯 InterviewMate · AI 面试陪练
 
-![version](https://img.shields.io/badge/version-0.18.0-4f6bf0) ![license](https://img.shields.io/badge/license-MIT-green) ![deps](https://img.shields.io/badge/dependencies-0-brightgreen) ![node](https://img.shields.io/badge/node-%3E%3D18-339933)
+![version](https://img.shields.io/badge/version-0.19.0-4f6bf0) ![license](https://img.shields.io/badge/license-MIT-green) ![deps](https://img.shields.io/badge/dependencies-0-brightgreen) ![node](https://img.shields.io/badge/node-%3E%3D18-339933)
 
 > 你的私人 AI 面试官 —— **智能体教练**、模拟面试、间隔重复复习、岗位雷达、简历工坊、个人知识库，本地运行、数据自持。
 
@@ -80,6 +80,7 @@
 | 🃏 **闪卡引擎** | 3D 翻转卡片，键盘评分（空格翻面，1/2/3 评分），单题速练 / 组卷刷题 / 错题回炉 | ❌ |
 | ⚡ **每日挑战** | 按日期确定性选题，一天一题保持手感，计入连续打卡 | ❌ |
 | 📚 **题库练习** | **90+ 内置高频题、11 大分类**（含 Java 专项、手写代码模板），相关题目推荐、多维筛选、收藏、**题目笔记**、掌握标记、AI 追问、题库导出 | 部分（AI 追问需要） |
+| 📮 **投递看板** | 求职中枢台账：九列状态流转（已投→约面→各轮面试→Offer/挂/搁置）、**从岗位雷达一键导入**、面试日期提醒（横幅+每日简报）、转化统计（约面率/进行中/Offer）、关联简历版本、Agent 第 10 个工具 `my_applications` | ❌ |
 | 📡 **岗位雷达** | 订阅公开源（RemoteOK / HN 招聘帖 / 自定义 JSON / RSS）**定时自动抓取**，关键词过滤 + 去重 + 未读徽标；**选择简历后本地匹配分自动排序**；AI 岗位情报 | 抓取/匹配❌ / AI 分析✅ |
 | 🧠 **知识库** | Markdown 知识条目 + 标签 + 全文检索；**AI 剪藏生成学习卡**：贴一篇文章 → 摘要 + 3-8 张问答卡 → 一键进题库与间隔重复 | 新建❌ / AI 生成✅ |
 | 📋 **简历工坊 2.0** | **上传 PDF / Word 后原生文档展示**——PDF 内嵌浏览器原生查看器（带页面/缩放），DOCX 由内置 docx-preview 渲染成带页面的 Word 视图；原文件存本地服务端；另有 AI 智能结构化视图（无 Key 启发式兜底）双标签切换；左侧**简历库**管理多份简历（来源标记/字数/切换）；每份简历直接挂 AI 操作：**智能解析 / 润色 / JD 诊断 / 匹配岗位**；结构化诊断报告 + 追问转练习题 | 解析/展示❌ / AI✅ |
@@ -223,6 +224,7 @@ INTERVIEW_MATE_JOB_REFRESH_MIN=30
 - [x] 冲刺与复盘套件（面试倒计时 / 错题本 / 分享成绩单 / Agent 新工具）（v0.10）
 - [x] **语音复盘**（录音回放 + 填充词/语速分析）（v0.18）
 - [x] **Agent 长期画像**（跨场沉淀用户画像卡，Agent 越用越懂你）（v0.18）
+- [x] **投递看板**（九列流转 / 雷达导入 / 面试提醒 / 转化统计 / my_applications 工具 / 上岸时刻成就）（v0.19）
 - [x] **UI 微交互包**（聚光灯 / 噪点 / 涟漪 / 流式进度条 / 复制 / 高亮）（v0.11）
 - [x] 高级感改造：图标统一 / 排版层级 / 质感升级（v0.12）
 - [x] **Token 用量面板**（真实 usage + 本地估算兜底，趋势/分布/费用）（v0.13）

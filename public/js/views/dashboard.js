@@ -57,9 +57,13 @@ export async function ensureDailyBrief(force = false) {
   const weak = catMastery().sort((a, b) => a.pct - b.pct).slice(0, 2);
   const streak = streakDays();
   const mocks = S.sessions.filter((s) => s.kind === 'mock' && s.score != null);
+  const upcoming = S.apps
+    .filter((a) => a.interviewDate && a.interviewDate >= today && a.status !== 'rejected')
+    .sort((x, y) => x.interviewDate.localeCompare(y.interviewDate))
+    .slice(0, 3);
   saveBrief({
     date: today, kind: 'local',
-    text: `## 昨日回顾\n连续打卡 **${streak} 天**${mocks.length ? `，最近一场模拟面试 ${mocks[0].score} 分` : ''}，当前待复习 ${due} 题。\n## 今日重点\n- 优先攻克薄弱分类：${weak.map((c) => `**${c.name}**（${c.pct}%）`).join('、')}\n- 完成每日挑战保持手感\n- ${due ? `清空 ${due} 道到期复习题` : '用「提前学新题」开一组闪卡'}\n## 一句加油\n数据不会说谎，今天的每一张卡片都在拉高你的雷达图。`,
+    text: `## 昨日回顾\n连续打卡 **${streak} 天**${mocks.length ? `，最近一场模拟面试 ${mocks[0].score} 分` : ''}，当前待复习 ${due} 题。\n## 今日重点\n- 优先攻克薄弱分类：${weak.map((c) => `**${c.name}**（${c.pct}%）`).join('、')}\n- 完成每日挑战保持手感\n- ${due ? `清空 ${due} 道到期复习题` : '用「提前学新题」开一组闪卡'}${upcoming.length ? `\n- ⏰ 即将面试：${upcoming.map((a) => `**${a.company}**（${a.interviewDate}）`).join('、')}——去投递看板看详情` : ''}\n## 一句加油\n数据不会说谎，今天的每一张卡片都在拉高你的雷达图。`,
   });
   return S.dailyBrief;
 }
