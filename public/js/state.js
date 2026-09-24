@@ -54,6 +54,7 @@ export const S = {
   customExperts: store.get('im_custom_experts', []),
   panelPick: store.get('im_panel_pick', ['interviewer', 'strategist', 'coach']),
   targetDate: store.get('im_target_date', ''),
+  profile: store.get('im_profile', { cards: [] }),
   serverKey: false,
   bankLoaded: false,
 };
@@ -78,6 +79,7 @@ const KEYMAP = {
   customExperts: 'im_custom_experts',
   panelPick: 'im_panel_pick',
   targetDate: 'im_target_date',
+  profile: 'im_profile',
 };
 
 export function persist(key) {

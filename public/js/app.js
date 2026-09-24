@@ -53,6 +53,10 @@ function commands() {
       run: () => import('./views/usage.js').then((m) => m.openUsagePanel()),
     },
     {
+      name: '我的长期画像', icon: 'brain', keys: ['profile', '画像', '记忆'],
+      run: () => import('./profile.js').then((m) => m.openProfileModal()),
+    },
+    {
       name: '键盘快捷键说明', icon: 'keyboard', keys: ['shortcuts', 'help', '快捷键'],
       run: showShortcuts,
     },

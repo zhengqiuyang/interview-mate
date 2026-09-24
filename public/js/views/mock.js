@@ -113,6 +113,56 @@ let voiceOn = false;
 let voiceRecog = null;
 let voiceSilence = null;
 
+/* 录音复盘：与语音识别并行录下口述回答，面后可回放 + 口语分析 */
+let voiceRecorder = null;
+let voiceChunks = [];
+let voiceStartTs = 0;
+let voiceStream = null;
+
+async function startVoiceRecording() {
+  if (voiceRecorder) return;
+  try {
+    voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    voiceChunks = [];
+    voiceRecorder = new MediaRecorder(voiceStream);
+    voiceRecorder.ondataavailable = (e) => { if (e.data && e.data.size) voiceChunks.push(e.data); };
+    voiceRecorder.onstop = async () => {
+      const dur = Math.round((Date.now() - voiceStartTs) / 1000);
+      try { voiceStream.getTracks().forEach((t) => t.stop()); } catch (_) { /* noop */ }
+      const blob = new Blob(voiceChunks, { type: voiceRecorder.mimeType || 'audio/webm' });
+      voiceRecorder = null;
+      if (blob.size < 2000) return; // 太短不上传
+      try {
+        const up = await fetch('/api/files/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/octet-stream', 'X-File-Name': encodeURIComponent('answer.webm') },
+          body: blob,
+        });
+        const j = await up.json();
+        if (up.ok && j.url && mock) {
+          const lastUser = [...mock.messages].reverse().find((m) => m.role === 'user');
+          if (lastUser) {
+            lastUser.audio = { url: j.url, dur };
+            toast(`本段回答已录音（${dur}s），面后可在「面试记录」复盘`, 'ok');
+          }
+        }
+      } catch (_) { /* 上传失败不影响面试 */ }
+    };
+    voiceStartTs = Date.now();
+    voiceRecorder.start();
+  } catch (_) {
+    voiceRecorder = null; // 无麦克风或拒绝授权：静默跳过录音
+  }
+}
+
+function stopVoiceRecording() {
+  if (voiceRecorder && voiceRecorder.state !== 'inactive') {
+    try { voiceRecorder.stop(); } catch (_) { voiceRecorder = null; }
+  } else {
+    voiceRecorder = null;
+  }
+}
+
 function toggleVoiceLoop() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { toast('语音整场面试需要 Chrome / Edge', 'err'); return; }
@@ -124,7 +174,7 @@ function toggleVoiceLoop() {
     toast('语音整场面试已关闭');
     return;
   }
-  toast('语音模式开启：面试官提问自动播报，说完自动聆听你的回答', 'ok');
+  toast('语音模式开启：自动播报 + 聆听，回答同步录音供面后复盘', 'ok');
   // 立即播报最新一条面试官消息
   const last = mock?.messages[mock.messages.length - 1];
   if (mock && !mock.ended && last?.role === 'assistant' && !mock.busy) {
@@ -134,6 +184,7 @@ function toggleVoiceLoop() {
 
 function stopVoiceListen() {
   clearTimeout(voiceSilence);
+  stopVoiceRecording();
   if (voiceRecog) { try { voiceRecog.onend = null; voiceRecog.stop(); } catch (_) { /* noop */ } voiceRecog = null; }
 }
 
@@ -145,6 +196,7 @@ function startVoiceListen() {
   }
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   stopVoiceListen();
+  startVoiceRecording(); // 同步开麦录音
   const r = new SR();
   voiceRecog = r;
   r.lang = mock.cfg.lang === 'en' ? 'en-US' : 'zh-CN';
@@ -385,6 +437,7 @@ function finishMock(reportMd) {
     </div>
     <div class="md">${md(body || raw)}</div>
     <div class="report-actions">
+      <button class="btn small ghost" id="rp-profile" ${hasKey() ? '' : 'disabled'} title="${hasKey() ? '把本场要点沉淀为长期画像' : '需配置 API Key'}">${icon('brain', 14)}沉淀画像</button>
       <button class="btn small ghost" id="rp-share">${icon('star', 14)}生成分享图</button>
       <button class="btn small ghost" id="rp-export">${icon('download', 14)}导出 Markdown</button>
       <button class="btn small ghost" id="rp-print">${icon('printer', 14)}打印 / 存为 PDF</button>
@@ -394,6 +447,27 @@ function finishMock(reportMd) {
   $('#chat-messages').scrollTop = $('#chat-messages').scrollHeight;
   requestAnimationFrame(() => animateRing($('.score-ring', card), total ?? 0));
   if ((total ?? 0) >= 80) confetti(2200);
+  $('#rp-profile').onclick = async () => {
+    const btn = $('#rp-profile');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="typing"><i></i><i></i><i></i></span> 沉淀中';
+    let full = '';
+    try {
+      await streamChat(
+        { mode: 'profile', messages: [{ role: 'user', content: raw }] },
+        (d) => { full += d; }
+      );
+      const t = full.replace(/```json|```/g, '');
+      const j = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1));
+      const { addCards } = await import('../profile.js');
+      const n = addCards((j.cards || []).map((c) => ({ ...c, source: '模拟面试' })));
+      toast(n ? `已沉淀 ${n} 条画像，Agent 更懂你了` : '没有需要新增的画像（已存在）', 'ok');
+    } catch (e) {
+      toast('沉淀失败：' + e.message, 'err');
+    }
+    btn.disabled = !hasKey();
+    btn.innerHTML = `${icon('brain', 14)}沉淀画像`;
+  };
   $('#rp-share').onclick = () => {
     downloadShareCard({
       title: '模拟面试成绩单',
@@ -445,6 +519,7 @@ function finishMock(reportMd) {
     score: total,
     reportMd: raw,
     elapsed: m.elapsed,
+    messages: m.messages, // 含 audio 引用，供语音复盘
   });
   S.sessions = S.sessions.slice(0, 100);
   localStorage.setItem('im_sessions', JSON.stringify(S.sessions));

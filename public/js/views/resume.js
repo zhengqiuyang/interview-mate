@@ -563,6 +563,19 @@ async function analyzeResume() {
         reportJson: parsed,
         reportMd: full,
       });
+      // 自动沉淀画像（结构化数据零成本提取）
+      try {
+        const cards = [];
+        (parsed.risks || []).forEach((r) => cards.push({ type: '失分', content: `${r.issue}——${r.fix || ''}`.slice(0, 100) }));
+        (parsed.coverage || []).filter((c) => c.status !== 'covered').forEach((c) => cards.push({ type: '薄弱', content: `JD 要求未满足：${c.req}`.slice(0, 80) }));
+        (parsed.radar || []).filter((r) => (r.score || 0) <= 5).forEach((r) => cards.push({ type: '薄弱', content: `维度偏弱：${r.dim} ${r.score}/10` }));
+        if (cards.length) {
+          import('../profile.js').then(({ addCards }) => {
+            const n = addCards(cards.map((c) => ({ ...c, source: '简历诊断' })));
+            if (n) toast(`已沉淀 ${n} 条画像，Agent 更懂你了`, 'ok');
+          });
+        }
+      } catch (_) { /* 画像失败不影响主流程 */ }
     } else {
       result.innerHTML = `<div class="card md">${md(full)}</div>`;
       S.sessions.unshift({

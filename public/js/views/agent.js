@@ -168,6 +168,12 @@ const TOOLS = {
     });
     return { 错题数: wrongList().length, 错题: wrong };
   },
+  get_profile() {
+    const cards = S.profile.cards.slice(0, 20);
+    return cards.length
+      ? { 画像卡: cards.map((c) => `[${c.type}] ${c.content}`), 说明: '这些是用户历次面试/诊断沉淀的长期画像，出题与建议应据此个性化' }
+      : { 画像卡: [], 说明: '用户还没有画像沉淀，按常规处理' };
+  },
 };
 
 export function collectStatsText(forTool = false) {
@@ -186,6 +192,7 @@ export function collectStatsText(forTool = false) {
     模拟面试: mocks.length ? `共 ${mocks.length} 场均分 ${avg}，最近三场：${mocks.slice(0, 3).map((m) => `${m.score}分`).join('、')}` : '暂无',
     知识库条目: S.knowledge.length,
     目标面试日期: daysLeft != null ? `${S.targetDate}（${daysLeft >= 0 ? `还剩 ${daysLeft} 天` : '已过，请更新' }）` : '未设置',
+    长期画像: S.profile.cards.length ? `${S.profile.cards.length} 条（可用 get_profile 读取详情）` : '暂无',
   };
   if (forTool) return data;
   return `连续打卡 ${data.连续打卡天数} 天；待复习 ${data.待复习题数} 题；错题 ${data.错题数} 道；已学 ${data.已学题目数} 题；模拟面试：${data.模拟面试}；分类掌握：${data.各分类掌握度.join('；')}；知识库 ${data.知识库条目} 条；目标面试：${data.目标面试日期}。`;

@@ -67,6 +67,10 @@ const MIME = {
   '.woff2': 'font/woff2',
   '.pdf': 'application/pdf',
   '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.webm': 'audio/webm',
+  '.mp3': 'audio/mpeg',
+  '.m4a': 'audio/mp4',
+  '.ogg': 'audio/ogg',
 };
 
 /* ---------------- 提示词 ---------------- */
@@ -167,6 +171,7 @@ const AGENT_TOOL_SPEC = [
   '6. save_knowledge(title, content, tags) — 将内容存入用户知识库',
   '7. search_knowledge(query) — 搜索用户知识库条目（标题/内容/标签）',
   '8. my_wrong() — 获取用户错题本（挂科次数最多的题目）',
+  '9. get_profile() — 读取用户长期画像（项目要点/高频失分点/薄弱技术/偏好，来自历次面试与诊断的沉淀）',
   '',
   '执行规则（严格遵守）：',
   '- 需要调用工具时，只输出一行，格式：TOOL: {"name": "工具名", "args": {...}}，然后立即停止输出，等待 TOOL_RESULT 消息。',
@@ -221,6 +226,14 @@ function buildParseResumePrompt() {
     '"sections": [{"heading": "小节名（教育背景/工作经历/项目经历…用原文语义）", "lines": ["该节下的每一行内容，去掉装饰符号，保留时间与量化数据"]}]',
     '}',
     '要求：保持原文事实不改动；噪音行（页码/纯符号）丢弃；无对应内容用空数组；行内不要加 Markdown 符号。',
+  ].join('\n');
+}
+
+function buildProfilePrompt() {
+  return [
+    '你是面试复盘教练。基于用户提供的面试评估报告，提取值得长期记住的候选人画像卡。严格只输出一个 JSON 对象（不要其他文字、不要代码块包裹）：',
+    '{"cards": [{"type": "项目|失分|薄弱|偏好|亮点", "content": "一句话，具体"}]}',
+    '规则：只提取有跨场价值的信息（如「订单项目用 RabbitMQ 异步解耦，可深挖一致性追问」「表达偏啰嗦，结论先行不足」）；忽略只与本题相关的细节；最多 6 张卡；不编造。',
   ].join('\n');
 }
 
@@ -408,6 +421,9 @@ async function proxyChat(res, body) {
       break;
     case 'parse-resume':
       system = buildParseResumePrompt();
+      break;
+    case 'profile':
+      system = buildProfilePrompt();
       break;
     case 'jd':
       system = buildJdSystemPrompt();
@@ -598,8 +614,8 @@ async function handleApi(req, res, pathname) {
       let name = 'file';
       try { name = decodeURIComponent(req.headers['x-file-name'] || 'file'); } catch (_) { /* ignore */ }
       const ext = (name.split('.').pop() || '').toLowerCase();
-      if (!['pdf', 'docx', 'txt', 'md'].includes(ext)) {
-        return sendJson(res, 400, { error: '仅支持 pdf / docx / txt / md 文件' });
+      if (!['pdf', 'docx', 'txt', 'md', 'webm', 'mp3', 'm4a', 'ogg'].includes(ext)) {
+        return sendJson(res, 400, { error: '不支持的文件类型' });
       }
       const buf = await readBodyRaw(req);
       if (!buf.length) return sendJson(res, 400, { error: '空文件' });

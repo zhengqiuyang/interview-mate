@@ -1,6 +1,6 @@
 # 🎯 InterviewMate · AI 面试陪练
 
-![version](https://img.shields.io/badge/version-0.17.0-4f6bf0) ![license](https://img.shields.io/badge/license-MIT-green) ![deps](https://img.shields.io/badge/dependencies-0-brightgreen) ![node](https://img.shields.io/badge/node-%3E%3D18-339933)
+![version](https://img.shields.io/badge/version-0.18.0-4f6bf0) ![license](https://img.shields.io/badge/license-MIT-green) ![deps](https://img.shields.io/badge/dependencies-0-brightgreen) ![node](https://img.shields.io/badge/node-%3E%3D18-339933)
 
 > 你的私人 AI 面试官 —— **智能体教练**、模拟面试、间隔重复复习、岗位雷达、简历工坊、个人知识库，本地运行、数据自持。
 
@@ -221,6 +221,8 @@ INTERVIEW_MATE_JOB_REFRESH_MIN=30
 - [x] **Agent 技能市场**（自定义 HTTP 工具 / 自定义专家 / 官方技能包 / JSON 分享）（v0.8）
 - [x] 新手引导 + 开源工程化（CI / 贡献指南 / 截图），上线 GitHub（v0.9）
 - [x] 冲刺与复盘套件（面试倒计时 / 错题本 / 分享成绩单 / Agent 新工具）（v0.10）
+- [x] **语音复盘**（录音回放 + 填充词/语速分析）（v0.18）
+- [x] **Agent 长期画像**（跨场沉淀用户画像卡，Agent 越用越懂你）（v0.18）
 - [x] **UI 微交互包**（聚光灯 / 噪点 / 涟漪 / 流式进度条 / 复制 / 高亮）（v0.11）
 - [x] 高级感改造：图标统一 / 排版层级 / 质感升级（v0.12）
 - [x] **Token 用量面板**（真实 usage + 本地估算兜底，趋势/分布/费用）（v0.13）

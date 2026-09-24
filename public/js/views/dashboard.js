@@ -203,6 +203,11 @@ export function render() {
 
   renderLevelChip();
   renderAchievements(document.getElementById('dash-achieve'));
+  import('../profile.js').then(({ renderProfileCard, profileStats }) => {
+    renderProfileCard(document.getElementById('dash-profile'));
+    const pc = document.getElementById('profile-count');
+    if (pc) pc.textContent = String(profileStats().total);
+  });
   renderYearHeat();
   renderForecast();
 
