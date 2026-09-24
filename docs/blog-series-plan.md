@@ -12,9 +12,9 @@
 - [x] 02 agentLoop 执行循环的工程细节：流式门控、白名单校验、失控防护（`docs/blog/02-agent-loop.md`，已存 CSDN 草稿）
 - [x] 03 多 Agent 会诊的设计：Promise.all 并行 + 人设差异化 + 汇总裁决（`docs/blog/03-multi-agent-panel.md`，已存 CSDN 草稿）
 - [x] 04 Agent 技能市场：把工具和专家人设做成可分享的数据（`docs/blog/04-skill-market.md`，已存 CSDN 草稿）
-- [ ] 05 HTTP 工具代理：服务端代抓绕开 CORS 的架构与安全边界
-- [ ] 06 长期画像：让 Agent 记住用户的低成本方案（零 token 结构化提取 vs LLM 提取）
-- [ ] 07 流式 SSE 透传：Node 零依赖实现 OpenAI 兼容的流式代理
+- [x] 05 HTTP 工具代理：服务端代抓绕开 CORS 的架构与安全边界（`docs/blog/05-http-proxy.md`，已存 CSDN 草稿）
+- [x] 06 长期画像：让 Agent 记住用户的低成本方案（`docs/blog/06-profile-memory.md`，已存 CSDN 草稿）
+- [x] 07 流式 SSE 透传：Node 零依赖实现 OpenAI 兼容的流式代理（`docs/blog/07-sse-proxy.md`，已存 CSDN 草稿）
 - [ ] 08 多服务商适配：一份代码接智谱/OpenAI/DeepSeek/Ollama 的取舍
 - [ ] 09 JSON 输出的可靠性工程：严格提示词 + 解析容错 + 降级路径
 - [ ] 10 Token 用量面板：从 SSE 流捕获 usage 与本地估算兜底
