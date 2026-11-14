@@ -2,6 +2,22 @@
 
 /* ---------- 本地存储（带内存回退，便于 Node 环境导入自检） ---------- */
 const mem = {};
+
+/* QuotaExceededError 处理：localStorage 写满不能静默丢数据——
+ * 至少要告诉用户去导出备份（内存副本仍在，本次会话内数据不丢）。 */
+export function safeStorageSet(key, json) {
+  try {
+    localStorage.setItem(key, json);
+    return true;
+  } catch (e) {
+    console.error('localStorage 写入失败（' + (e && e.name) + '）：', key);
+    try {
+      toast('浏览器存储空间已满：新的保存无法落盘。请尽快到「设置 → 导出备份」保留数据，并清理旧数据后重试', 'err');
+    } catch (_) { /* 无 DOM 环境（Node 自检）忽略 */ }
+    return false;
+  }
+}
+
 export const store = {
   get(key, fallback) {
     try {
@@ -14,9 +30,8 @@ export const store = {
   },
   set(key, val) {
     mem[key] = val;
-    try {
-      if (typeof localStorage !== 'undefined') localStorage.setItem(key, JSON.stringify(val));
-    } catch (_) { /* 空间不足等，忽略 */ }
+    if (typeof localStorage === 'undefined') return;
+    safeStorageSet(key, JSON.stringify(val));
   },
 };
 

@@ -1,5 +1,5 @@
 /* 全局状态单例 */
-import { store } from './core.js';
+import { store, safeStorageSet } from './core.js';
 
 const PROVIDERS = [
   { key: 'zhipu', name: '智谱 GLM（推荐）', baseURL: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-flash' },
@@ -86,9 +86,9 @@ const KEYMAP = {
 
 export function persist(key) {
   const storageKey = KEYMAP[key] || 'im_' + key;
-  try {
-    if (typeof localStorage !== 'undefined') localStorage.setItem(storageKey, JSON.stringify(S[key]));
-  } catch (_) { /* 忽略 */ }
+  if (typeof localStorage === 'undefined') return;
+  // 配额满时 safeStorageSet 会 toast 引导导出；内存里的 S 不受影响
+  safeStorageSet(storageKey, JSON.stringify(S[key]));
 }
 
 /* 合并内置题库 + 自定义题库 */
