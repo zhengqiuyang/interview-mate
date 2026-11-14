@@ -298,6 +298,42 @@ function sendJson(res, status, obj) {
   res.end(body);
 }
 
+/* ---- DNS rebinding 防护：仅 loopback 绑定时强制 Host 校验（双模式） ----
+ * HOST=0.0.0.0 的局域网用法主机名不可预知，跳过校验；默认 127.0.0.1 下，
+ * 合法 Host 只有 127.0.0.1 / localhost / ::1（端口任意）。 */
+const HOST_IS_LOOPBACK = new Set(['127.0.0.1', 'localhost', '::1', '[::1]'])
+  .has(String(process.env.HOST || '127.0.0.1').trim().toLowerCase());
+
+function hostHeaderIsLocal(req) {
+  const raw = String(req.headers.host || '');
+  if (!raw) return false;
+  let hostname = raw;
+  if (hostname.startsWith('[')) {
+    const end = hostname.indexOf(']');
+    if (end === -1) return false;
+    hostname = hostname.slice(1, end); // [::1]:3000 → ::1
+  } else if (hostname.includes(':')) {
+    hostname = hostname.slice(0, hostname.lastIndexOf(':')); // 127.0.0.1:3000
+  }
+  hostname = hostname.toLowerCase();
+  return hostname === '127.0.0.1' || hostname === 'localhost' || hostname === '::1';
+}
+
+// CSP：index.html 无内联 JS（style-src 需 unsafe-inline——模板里全是 style 属性）；
+// pdf.js worker 同源加载（worker-src 'self'，blob: 兜底）；docx/pdf 预览用 blob 传数据
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "media-src 'self' blob:",
+  "frame-src 'self' blob:",
+  "worker-src 'self' blob:",
+  "connect-src 'self'",
+  "object-src 'none'",
+  "base-uri 'none'",
+].join('; ');
+
 function readBody(req, limit = 2 * 1024 * 1024) {
   return new Promise((resolve, reject) => {
     let size = 0;
@@ -354,6 +390,7 @@ function serveStatic(res, pathname) {
       'Content-Type': MIME[ext] || 'application/octet-stream',
       // 本地工具，禁缓存保证修改即时生效
       'Cache-Control': 'no-store',
+      'Content-Security-Policy': CSP,
     });
     res.end(data);
   });
@@ -751,6 +788,11 @@ async function callLLM(system, user) {
 /* ---------------- 启动 ---------------- */
 
 const server = http.createServer(async (req, res) => {
+  if (HOST_IS_LOOPBACK && !hostHeaderIsLocal(req)) {
+    return sendJson(res, 403, {
+      error: 'Host 不受信任（DNS rebinding 防护）。请用 127.0.0.1 / localhost 访问。',
+    });
+  }
   let pathname;
   try {
     pathname = decodeURIComponent(new URL(req.url, 'http://x').pathname);
