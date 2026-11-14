@@ -1,5 +1,5 @@
 /* 游戏化引擎：XP / 等级 / 成就（Duolingo 式进度系统） */
-import { $, icon, toast, confetti } from './core.js';
+import { toast, confetti } from './core.js';
 import { S, persist } from './state.js';
 import { streakDays, masteryStats, isMastered } from './srs.js';
 

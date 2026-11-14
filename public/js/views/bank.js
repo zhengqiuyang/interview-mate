@@ -6,7 +6,7 @@ import { isMastered, nextReviewText } from '../srs.js';
 import { switchView } from '../router.js';
 import { startFlashcards } from './flashcards.js';
 
-const store2 = (key, val) => persist(key);
+const store2 = (key, _val) => persist(key);
 
 export function init() {
   $('#bank-search').addEventListener('input', debounce((e) => {
@@ -168,7 +168,7 @@ export function openQuestion(qid) {
 }
 
 /* ---------- 笔记 ---------- */
-function openNoteModal(q, cardEl) {
+function openNoteModal(q, _cardEl) {
   const m = openModal(`
     <label class="field">
       <span>「${esc(q.q.slice(0, 30))}…」的笔记</span>

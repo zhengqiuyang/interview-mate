@@ -141,8 +141,8 @@ function openGlobalSearch() {
     const qs = S.questions.filter((q) => `${q.q} ${q.a} ${(q.tags || []).join(' ')}`.toLowerCase().includes(k)).slice(0, 8);
     const kn = S.knowledge.filter((x) => `${x.title} ${x.content}`.toLowerCase().includes(k)).slice(0, 6);
     const notes = Object.entries(S.notes)
-      .filter(([qid, n]) => n.toLowerCase().includes(k))
-      .map(([qid, n]) => S.questions.find((q) => q.id === qid))
+      .filter(([_qid, n]) => n.toLowerCase().includes(k))
+      .map(([qid, _n]) => S.questions.find((q) => q.id === qid))
       .filter(Boolean)
       .slice(0, 5);
     if (!qs.length && !kn.length && !notes.length) {

@@ -1,5 +1,5 @@
 /* 投递看板：求职中枢台账（状态流转 / 雷达导入 / 面试提醒 / 转化统计） */
-import { $, $$, esc, icon, toast, openModal, confirmModal, staggerIn } from '../core.js';
+import { $, $$, esc, icon, toast, openModal, confirmModal } from '../core.js';
 import { S, persist } from '../state.js';
 import { switchView } from '../router.js';
 import { awardXP } from '../gamify.js';
@@ -190,7 +190,7 @@ function openEditor(a = null) {
     </div>
     ${a && a.history?.length > 1 ? `
     <div class="muted" style="font-size:12px;font-weight:700;letter-spacing:.1em;margin:14px 0 6px">状态流水</div>
-    ${a.history.map((h, i) => `
+    ${a.history.map((h, _i) => `
       <div class="tok-row" style="grid-template-columns:110px 1fr">
         <span class="muted">${new Date(h.date).toLocaleDateString('zh-CN')}</span>
         <span>${STATUSES.find((s) => s.key === h.status)?.icon || ''} ${stName(h.status)}${h.note ? ' · ' + esc(h.note) : ''}</span>
