@@ -20,9 +20,16 @@ const pkg = require('./package.json'); // 版本号唯一来源，见 scripts/sy
 
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, 'public');
+// 可写数据目录：jobs-store / briefs / 上传文件都在这里；题库（只读资产）仍在仓库 data/
+// 测试与多实例用 INTERVIEW_MATE_DATA_DIR 重定向，避免写进仓库工作区
+const DATA_DIR = process.env.INTERVIEW_MATE_DATA_DIR || path.join(ROOT, 'data');
 const QUESTIONS_FILE = path.join(ROOT, 'data', 'questions.json');
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '127.0.0.1';
+// 流式代理超时（ms）：30s 内必须拿到上游响应头；吐字后 120s 无新数据才算空闲超时。
+// 整场面试可能很长，不设总超时。测试可用环境变量缩短。
+const UPSTREAM_FIRST_BYTE_MS = Number(process.env.INTERVIEW_MATE_UPSTREAM_FIRST_BYTE_MS || 30000);
+const UPSTREAM_IDLE_MS = Number(process.env.INTERVIEW_MATE_UPSTREAM_IDLE_MS || 120000);
 
 /* ---------------- 极简 .env 加载（文件不存在则跳过） ---------------- */
 (function loadDotEnv() {
@@ -281,6 +288,8 @@ const FREE_SYSTEM =
 /* ---------------- 工具函数 ---------------- */
 
 function sendJson(res, status, obj) {
+  // SSE 代理中途放弃时响应头可能已写（504/客户端断开竞态），静默放弃而不是崩
+  if (res.headersSent || res.writableEnded) return;
   const body = JSON.stringify(obj);
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
@@ -352,7 +361,7 @@ function serveStatic(res, pathname) {
 
 /* ---------------- LLM 流式代理 ---------------- */
 
-async function proxyChat(res, body) {
+async function proxyChat(req, res, body) {
   const mode = String(body.mode || 'free');
   const raw = Array.isArray(body.messages) ? body.messages : [];
   const messages = raw
@@ -444,26 +453,72 @@ async function proxyChat(res, body) {
       ? body.temperature
       : fallbackTemp;
 
+  /* ---- 超时与取消：两段式（首字节 30s / 空闲 120s），不用总超时 ---- */
+  const ctrl = new AbortController();
+  // 客户端断开（关页 / Stop）→ 立即放弃上游，别让服务端白烧 token。
+  // req 'close' 覆盖请求未读完就断；流式期间真正的断开信号是 res 'close'
+  // （writableEnded=false 的 close = premature disconnect）。
+  const abortIfClientGone = () => {
+    if (!res.writableEnded) ctrl.abort();
+  };
+  req.on('close', abortIfClientGone);
+  res.on('close', abortIfClientGone);
+  res.on('error', () => {
+    if (!ctrl.signal.aborted) ctrl.abort();
+  });
+
+  let firstByteTimer = setTimeout(() => {
+    ctrl.abort();
+    sendJson(res, 504, { error: `上游 ${Math.round(UPSTREAM_FIRST_BYTE_MS / 1000)}s 内未返回首字节，已中断。请检查服务地址/模型是否可用。` });
+  }, UPSTREAM_FIRST_BYTE_MS);
+  const clearFirstByte = () => {
+    if (firstByteTimer) { clearTimeout(firstByteTimer); firstByteTimer = null; }
+  };
+
+  const upstreamPayload = {
+    model,
+    stream: true,
+    stream_options: { include_usage: true },
+    temperature,
+    messages: [{ role: 'system', content: system }, ...messages],
+  };
+  const doFetch = () => fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(upstreamPayload),
+    signal: ctrl.signal,
+  });
+
   let upstream;
   try {
-    upstream = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        stream: true,
-        stream_options: { include_usage: true },
-        temperature,
-        messages: [{ role: 'system', content: system }, ...messages],
-      }),
-    });
+    upstream = await doFetch();
+    clearFirstByte();
   } catch (e) {
+    clearFirstByte();
+    if (res.headersSent || res.writableEnded) return; // 首字节超时 504 已写 / 客户端已断
+    if (ctrl.signal.aborted) return;
     return sendJson(res, 502, {
       error: `无法连接模型服务（${endpoint}）：${e.message}`,
     });
+  }
+
+  // stream_options 兼容回退：部分 OpenAI 兼容服务不认识这个参数，400 提到就去掉重试一次
+  if ((!upstream.ok || !upstream.body) && upstream.status === 400) {
+    const text = await upstream.text().catch(() => '');
+    if (/stream_options/i.test(text)) {
+      delete upstreamPayload.stream_options;
+      try {
+        upstream = await doFetch();
+      } catch (e) {
+        if (res.headersSent || res.writableEnded || ctrl.signal.aborted) return;
+        return sendJson(res, 502, {
+          error: `无法连接模型服务（${endpoint}）：${e.message}`,
+        });
+      }
+    }
   }
 
   if (!upstream.ok || !upstream.body) {
@@ -478,14 +533,33 @@ async function proxyChat(res, body) {
     return sendJson(res, 502, { error: `模型服务返回 ${upstream.status}：${detail}` });
   }
 
-  // 以 SSE 原文透传，由前端解析 delta
+  // 以 SSE 原文透传，由前端解析 delta；吐字期间 120s 无新数据 → 空闲超时
   res.writeHead(200, {
     'Content-Type': 'text/plain; charset=utf-8',
     'Cache-Control': 'no-cache, no-transform',
     'X-Accel-Buffering': 'no',
   });
   const nodeStream = Readable.fromWeb(upstream.body);
-  nodeStream.on('error', () => res.end());
+  let idleTimer = setTimeout(() => {
+    ctrl.abort();
+    nodeStream.destroy(new Error(`上游空闲超过 ${Math.round(UPSTREAM_IDLE_MS / 1000)}s`));
+    if (!res.writableEnded) res.end();
+  }, UPSTREAM_IDLE_MS);
+  nodeStream.on('data', () => {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      ctrl.abort();
+      nodeStream.destroy(new Error(`上游空闲超过 ${Math.round(UPSTREAM_IDLE_MS / 1000)}s`));
+      if (!res.writableEnded) res.end();
+    }, UPSTREAM_IDLE_MS);
+  });
+  const stopIdle = () => clearTimeout(idleTimer);
+  nodeStream.on('error', () => {
+    stopIdle();
+    if (!res.writableEnded) res.end();
+  });
+  nodeStream.on('close', stopIdle);
+  res.on('close', stopIdle);
   nodeStream.pipe(res);
 }
 
@@ -515,7 +589,7 @@ async function handleApi(req, res, pathname) {
   if (req.method === 'POST' && pathname === '/api/chat') {
     try {
       const body = JSON.parse(await readBody(req));
-      return await proxyChat(res, body);
+      return await proxyChat(req, res, body);
     } catch (e) {
       return sendJson(res, 400, { error: '请求解析失败：' + e.message });
     }
@@ -594,7 +668,7 @@ async function handleApi(req, res, pathname) {
   }
 
   /* ---- 简历原文件：上传与展示 ---- */
-  const FILES_DIR = path.join(ROOT, 'data', 'files');
+  const FILES_DIR = path.join(DATA_DIR, 'files'); // 上传文件也是可写数据，跟 DATA_DIR 走
   if (req.method === 'POST' && pathname === '/api/files/upload') {
     try {
       let name = 'file';

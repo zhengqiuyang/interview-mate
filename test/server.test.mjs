@@ -6,6 +6,7 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -14,13 +15,16 @@ const questions = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'questions.
 
 let child;
 let base;
+let tmpData;
 
 before(async () => {
+  tmpData = fs.mkdtempSync(path.join(os.tmpdir(), 'im-data-'));
   child = spawn(process.execPath, ['server.js'], {
     cwd: ROOT,
     env: {
       ...process.env,
       PORT: '0',
+      INTERVIEW_MATE_DATA_DIR: tmpData, // 不写仓库 data/
       INTERVIEW_MATE_JOB_REFRESH_MIN: '0',
       INTERVIEW_MATE_BRIEF_CHECK_MIN: '0',
     },
@@ -49,6 +53,7 @@ before(async () => {
 
 after(() => {
   if (child) child.kill();
+  if (tmpData) fs.rmSync(tmpData, { recursive: true, force: true });
 });
 
 const get = (pathname) => fetch(base + pathname, { redirect: 'manual' });
