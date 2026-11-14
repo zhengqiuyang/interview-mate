@@ -1,5 +1,5 @@
 /* 数据看板 */
-import { $, $$, esc, icon, radarChart, lineChart, donutChart, animateNum, staggerIn, md, dateKey, toast } from '../core.js';
+import { $, $$, esc, icon, radarChart, lineChart, donutChart, animateNum, staggerIn, md, dateKey } from '../core.js';
 import { S, persist } from '../state.js';
 import { switchView } from '../router.js';
 import { dueList, masteryStats, catMastery, streakDays, heatLevels, dailyQuestion, isDailyDone } from '../srs.js';

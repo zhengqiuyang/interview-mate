@@ -2,7 +2,6 @@
 import { $, $$, esc, md, icon, toast, openModal, downloadFile, printHtml, fmtDate, fmtTime, downloadShareCard, staggerIn } from '../core.js';
 import { S } from '../state.js';
 import { renderReport } from './resume.js';
-import { startFlashcards } from './flashcards.js';
 
 let filter = 'all';
 

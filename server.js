@@ -136,6 +136,7 @@ const REPORT_INSTRUCTION = [
   '评分要严格、有区分度、有依据，不要客套。',
 ].join('\n');
 
+// eslint-disable-next-line no-unused-vars -- 服务端简历诊断提示词，前端暂未走此路径；删除前先问用户
 function buildResumeSystemPrompt() {
   return [
     '你是一位资深技术招聘官兼面试辅导专家。用户会提供「简历内容」和「目标岗位 JD」，请输出结构化分析，严格使用如下 Markdown 格式：',

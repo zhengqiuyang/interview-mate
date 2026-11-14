@@ -2,7 +2,6 @@
  * 优先记录接口返回的真实 usage；缺失时按中英文加权估算（est=true 标注）
  */
 import { store, dateKey } from './core.js';
-import { S } from './state.js';
 
 const KEY = 'im_tokens';
 const MAX_LOG = 600;

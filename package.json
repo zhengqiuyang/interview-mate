@@ -7,6 +7,8 @@
     "start": "node server.js",
     "dev": "node server.js",
     "test": "node --test",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "sync-version": "node scripts/sync-version.mjs --check"
   },
   "engines": {
@@ -20,5 +22,10 @@
     "question-bank",
     "career"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "globals": "^17.14.0"
+  }
 }

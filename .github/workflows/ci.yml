@@ -8,11 +8,16 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 运行时兼容线是 Node 18（engines >=18）；仅 22 出覆盖率报告
+        node-version: [18, 20, 22]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ matrix.node-version }}
       - name: 服务端语法检查
         run: |
           node --check server.js
@@ -51,11 +56,19 @@ jobs:
           "
       - name: manifest 校验
         run: node -e "JSON.parse(require('fs').readFileSync('public/manifest.json','utf8')); console.log('manifest OK')"
+      - name: 安装 dev 依赖（eslint；运行时依赖仍为 0）
+        run: npm ci
+      - name: Lint
+        run: npm run lint
       - name: 版本号一致性（package.json ← sw.js / index.html）
         run: node scripts/sync-version.mjs --check
       - name: 行为测试（node:test，零依赖）
         run: npm test
+      - name: 覆盖率报告（仅 Node 22，先不做硬门槛）
+        if: matrix.node-version == 22
+        run: node --test --experimental-test-coverage
       - name: 启动冒烟（起 server → 轮询 /api/health → kill）
+        if: matrix.node-version == 22
         shell: bash
         run: |
           PORT=3777 node server.js > smoke.log 2>&1 & SRV=$!

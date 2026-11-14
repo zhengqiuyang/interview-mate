@@ -238,7 +238,7 @@ async function execTool(call, allowedTools) {
   }
 }
 
-function parseToolCall(text, allowedTools) {
+function parseToolCall(text, _allowedTools) {
   const m = text.match(/TOOL:\s*(\{[\s\S]*?\})\s*$/);
   if (!m) return null;
   try {
