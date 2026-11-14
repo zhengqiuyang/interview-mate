@@ -51,3 +51,21 @@ jobs:
           "
       - name: manifest 校验
         run: node -e "JSON.parse(require('fs').readFileSync('public/manifest.json','utf8')); console.log('manifest OK')"
+      - name: 版本号一致性（package.json ← sw.js / index.html）
+        run: node scripts/sync-version.mjs --check
+      - name: 行为测试（node:test，零依赖）
+        run: npm test
+      - name: 启动冒烟（起 server → 轮询 /api/health → kill）
+        shell: bash
+        run: |
+          PORT=3777 node server.js > smoke.log 2>&1 & SRV=$!
+          ok=""
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:3777/api/health | grep -q '"ok":true'; then
+              ok=1; break
+            fi
+            sleep 0.5
+          done
+          kill $SRV 2>/dev/null || true
+          if [ -z "$ok" ]; then echo "health 轮询超时"; cat smoke.log; exit 1; fi
+          echo "启动冒烟 OK（health 返回 ok:true）"
