@@ -8,7 +8,7 @@ import { S } from './state.js';
 import { store, dateKey, seededRandom } from './core.js';
 
 const DAY = 24 * 3600 * 1000;
-export const BOX_INTERVALS = [10 * 60 * 1000, DAY, 3 * DAY, 7 * DAY, 21 * DAY];
+export const BOX_INTERVALS = [11 * 60 * 1000, DAY, 3 * DAY, 7 * DAY, 21 * DAY];
 
 export function getCard(qid) {
   return S.srs[qid] || null;
