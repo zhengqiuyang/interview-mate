@@ -16,6 +16,7 @@ const path = require('path');
 const { Readable } = require('stream');
 const jobs = require('./lib/jobs.js');
 const briefs = require('./lib/briefs.js');
+const pkg = require('./package.json'); // 版本号唯一来源，见 scripts/sync-version.mjs
 
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -511,6 +512,7 @@ async function handleApi(req, res, pathname) {
   if (req.method === 'GET' && pathname === '/api/health') {
     return sendJson(res, 200, {
       ok: true,
+      version: pkg.version,
       serverKeyConfigured: Boolean(DEFAULTS.apiKey),
       baseURL: DEFAULTS.baseURL,
       model: DEFAULTS.model,
@@ -722,7 +724,7 @@ server.listen(PORT, HOST, () => {
   const briefMin = Number(process.env.INTERVIEW_MATE_BRIEF_CHECK_MIN ?? 720);
   briefs.startScheduler(briefMin, callLLM, () => Boolean(DEFAULTS.apiKey));
   console.log('');
-  console.log('  🎯 InterviewMate · AI 面试陪练 v0.6.0');
+  console.log(`  🎯 InterviewMate · AI 面试陪练 v${pkg.version}`);
   console.log(`  已启动: http://${HOST}:${PORT}`);
   console.log(`  服务端 Key: ${DEFAULTS.apiKey ? '已配置（.env）' : '未配置（可在页面设置中填写）'}`);
   console.log(`  岗位雷达: 自动抓取${refreshMin > 0 ? `每 ${refreshMin} 分钟` : '已关闭'}`);
