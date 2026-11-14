@@ -717,6 +717,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
+  const bound = server.address().port; // PORT=0 时由系统分配，横幅必须报真实端口
   jobs.load();
   briefs.load();
   const refreshMin = Number(process.env.INTERVIEW_MATE_JOB_REFRESH_MIN ?? 30);
@@ -725,7 +726,7 @@ server.listen(PORT, HOST, () => {
   briefs.startScheduler(briefMin, callLLM, () => Boolean(DEFAULTS.apiKey));
   console.log('');
   console.log(`  🎯 InterviewMate · AI 面试陪练 v${pkg.version}`);
-  console.log(`  已启动: http://${HOST}:${PORT}`);
+  console.log(`  已启动: http://${HOST}:${bound}`);
   console.log(`  服务端 Key: ${DEFAULTS.apiKey ? '已配置（.env）' : '未配置（可在页面设置中填写）'}`);
   console.log(`  岗位雷达: 自动抓取${refreshMin > 0 ? `每 ${refreshMin} 分钟` : '已关闭'}`);
   console.log(`  每日简报: ${DEFAULTS.apiKey ? `调度器每 ${briefMin} 分钟检查` : '等待服务端 Key（页面 Key 也可现场生成）'}`);
