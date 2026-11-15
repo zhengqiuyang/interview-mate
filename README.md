@@ -1,8 +1,27 @@
+<div align="center">
+
 # 🎯 InterviewMate · AI 面试陪练
 
-[![CI](https://github.com/zhengqiuyang/interview-mate/actions/workflows/ci.yml/badge.svg)](https://github.com/zhengqiuyang/interview-mate/actions/workflows/ci.yml) ![version](https://img.shields.io/badge/version-0.19.0-4f6bf0) ![license](https://img.shields.io/badge/license-MIT-green) ![deps](https://img.shields.io/badge/dependencies-0-brightgreen) ![node](https://img.shields.io/badge/node-%3E%3D18-339933)
+**你的私人 AI 面试官 —— 智能体教练、模拟面试、间隔重复复习、岗位雷达、简历工坊、个人知识库，本地运行、数据自持。**
 
-> 你的私人 AI 面试官 —— **智能体教练**、模拟面试、间隔重复复习、岗位雷达、简历工坊、个人知识库，本地运行、数据自持。
+[![CI](https://github.com/zhengqiuyang/interview-mate/actions/workflows/ci.yml/badge.svg?style=flat-square)](https://github.com/zhengqiuyang/interview-mate/actions/workflows/ci.yml)
+![version](https://img.shields.io/badge/version-0.19.0-4f6bf0?style=flat-square)
+![license](https://img.shields.io/badge/license-MIT-green?style=flat-square)
+![deps](https://img.shields.io/badge/dependencies-0-brightgreen?style=flat-square)
+![node](https://img.shields.io/badge/node-%3E%3D18-339933?style=flat-square)
+
+零依赖，不需要 `npm install`：
+
+```bash
+node server.js
+```
+
+[功能特性](#features) · [快速开始](#quickstart) · [架构](#arch) · [FAQ](#faq) · [贡献](#contrib)
+
+</div>
+
+---
+
 
 **InterviewMate** 参考了 GitHub 上最知名的一批面试开源项目（CS-Notes、JavaGuide、tech-interview-handbook、system-design-primer 等）的知识体系与题型结构，但走了一条不同的路：**把静态知识库变成 AI Agent 驱动的面试训练系统**。智能体教练能调用工具读取你的真实数据、多步执行任务；AI 面试官逐题追问并评分；间隔重复算法安排复习；岗位雷达自动汇集机会；简历工坊结构化诊断。
 
@@ -17,6 +36,8 @@
 | 编辑部风格 | 粗野主义风格 |
 | --- | --- |
 | ![编辑部风格](docs/screenshots/style-editorial.png) | ![粗野主义风格](docs/screenshots/style-brutal.png) |
+
+<a id="features"></a>
 
 ## ✨ 功能特性
 
@@ -100,6 +121,8 @@
 - **零依赖自绘 UI**：内联 SVG 图标库、Canvas 雷达/折线/环形图、翻转闪卡、骨架屏、Toast、Modal、分段控件——不依赖任何前端框架与 CDN，完全离线可用
 - **数据自持**：全量数据一键备份/恢复 JSON，跨设备迁移
 
+<a id="quickstart"></a>
+
 ## 🚀 快速开始
 
 要求 **Node.js 18+**（零 npm 依赖，无需 `npm install`）：
@@ -150,6 +173,8 @@ INTERVIEW_MATE_JOB_REFRESH_MIN=30
 ```
 
 导入后并入题库「自定义」分类，进入闪卡、组卷、复习计划全部流程。支持导出分享。更省事的方式：知识库 → 「AI 生成学习卡」→ 粘贴材料 → 一键导入。
+
+<a id="arch"></a>
 
 ## 🧱 架构
 
@@ -230,6 +255,8 @@ INTERVIEW_MATE_JOB_REFRESH_MIN=30
 - [x] **Token 用量面板**（真实 usage + 本地估算兜底，趋势/分布/费用）（v0.13）
 - [ ] 团队部署模式（服务端统一密钥、多用户数据隔离）——按需启动
 
+<a id="faq"></a>
+
 ## ❓ FAQ
 
 **Q：数据安全吗？**
@@ -244,6 +271,8 @@ server.js 职责单一（静态 + API 网关），前端是纯静态 ES Modules�
 ## 📄 License
 
 [MIT](LICENSE)。内置的 [pdf.js](public/vendor/pdfjs/)（PDF 文本提取）为 Mozilla 出品，遵循 [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0)，版权归 Mozilla 及贡献者所有；[JSZip](https://stuk.github.io/jszip/)（MIT）与 [docx-preview](https://github.com/VolodymyrBaydalka/docxjs)（Apache-2.0）用于 Word 原样渲染。
+
+<a id="contrib"></a>
 
 ## 🤝 贡献
 
