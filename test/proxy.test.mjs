@@ -13,23 +13,28 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 let server;
 let base;
-let tmpData;
+let tmpDirs = [];
 const mocks = [];
 
-before(async () => {
-  tmpData = fs.mkdtempSync(path.join(os.tmpdir(), 'im-data-'));
-  server = spawn(process.execPath, ['server.js'], {
+/** 起一个 server 子进程，返回 { child, base, tmp }；base 从启动横幅里解析真实端口 */
+async function startServer(extraEnv = {}) {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'im-data-'));
+  tmpDirs.push(tmp);
+  const child = spawn(process.execPath, ['server.js'], {
     cwd: ROOT,
     env: {
       ...process.env,
       PORT: '0',
-      INTERVIEW_MATE_DATA_DIR: tmpData, // 不写仓库 data/
+      INTERVIEW_MATE_DATA_DIR: tmp, // 不写仓库 data/
+      INTERVIEW_MATE_JOB_REFRESH_MIN: '0',
+      INTERVIEW_MATE_BRIEF_CHECK_MIN: '0',
       INTERVIEW_MATE_UPSTREAM_FIRST_BYTE_MS: '700',
       INTERVIEW_MATE_UPSTREAM_IDLE_MS: '700',
+      ...extraEnv,
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
-  base = await new Promise((resolve, reject) => {
+  const url = await new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('server 启动超时')), 10000);
     let buf = '';
     const onData = (d) => {
@@ -37,23 +42,30 @@ before(async () => {
       const m = buf.match(/已启动: http:\/\/[\d.]+:(\d+)/);
       if (m) {
         clearTimeout(timer);
-        server.stdout.off('data', onData);
+        child.stdout.off('data', onData);
         resolve(`http://127.0.0.1:${m[1]}`);
       }
     };
-    server.stdout.on('data', onData);
-    server.stderr.on('data', (d) => { buf += d.toString(); });
-    server.on('exit', (code) => {
+    child.stdout.on('data', onData);
+    child.stderr.on('data', (d) => { buf += d.toString(); });
+    child.on('exit', (code) => {
       clearTimeout(timer);
       reject(new Error(`server 提前退出 code=${code}\n${buf}`));
     });
   });
+  return { child, base: url, tmp };
+}
+
+before(async () => {
+  const s = await startServer();
+  server = s.child;
+  base = s.base;
 });
 
 after(() => {
   if (server) server.kill();
   for (const m of mocks) m.close();
-  fs.rmSync(tmpData, { recursive: true, force: true });
+  for (const d of tmpDirs) fs.rmSync(d, { recursive: true, force: true });
 });
 
 const CHAT_BODY = {
@@ -62,9 +74,9 @@ const CHAT_BODY = {
   messages: [{ role: 'user', content: 'hi' }],
 };
 
-function chatChat(payload) {
+function chatChat(payload, targetBase = base) {
   return new Promise((resolve, reject) => {
-    const req = http.request(base + '/api/chat', {
+    const req = http.request(targetBase + '/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     }, (res) => {
@@ -157,4 +169,53 @@ test('场景3：客户端断开 → 上游收到 abort（连接关闭）', async
     new Promise((resolve) => setTimeout(() => resolve(false), 3000)),
   ]);
   assert.equal(closed, true, '上游 3s 内应感知到断开（abort 传播）');
+});
+
+/* ---- P2 复核遗留：回退请求缺首字节超时 / 非法 env 变 NaN ---- */
+
+test('场景4：400 回退后第二次请求挂住 → 回退请求也有首字节超时（不永久 hang）', async () => {
+  const calls = [];
+  const mock = await startMock((req, res) => {
+    let raw = '';
+    req.on('data', (c) => { raw += c; });
+    req.on('end', () => {
+      calls.push(JSON.parse(raw));
+      if (calls.length === 1) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: { message: 'Unrecognized request argument supplied: stream_options' } }));
+      }
+      // 第二次：接受连接但永不响应 —— 旧实现这里会永久挂住
+    });
+  });
+  const payload = { ...CHAT_BODY, baseURL: `http://127.0.0.1:${mock.address().port}/v1` };
+  const started = Date.now();
+  const res = await chatChat(payload);
+  const elapsed = Date.now() - started;
+  assert.equal(calls.length, 2, '应先 400 再回退一次');
+  assert.equal(res.status, 504, `回退请求挂住应 504，实际 ${res.status}`);
+  assert.match(res.body, /首字节/);
+  assert.ok(elapsed < 5000, `回退请求也应在 ~0.7s 超时，实际 ${elapsed}ms`);
+});
+
+test('场景5：超时环境变量非法（NaN）→ 回退默认值，不会立刻误超时', async () => {
+  const s = await startServer({ INTERVIEW_MATE_UPSTREAM_FIRST_BYTE_MS: 'abc' });
+  try {
+    const sse = 'data: {"choices":[{"delta":{"content":"ok"}}]}\n\ndata: [DONE]\n\n';
+    const mock = await startMock((req, res) => {
+      req.on('data', () => {});
+      req.on('end', () => {
+        // 400ms 后才响应：若 NaN 被当成 0ms，这里会立刻 504
+        setTimeout(() => {
+          res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+          res.end(sse);
+        }, 400);
+      });
+    });
+    const payload = { ...CHAT_BODY, baseURL: `http://127.0.0.1:${mock.address().port}/v1` };
+    const res = await chatChat(payload, s.base);
+    assert.equal(res.status, 200, `非法阈值应回退 30s 默认值，实际 ${res.status}: ${res.body}`);
+    assert.equal(res.body, sse);
+  } finally {
+    s.child.kill();
+  }
 });

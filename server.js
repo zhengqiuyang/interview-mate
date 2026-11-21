@@ -14,24 +14,13 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { Readable } = require('stream');
-const jobs = require('./lib/jobs.js');
-const briefs = require('./lib/briefs.js');
-const pkg = require('./package.json'); // 版本号唯一来源，见 scripts/sync-version.mjs
 
 const ROOT = __dirname;
-const PUBLIC_DIR = path.join(ROOT, 'public');
-// 可写数据目录：jobs-store / briefs / 上传文件都在这里；题库（只读资产）仍在仓库 data/
-// 测试与多实例用 INTERVIEW_MATE_DATA_DIR 重定向，避免写进仓库工作区
-const DATA_DIR = process.env.INTERVIEW_MATE_DATA_DIR || path.join(ROOT, 'data');
-const QUESTIONS_FILE = path.join(ROOT, 'data', 'questions.json');
-const PORT = Number(process.env.PORT || 3000);
-const HOST = process.env.HOST || '127.0.0.1';
-// 流式代理超时（ms）：30s 内必须拿到上游响应头；吐字后 120s 无新数据才算空闲超时。
-// 整场面试可能很长，不设总超时。测试可用环境变量缩短。
-const UPSTREAM_FIRST_BYTE_MS = Number(process.env.INTERVIEW_MATE_UPSTREAM_FIRST_BYTE_MS || 30000);
-const UPSTREAM_IDLE_MS = Number(process.env.INTERVIEW_MATE_UPSTREAM_IDLE_MS || 120000);
 
-/* ---------------- 极简 .env 加载（文件不存在则跳过） ---------------- */
+/* ---------------- 极简 .env 加载（文件不存在则跳过） ----------------
+ * 必须排在所有 require 与常量读取之前：lib/jobs.js、lib/briefs.js 在模块加载时
+ * 就把 DATA_DIR 固化成常量，晚一步加载 .env，里面的 INTERVIEW_MATE_DATA_DIR /
+ * PORT / HOST 就全部失效（P2 复核发现的 pre-existing 问题）。 */
 (function loadDotEnv() {
   try {
     const envPath = path.join(ROOT, '.env');
@@ -53,6 +42,39 @@ const UPSTREAM_IDLE_MS = Number(process.env.INTERVIEW_MATE_UPSTREAM_IDLE_MS || 1
     console.warn('[warn] .env 解析失败（忽略）：', e.message);
   }
 })();
+
+// 这两个模块加载时就会读 env（DATA_DIR），require 必须在 dotenv 之后
+const jobs = require('./lib/jobs.js');
+const briefs = require('./lib/briefs.js');
+const pkg = require('./package.json'); // 版本号唯一来源，见 scripts/sync-version.mjs
+
+const PUBLIC_DIR = path.join(ROOT, 'public');
+// 可写数据目录：jobs-store / briefs / 上传文件都在这里；题库（只读资产）仍在仓库 data/
+// 测试与多实例用 INTERVIEW_MATE_DATA_DIR 重定向，避免写进仓库工作区
+const DATA_DIR = process.env.INTERVIEW_MATE_DATA_DIR || path.join(ROOT, 'data');
+const QUESTIONS_FILE = path.join(ROOT, 'data', 'questions.json');
+
+/** 读整数型环境变量：非法/越界一律回退默认值。
+ *  Number('abc') 是 NaN，而 setTimeout(NaN) 等价 0ms —— 会让“首字节超时”变成立刻误判。 */
+function intEnv(name, def, opts = {}) {
+  const min = opts.min === undefined ? 0 : opts.min;
+  const max = opts.max === undefined ? 2147483647 : opts.max; // setTimeout 上限
+  const raw = process.env[name];
+  if (raw === undefined || raw === '') return def;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < min || n > max) {
+    console.warn(`[warn] 环境变量 ${name}=${JSON.stringify(raw)} 非法（需 ${min}~${max} 的整数），回退默认值 ${def}`);
+    return def;
+  }
+  return Math.floor(n);
+}
+
+const PORT = intEnv('PORT', 3000, { min: 0, max: 65535 });
+const HOST = process.env.HOST || '127.0.0.1';
+// 流式代理超时（ms）：30s 内必须拿到上游响应头；吐字后 120s 无新数据才算空闲超时。
+// 整场面试可能很长，不设总超时。测试可用环境变量缩短。
+const UPSTREAM_FIRST_BYTE_MS = intEnv('INTERVIEW_MATE_UPSTREAM_FIRST_BYTE_MS', 30000, { min: 1 });
+const UPSTREAM_IDLE_MS = intEnv('INTERVIEW_MATE_UPSTREAM_IDLE_MS', 120000, { min: 1 });
 
 const DEFAULTS = {
   baseURL: process.env.INTERVIEW_MATE_BASE_URL || 'https://open.bigmodel.cn/api/paas/v4',
@@ -302,7 +324,7 @@ function sendJson(res, status, obj) {
  * HOST=0.0.0.0 的局域网用法主机名不可预知，跳过校验；默认 127.0.0.1 下，
  * 合法 Host 只有 127.0.0.1 / localhost / ::1（端口任意）。 */
 const HOST_IS_LOOPBACK = new Set(['127.0.0.1', 'localhost', '::1', '[::1]'])
-  .has(String(process.env.HOST || '127.0.0.1').trim().toLowerCase());
+  .has(String(HOST).trim().toLowerCase()); // 用真正绑定的 HOST，别再读 process.env.HOST（.env 里写 0.0.0.0 时两者曾不一致）
 
 function hostHeaderIsLocal(req) {
   const raw = String(req.headers.host || '');
@@ -504,12 +526,19 @@ async function proxyChat(req, res, body) {
     if (!ctrl.signal.aborted) ctrl.abort();
   });
 
-  let firstByteTimer = setTimeout(() => {
-    ctrl.abort();
-    sendJson(res, 504, { error: `上游 ${Math.round(UPSTREAM_FIRST_BYTE_MS / 1000)}s 内未返回首字节，已中断。请检查服务地址/模型是否可用。` });
-  }, UPSTREAM_FIRST_BYTE_MS);
+  let firstByteTimer = null;
   const clearFirstByte = () => {
     if (firstByteTimer) { clearTimeout(firstByteTimer); firstByteTimer = null; }
+  };
+  // 每次发起上游请求前都要重新计时：stream_options 回退的第二次请求同样在“等首字节”，
+  // 不重新 arm 的话第二次连接挂住就永久 hang（P2 复核遗留问题 2）
+  const armFirstByte = () => {
+    clearFirstByte();
+    firstByteTimer = setTimeout(() => {
+      firstByteTimer = null;
+      ctrl.abort();
+      sendJson(res, 504, { error: `上游 ${Math.round(UPSTREAM_FIRST_BYTE_MS / 1000)}s 内未返回首字节，已中断。请检查服务地址/模型是否可用。` });
+    }, UPSTREAM_FIRST_BYTE_MS);
   };
 
   const upstreamPayload = {
@@ -530,6 +559,7 @@ async function proxyChat(req, res, body) {
   });
 
   let upstream;
+  armFirstByte();
   try {
     upstream = await doFetch();
     clearFirstByte();
@@ -547,9 +577,12 @@ async function proxyChat(req, res, body) {
     const text = await upstream.text().catch(() => '');
     if (/stream_options/i.test(text)) {
       delete upstreamPayload.stream_options;
+      armFirstByte(); // 回退请求也要有首字节超时，否则第二次挂住 = 永久 hang
       try {
         upstream = await doFetch();
+        clearFirstByte();
       } catch (e) {
+        clearFirstByte();
         if (res.headersSent || res.writableEnded || ctrl.signal.aborted) return;
         return sendJson(res, 502, {
           error: `无法连接模型服务（${endpoint}）：${e.message}`,
