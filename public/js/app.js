@@ -1,5 +1,5 @@
 /* InterviewMate 主入口：路由 / 命令面板 / 快捷键 / 初始化 */
-import { $, $$, esc, icon, toast, hydrateIcons, applyTheme, openModal, store, initMicroInteractions } from './core.js';
+import { $, $$, esc, icon, toast, hydrateIcons, applyTheme, openModal, store, initMicroInteractions, THEME_ORDER, THEME_NAME } from './core.js';
 import { S, initMigrations } from './state.js';
 import { checkHealth, loadBank, hasKey } from './api.js';
 import { startFlashcards } from './views/flashcards.js';
@@ -258,12 +258,12 @@ function showShortcuts() {
 
 function toggleTheme() {
   const cur = document.documentElement.dataset.theme;
-  S.theme = cur === 'dark' ? 'light' : 'dark';
+  S.theme = THEME_ORDER[(THEME_ORDER.indexOf(cur) + 1) % THEME_ORDER.length];
   localStorage.setItem('im_theme', JSON.stringify(S.theme));
   applyTheme(S.theme);
   $$('#theme-choice button').forEach((b) => b.classList.toggle('active', b.dataset.themeVal === S.theme));
   window.dispatchEvent(new CustomEvent('themechange'));
-  toast(`已切换到${S.theme === 'dark' ? '深色' : '浅色'}主题`, 'ok');
+  toast(`已切换到「${THEME_NAME[S.theme]}」主题`, 'ok');
 }
 
 function onGlobalKey(e) {

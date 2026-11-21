@@ -26,6 +26,12 @@ All notable changes to this project will be documented in this file.
   已被 `buildResumeV2SystemPrompt`（JSON 版，含结构化输出约束）取代，死代码易误导
 
 ### Changed
+- **设计系统 v3（Swiss）**：统一排版刻度（`--fs-*` 五档 + 8pt 间距 + 单一描边色），
+  用 1px 描边替代全部卡片投影，移除极光背景 / 噪点 / 渐变标题 / 渐变按钮 / 卡片高光；
+  侧栏改为浅色窄导轨（216px），看板问候区从"欢迎卡片"改为页头
+- **主题收敛为三套 token**：中性（默认）/ 墨黑 / 暖调，同一套排版骨架；
+  移除 aurora · editorial · brutal 三套「设计风格」维度（旧 `im_style` 不再生效，
+  主题切换按钮按 中性 → 墨黑 → 暖调 循环）
 - **UI 2.0**：移动端导航重建（胶囊 tab，修复标签被压成 31px 竖排、首屏被吃掉 27% 的问题）、
   KPI 两列、题库行改两行布局、筛选条横向滚动、触控区 ≥36px；桌面 KPI 四列 + 内容居中、
   字号收敛到 12px 起；三套主题（浅色 / 深色 / editorial）色板不动
