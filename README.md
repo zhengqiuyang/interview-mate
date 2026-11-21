@@ -126,10 +126,16 @@ npm start
 INTERVIEW_MATE_API_KEY=你的key
 INTERVIEW_MATE_BASE_URL=https://open.bigmodel.cn/api/paas/v4
 INTERVIEW_MATE_MODEL=glm-4-flash
+HOST=127.0.0.1          # 0.0.0.0 = 允许局域网访问（此时不强制 Host 校验）
 PORT=3000
+INTERVIEW_MATE_DATA_DIR=   # 可写数据目录，默认仓库 data/；挪出仓库可让升级不丢数据
+INTERVIEW_MATE_UPSTREAM_FIRST_BYTE_MS=30000  # 上游首字节超时
+INTERVIEW_MATE_UPSTREAM_IDLE_MS=120000       # 流式吐字空闲超时
 # 岗位雷达自动抓取间隔（分钟），0 = 关闭
 INTERVIEW_MATE_JOB_REFRESH_MIN=30
 ```
+
+`.env` 在服务启动最早期加载，**改完要重启 `node server.js`**；环境变量优先级低于页面「设置」，高于内置默认值。
 
 ### 岗位雷达怎么用
 
