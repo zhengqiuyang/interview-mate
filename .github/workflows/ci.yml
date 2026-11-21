@@ -38,6 +38,8 @@ jobs:
             }
             console.log('题库', q.questions.length, '题，', q.categories.length, '个分类，校验通过');
           "
+      - name: 演示模式题库快照（?demo=1 用，须与 data/questions.json 一致）
+        run: node scripts/build-demo.mjs --check
       - name: 前端模块导入自检（ESM 链接完整性，node 18 无法加载 .js 里的 ESM，跳过）
         if: matrix.node-version != 18
         run: |

@@ -4,6 +4,11 @@ import { S, initMigrations } from './state.js';
 import { checkHealth, loadBank, hasKey } from './api.js';
 import { startFlashcards } from './views/flashcards.js';
 import { VIEWS, switchView } from './router.js';
+import { installDemoFetch } from './demo.js';
+
+// 演示模式（?demo=1）：先把 /api/* 换成本地 mock，再走正常初始化。
+// 必须在任何请求发出前执行；非演示模式它什么也不做。
+installDemoFetch();
 
 /* ---------------- 命令面板 ---------------- */
 let paletteSel = 0;
