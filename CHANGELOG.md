@@ -26,6 +26,9 @@ All notable changes to this project will be documented in this file.
   已被 `buildResumeV2SystemPrompt`（JSON 版，含结构化输出约束）取代，死代码易误导
 
 ### Changed
+- **UI 2.0**：移动端导航重建（胶囊 tab，修复标签被压成 31px 竖排、首屏被吃掉 27% 的问题）、
+  KPI 两列、题库行改两行布局、筛选条横向滚动、触控区 ≥36px；桌面 KPI 四列 + 内容居中、
+  字号收敛到 12px 起；三套主题（浅色 / 深色 / editorial）色板不动
 - 版本号单一来源：启动横幅 / `/api/health` / sw.js 缓存名 / index.html 全部
   由 package.json 经 `scripts/sync-version.mjs` 管理（v0.19.0 起）
 - CI：node 18/20/22 矩阵 + eslint 门禁 + 行为测试（node:test）+ 启动冒烟 +

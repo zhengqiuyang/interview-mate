@@ -1274,3 +1274,155 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { outline: non
 /* 演示横幅固定在底部，给主内容留出滚动余量，避免盖住输入框/底部按钮 */
 body:has(.demo-bar) .main { padding-bottom: 132px; }
 body:has(.demo-bar) #mock-chat { height: calc(100vh - 190px); }
+
+/* ============================================================
+   UI 2.0（P3-2）：字阶收敛 / 卡片密度 / 移动端重排
+   只覆盖必要规则，颜色全部走 token —— 浅色 / 深色 / editorial 同时生效
+   ============================================================ */
+
+/* ---------- 1. 字阶：把 10 / 10.5 / 11 / 11.5 的碎档收敛到 12 起 ---------- */
+:root { --fs-2xs: 12px; --fs-xs: 12.5px; --fs-sm: 13px; }
+.tile-label, .streak-label, .brand-sub, .fc-label, .rs-kw-title, .gs-group {
+  font-size: var(--fs-2xs) !important; letter-spacing: 0.07em;
+}
+.heat-cell, .lv-sub, .q-diff, .q-tag, .sidebar-foot { font-size: var(--fs-2xs); }
+.nav-badge { font-size: 11px; }
+
+/* ---------- 2. 首页 hero：标题更有分量，正文更克制 ---------- */
+.dash-hero { padding: 22px 26px; border-radius: calc(var(--radius) + 2px); }
+.dash-hello h1 { font-size: clamp(23px, 1.1vw + 16px, 30px); letter-spacing: -0.035em; }
+.dash-hello p { margin-top: 3px; font-size: var(--fs-sm); letter-spacing: 0.02em; }
+
+/* ---------- 3. KPI 卡片：更紧凑，数字更突出 ---------- */
+.tiles { grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: 12px; }
+.tile { padding: 14px 16px; gap: 12px; border-radius: 14px; }
+.tile-num { font-size: 24px; letter-spacing: -0.02em; }
+.tile-ico { width: 38px; height: 38px; border-radius: 11px; }
+
+/* ---------- 4. 题库行：提高扫读密度，操作按钮退到背景 ---------- */
+.q-card { border-radius: 12px; }
+.q-head { padding: 11px 16px; gap: 10px; }
+.q-title { font-size: 14px; line-height: 1.5; }
+.q-actions { opacity: 0.55; transition: opacity 0.15s; }
+.q-card:hover .q-actions, .q-card:focus-within .q-actions { opacity: 1; }
+
+/* ---------- 5. 移动端（≤ 900px）：导航改成顶部胶囊 tab，KPI 两列 ---------- */
+@media (max-width: 900px) {
+  .sidebar {
+    position: sticky; top: 0; z-index: 60;
+    width: 100%; height: auto; padding: 10px 12px 0;
+    background: var(--sidebar-bg);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+  .brand { padding: 2px 4px 10px; gap: 8px; }
+  .brand-logo { width: 30px; height: 30px; border-radius: 9px; }
+  .brand-logo svg { width: 17px; height: 17px; }
+  .brand-name { font-size: 15px; }
+
+  .nav {
+    flex-direction: row; gap: 4px; overflow-x: auto; overflow-y: hidden;
+    padding-bottom: 8px; margin: 0 -2px; scrollbar-width: none;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav-item {
+    flex: 0 0 auto; gap: 6px; padding: 8px 11px; min-height: 40px;
+    font-size: var(--fs-sm); border-radius: 99px; color: #b9c2d8;
+  }
+  .nav-item .nav-label { white-space: nowrap; }
+  .nav-item .ico svg { width: 16px; height: 16px; }
+  .nav-item.active {
+    box-shadow: none;
+    border: 1px solid rgba(120, 140, 255, 0.5);
+    background: linear-gradient(135deg, rgba(79, 107, 240, 0.38), rgba(124, 92, 245, 0.24));
+  }
+  .nav-badge { margin-left: 0; }
+
+  .main { padding: 16px 14px 44px; }
+  .page-head { margin-bottom: 16px; }
+  .page-head h1 { font-size: 21px; }
+  .page-head p { font-size: var(--fs-sm); }
+
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .tile { padding: 12px; gap: 10px; }
+  .tile-num { font-size: 20px; }
+  .tile-ico { width: 32px; height: 32px; border-radius: 9px; }
+  .tile-ico svg { width: 16px; height: 16px; }
+  .tile-label { font-size: 11.5px !important; letter-spacing: 0.02em; }
+
+  .dash-hero { padding: 16px 18px; }
+  .dash-hello h1 { font-size: 21px; }
+
+  /* 触控区：手机上按钮/图钉都要 ≥ 36~40px */
+  .btn, .chip { min-height: 38px; }
+  .icon-btn { min-width: 36px; min-height: 36px; }
+  .q-actions .icon-btn.sm { min-width: 36px; min-height: 36px; }
+
+  /* 聊天区按可视高度算，避免被顶部导航 + 配置区挤出屏幕 */
+  #mock-chat { height: calc(100dvh - 330px); min-height: 300px; }
+  #mock-chat .msg { max-width: 95%; }
+
+  /* 演示横幅在手机上只留一行 + 退出 */
+  .demo-bar { padding: 8px 12px; gap: 8px; }
+  .demo-bar span { display: none; }
+}
+
+/* ---------- 6. 桌面：内容居中 + KPI 四列（7 张卡不再出现 5+2 的豁口） ---------- */
+.main { margin: 0 auto; }
+@media (min-width: 1080px) {
+  .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* ---------- 7. 移动端：顶部导航更矮；模拟面试进入后用满屏高 ---------- */
+@media (max-width: 900px) {
+  .sidebar { padding: 8px 12px 0; }
+  .brand { padding: 0 4px 8px; }
+  .brand-sub { display: none; }
+  .brand-name { font-size: 14.5px; }
+  .nav { padding-bottom: 7px; }
+  .nav-item { min-height: 36px; padding: 6px 10px; }
+
+  /* 演示横幅在手机上回到文档流，不再压住底部输入区 */
+  .demo-bar {
+    position: static; border-radius: 0; border-left: 0; border-right: 0; border-top: 0;
+    box-shadow: none; padding: 7px 12px; font-size: 12.5px;
+  }
+
+  /* 面试进行中：整块视图吃满可视高度，消息区自己滚，输入区永远在底部可见 */
+  #view-mock.active:has(#mock-chat:not(.hidden)) {
+    display: flex; flex-direction: column;
+    height: calc(100dvh - 116px);
+  }
+  body:has(.demo-bar) #view-mock.active:has(#mock-chat:not(.hidden)) {
+    height: calc(100dvh - 156px);
+  }
+  #view-mock.active:has(#mock-chat:not(.hidden)) .page-head { display: none; }
+  #view-mock.active:has(#mock-chat:not(.hidden)) #mock-chat {
+    flex: 1 1 auto; height: auto; min-height: 0;
+  }
+  #mock-chat .chat-top { padding: 10px 12px; gap: 6px; }
+  #mock-chat .chat-input-row { padding: 10px 12px; }
+}
+
+/* ---------- 8. 移动端：题库筛选条横滚、题目行改成两行（标题满宽、操作下移） ---------- */
+@media (max-width: 900px) {
+  .chips {
+    flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+    margin: 10px -14px 14px; padding: 2px 14px 6px;
+  }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: 0 0 auto; min-height: 36px; }
+
+  .q-head { flex-wrap: wrap; row-gap: 4px; padding: 12px 14px; }
+  .q-title { flex: 1 1 100%; font-size: 14.5px; }
+  .q-meta { flex: 1 1 100%; justify-content: flex-start; margin-top: 2px; }
+  .q-actions { order: 2; margin-left: auto; }
+}
+
+/* 修正：auto 外边距会取消 flex 的 stretch（移动端把主区撑成 max-content 宽），
+   所以只在桌面（横向布局）居中，移动端保持 100% 拉伸 */
+@media (max-width: 900px) {
+  .main { margin: 0; }
+}
+
+/* ---------- 9. KPI 卡片填满最后一行（7 张卡时不再留豁口） ---------- */
+.tiles > .tile:last-child:nth-child(odd) { grid-column: span 2; }
