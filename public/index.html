@@ -6,64 +6,83 @@
   <title>InterviewMate · AI 面试陪练</title>
   <meta name="description" content="AI 面试陪练：模拟面试、题库练习、间隔重复复习、简历/JD 诊断，本地运行，数据自持。">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
-  <link rel="manifest" href="/manifest.json">
-  <link rel="icon" href="/icon.svg">
-  <link rel="stylesheet" href="/css/style.css?v=0.19.0">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg">
+  <link rel="stylesheet" href="css/style.css?v=0.20.0">
 </head>
 <body>
-  <div class="aurora"></div>
   <div class="app">
     <aside class="sidebar">
       <div class="brand">
         <div class="brand-logo" data-icon="target"></div>
-        <div>
+        <div class="brand-text">
           <div class="brand-name">InterviewMate</div>
-          <div class="brand-sub">AI 面试陪练</div>
+          <div class="brand-sub">AI 面试工作台</div>
         </div>
       </div>
       <nav class="nav" id="main-nav">
-        <button class="nav-item active" data-view="dashboard"><span class="ico" data-icon="gauge"></span><span class="nav-label">数据看板</span></button>
-        <button class="nav-item" data-view="agent"><span class="ico" data-icon="sparkles"></span><span class="nav-label">智能体教练</span></button>
-        <button class="nav-item" data-view="mock"><span class="ico" data-icon="mic"></span><span class="nav-label">模拟面试</span></button>
-        <button class="nav-item" data-view="bank"><span class="ico" data-icon="book"></span><span class="nav-label">题库练习</span></button>
-        <button class="nav-item" data-view="review"><span class="ico" data-icon="repeat"></span><span class="nav-label">复习中心</span></button>
-        <button class="nav-item" data-view="jobs"><span class="ico" data-icon="radar"></span><span class="nav-label">岗位雷达</span><em class="nav-badge hidden" id="nav-jobs-badge"></em></button>
-        <button class="nav-item" data-view="apps"><span class="ico" data-icon="send"></span><span class="nav-label">投递看板</span></button>
-        <button class="nav-item" data-view="knowledge"><span class="ico" data-icon="brain"></span><span class="nav-label">知识库</span></button>
-        <button class="nav-item" data-view="resume"><span class="ico" data-icon="clipboard"></span><span class="nav-label">简历工坊</span></button>
-        <button class="nav-item" data-view="history"><span class="ico" data-icon="folder"></span><span class="nav-label">面试记录</span></button>
+        <div class="nav-group">工作台</div>
+        <button class="nav-item active" data-view="dashboard"><span class="ico" data-icon="gauge"></span><span class="nav-label">数据看板</span><kbd class="nav-key">1</kbd></button>
+        <button class="nav-item" data-view="agent"><span class="ico" data-icon="sparkles"></span><span class="nav-label">智能体教练</span><kbd class="nav-key">2</kbd></button>
+        <button class="nav-item" data-view="mock"><span class="ico" data-icon="mic"></span><span class="nav-label">模拟面试</span><kbd class="nav-key">3</kbd></button>
+        <div class="nav-group">训练与记忆</div>
+        <button class="nav-item" data-view="bank"><span class="ico" data-icon="book"></span><span class="nav-label">题库练习</span><kbd class="nav-key">4</kbd></button>
+        <button class="nav-item" data-view="review"><span class="ico" data-icon="repeat"></span><span class="nav-label">复习中心</span><kbd class="nav-key">5</kbd></button>
+        <button class="nav-item" data-view="knowledge"><span class="ico" data-icon="brain"></span><span class="nav-label">知识库</span><kbd class="nav-key">8</kbd></button>
+        <div class="nav-group">求职与复盘</div>
+        <button class="nav-item" data-view="jobs"><span class="ico" data-icon="radar"></span><span class="nav-label">岗位雷达</span><em class="nav-badge hidden" id="nav-jobs-badge"></em><kbd class="nav-key">6</kbd></button>
+        <button class="nav-item" data-view="apps"><span class="ico" data-icon="send"></span><span class="nav-label">投递看板</span><kbd class="nav-key">7</kbd></button>
+        <button class="nav-item" data-view="resume"><span class="ico" data-icon="clipboard"></span><span class="nav-label">简历工坊</span><kbd class="nav-key">9</kbd></button>
+        <button class="nav-item" data-view="history"><span class="ico" data-icon="folder"></span><span class="nav-label">面试记录</span><kbd class="nav-key">0</kbd></button>
+        <div class="nav-group">系统</div>
         <button class="nav-item" data-view="settings"><span class="ico" data-icon="settings"></span><span class="nav-label">设置</span></button>
       </nav>
       <div class="sidebar-tools">
         <div id="level-chip" class="level-chip"></div>
-        <button class="tool-btn" id="theme-toggle" title="切换主题（浅色/深色）"><span data-icon="moon"></span><em>深色模式</em></button>
-        <button class="tool-btn" id="palette-btn" title="命令面板 Ctrl+K"><span data-icon="command"></span><em>命令面板</em></button>
+        <div class="sidebar-actions">
+          <button class="tool-btn" id="theme-toggle" title="切换主题"><span data-icon="moon"></span><em>深色模式</em></button>
+          <button class="tool-btn" id="palette-btn" title="命令面板 Ctrl+K"><span data-icon="command"></span><em>命令</em><kbd>⌘K</kbd></button>
+        </div>
       </div>
       <div class="sidebar-foot">
-        v0.19.0 · 本地运行 · 数据自持<br>
-        题库体系参考
-        <a href="https://github.com/Snailclimb/JavaGuide" target="_blank" rel="noopener">JavaGuide</a> ·
-        <a href="https://github.com/CyC2018/CS-Notes" target="_blank" rel="noopener">CS-Notes</a> ·
-        <a href="https://github.com/donnemartin/system-design-primer" target="_blank" rel="noopener">SysDesign</a><br>
-        按 <kbd>?</kbd> 查看快捷键
+        <span class="foot-ver">v0.20.0 · 本地零依赖 · 数据自持</span>
+        <span class="foot-links">
+          题库参考 <a href="https://github.com/Snailclimb/JavaGuide" target="_blank" rel="noopener">JavaGuide</a> ·
+          <a href="https://github.com/CyC2018/CS-Notes" target="_blank" rel="noopener">CS-Notes</a> ·
+          <a href="https://github.com/donnemartin/system-design-primer" target="_blank" rel="noopener">SysDesign</a> ·
+          按 <kbd>?</kbd> 快捷键
+        </span>
       </div>
     </aside>
 
     <main class="main" id="main">
       <!-- ============ 数据看板 ============ -->
       <section id="view-dashboard" class="view active">
-        <div class="dash-hero card">
+        <div class="dash-hero">
           <div class="dash-hello">
-            <h1 id="dash-hello">你好，候选人 👋</h1>
-            <p id="dash-date" class="muted"></p>
+            <div class="dash-eyebrow" id="dash-date"></div>
+            <h1 id="dash-hello">你好，候选人</h1>
           </div>
-          <div class="dash-streak" id="dash-streak"></div>
+          <div class="dash-hero-right">
+            <div class="dash-quick">
+              <button class="btn primary" id="dash-go-mock"><span class="ico" data-icon="mic"></span>开始模拟面试</button>
+              <button class="btn" id="dash-go-agent"><span class="ico" data-icon="sparkles"></span>智能体教练</button>
+              <button class="btn ghost" id="dash-go-review"><span class="ico" data-icon="repeat"></span>到期复习</button>
+            </div>
+            <div class="dash-streak" id="dash-streak"></div>
+          </div>
         </div>
         <div class="tiles" id="dash-tiles"></div>
-        <div class="card hidden" id="dash-brief-card">
-          <h3><span class="ico" data-icon="sun"></span>今日简报 <span class="badge" id="brief-kind"></span>
-            <button class="btn small ghost" id="btn-brief-refresh" style="margin-left:auto"><span class="ico" data-icon="rotate"></span>重新生成</button></h3>
-          <div id="dash-brief" class="md"></div>
+        <div class="dash-spotlight">
+          <div class="card dash-brief-card hidden" id="dash-brief-card">
+            <h3><span class="ico" data-icon="sun"></span>今日简报 <span class="badge" id="brief-kind"></span>
+              <button class="btn small ghost" id="btn-brief-refresh" style="margin-left:auto"><span class="ico" data-icon="rotate"></span>重新生成</button></h3>
+            <div id="dash-brief" class="md"></div>
+          </div>
+          <div class="card dash-daily-card" id="dash-daily-card">
+            <h3><span class="ico" data-icon="zap"></span>今日挑战 <span class="badge">每日一题</span></h3>
+            <div id="dash-daily"></div>
+          </div>
         </div>
         <div class="dash-grid">
           <div class="card chart-card">
@@ -76,37 +95,37 @@
             <div class="chart-box"><canvas id="dash-trend"></canvas></div>
             <p class="hint" id="dash-trend-note"></p>
           </div>
-          <div class="card chart-card">
-            <h3><span class="ico" data-icon="flame"></span>最近 14 天练习热力</h3>
-            <div class="heat-strip" id="dash-heat"></div>
-            <p class="hint" id="dash-heat-note"></p>
-          </div>
-          <div class="card" id="dash-daily-card">
-            <h3><span class="ico" data-icon="zap"></span>今日挑战</h3>
-            <div id="dash-daily"></div>
-          </div>
         </div>
         <div class="dash-grid2">
           <div class="card">
             <h3><span class="ico" data-icon="bars"></span>分类掌握进度</h3>
             <div id="dash-cats"></div>
           </div>
-          <div class="card">
-            <h3><span class="ico" data-icon="clock"></span>未来 7 天复习量预测</h3>
-            <div id="dash-forecast"></div>
+          <div class="dash-stack">
+            <div class="card">
+              <h3><span class="ico" data-icon="clock"></span>未来 7 天复习量预测</h3>
+              <div id="dash-forecast"></div>
+            </div>
+            <div class="card">
+              <h3><span class="ico" data-icon="flame"></span>最近 14 天练习热力</h3>
+              <div class="heat-strip" id="dash-heat"></div>
+              <p class="hint" id="dash-heat-note"></p>
+            </div>
           </div>
         </div>
         <div class="card">
           <h3><span class="ico" data-icon="calendar"></span>练习年历 · 26 周</h3>
           <div id="dash-year-heat"></div>
         </div>
-        <div class="card">
-          <h3><span class="ico" data-icon="trophy"></span>成就墙 <span class="badge" id="ach-count"></span></h3>
-          <div id="dash-achieve" class="ach-grid"></div>
-        </div>
-        <div class="card">
-          <h3><span class="ico" data-icon="brain"></span>我的长期画像 <span class="badge" id="profile-count"></span></h3>
-          <div id="dash-profile"></div>
+        <div class="dash-grid2">
+          <div class="card">
+            <h3><span class="ico" data-icon="trophy"></span>成就墙 <span class="badge" id="ach-count"></span></h3>
+            <div id="dash-achieve" class="ach-grid"></div>
+          </div>
+          <div class="card">
+            <h3><span class="ico" data-icon="brain"></span>我的长期画像 <span class="badge" id="profile-count"></span></h3>
+            <div id="dash-profile"></div>
+          </div>
         </div>
       </section>
 
@@ -541,7 +560,7 @@
 
         <div class="card settings-card about">
           <h3><span class="ico" data-icon="info"></span>关于</h3>
-          <p>InterviewMate v0.19.0 · 零依赖本地运行 · 数据不出本机（除 LLM 请求本身）</p>
+          <p>InterviewMate v0.20.0 · 零依赖本地运行 · 数据不出本机（除 LLM 请求本身）</p>
           <div class="actions">
             <button class="btn ghost" id="btn-onboarding">🚀 重看新手引导</button>
           </div>
@@ -566,6 +585,6 @@
   <div id="toast-root"></div>
   <div id="fatal-error" class="banner warn hidden" style="position:fixed;left:50%;transform:translateX(-50%);bottom:24px;z-index:200"></div>
 
-  <script type="module" src="/js/app.js?v=0.19.0"></script>
+  <script type="module" src="js/app.js?v=0.20.0"></script>
 </body>
 </html>

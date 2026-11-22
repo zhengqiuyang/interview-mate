@@ -328,17 +328,17 @@ function extractJson(text) {
 let pdfjsLoading = null;
 function ensurePdfJs() {
   if (window.pdfjsLib) {
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/pdf.worker.min.js';
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdfjs/pdf.worker.min.js';
     return Promise.resolve(window.pdfjsLib);
   }
   if (pdfjsLoading) return pdfjsLoading;
   pdfjsLoading = new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = '/vendor/pdfjs/pdf.min.js';
+    s.src = 'vendor/pdfjs/pdf.min.js';
     s.onload = () => {
       const lib = window.pdfjsLib;
       if (!lib) return reject(new Error('pdf.js 加载异常'));
-      lib.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/pdf.worker.min.js';
+      lib.GlobalWorkerOptions.workerSrc = 'vendor/pdfjs/pdf.worker.min.js';
       resolve(lib);
     };
     s.onerror = () => reject(new Error('pdf.js 加载失败'));
@@ -477,8 +477,8 @@ function ensureDocxLib() {
     s.onerror = () => no(new Error('加载 ' + src + ' 失败'));
     document.head.appendChild(s);
   });
-  docxLibLoading = load('/vendor/docx/jszip.min.js')
-    .then(() => load('/vendor/docx/docx-preview.min.js'))
+  docxLibLoading = load('vendor/docx/jszip.min.js')
+    .then(() => load('vendor/docx/docx-preview.min.js'))
     .then(() => {
       if (!window.docx) throw new Error('docx-preview 加载异常');
       return window.docx;

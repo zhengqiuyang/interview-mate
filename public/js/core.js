@@ -276,10 +276,13 @@ function setupCanvas(canvas) {
 export function radarChart(canvas, labels, values) {
   const { ctx, w, h } = setupCanvas(canvas);
   const cx = w / 2, cy = h / 2;
-  const R = Math.min(w, h) / 2 - 34;
+  const R = Math.min(w, h) / 2 - 36;
   const n = labels.length;
-  const grid = cssVar('--chart-grid') || '#e3e8f4';
-  const ink = cssVar('--chart-ink') || '#8a93a8';
+  const grid = cssVar('--chart-grid') || '#e5e7ec';
+  const ink = cssVar('--chart-ink') || '#737988';
+  const brand = cssVar('--brand') || '#2563eb';
+  const fill = cssVar('--chart-fill') || 'rgba(37, 99, 235, 0.16)';
+  const cardBg = cssVar('--card') || '#ffffff';
   if (!n || R <= 10) return;
   const angle = (i) => (Math.PI * 2 * i) / n - Math.PI / 2;
 
@@ -291,65 +294,75 @@ export function radarChart(canvas, labels, values) {
       const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
       i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     }
-    ctx.strokeStyle = grid; ctx.lineWidth = 1; ctx.stroke();
+    ctx.strokeStyle = grid; ctx.lineWidth = g === 4 ? 1.2 : 1; ctx.stroke();
   }
   for (let i = 0; i < n; i++) {
     const a = angle(i);
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R);
-    ctx.strokeStyle = grid; ctx.stroke();
+    ctx.strokeStyle = grid; ctx.lineWidth = 1; ctx.stroke();
   }
   // 数据面
-  const grad = ctx.createLinearGradient(0, 0, w, h);
-  grad.addColorStop(0, 'rgba(79,107,240,0.42)');
-  grad.addColorStop(1, 'rgba(124,92,245,0.30)');
   ctx.beginPath();
   for (let i = 0; i <= n; i++) {
     const idx = i % n;
     const a = angle(idx);
-    const r = R * Math.max(Math.min((values[idx] || 0) / 100, 1), 0.02);
+    const r = R * Math.max(Math.min((values[idx] || 0) / 100, 1), 0.04);
     const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
     i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
   }
   ctx.closePath();
-  ctx.fillStyle = grad; ctx.fill();
-  ctx.strokeStyle = '#4f6bf0'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = fill; ctx.fill();
+  ctx.strokeStyle = brand; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+  // 数据节点
+  for (let i = 0; i < n; i++) {
+    const a = angle(i);
+    const r = R * Math.max(Math.min((values[i] || 0) / 100, 1), 0.04);
+    const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+    ctx.beginPath();
+    ctx.arc(x, y, 2.8, 0, Math.PI * 2);
+    ctx.fillStyle = cardBg; ctx.fill();
+    ctx.strokeStyle = brand; ctx.lineWidth = 1.8; ctx.stroke();
+  }
   // 顶点与标签
-  ctx.font = '11px ' + (cssVar('--font') || 'sans-serif');
+  ctx.font = '500 11.5px ' + (cssVar('--font') || 'sans-serif');
   ctx.fillStyle = ink;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   for (let i = 0; i < n; i++) {
     const a = angle(i);
-    const lx = cx + Math.cos(a) * (R + 20);
-    const ly = cy + Math.sin(a) * (R + 16);
-    ctx.fillText(labels[i], lx, ly, 64);
+    const lx = cx + Math.cos(a) * (R + 21);
+    const ly = cy + Math.sin(a) * (R + 17);
+    ctx.fillText(labels[i], lx, ly, 68);
   }
 }
 
 /* 折线图：points [{label, value}] */
 export function lineChart(canvas, points, { min = 0, max = 100 } = {}) {
   const { ctx, w, h } = setupCanvas(canvas);
-  const pad = { l: 30, r: 14, t: 14, b: 26 };
+  const pad = { l: 32, r: 16, t: 16, b: 28 };
   const iw = w - pad.l - pad.r, ih = h - pad.t - pad.b;
-  const grid = cssVar('--chart-grid') || '#e3e8f4';
-  const ink = cssVar('--chart-ink') || '#8a93a8';
-  ctx.font = '10px ' + (cssVar('--font') || 'sans-serif');
+  const grid = cssVar('--chart-grid') || '#e5e7ec';
+  const ink = cssVar('--chart-ink') || '#737988';
+  const brand = cssVar('--brand') || '#2563eb';
+  const fill = cssVar('--chart-fill') || 'rgba(37, 99, 235, 0.16)';
+  const cardBg = cssVar('--card') || '#ffffff';
+  ctx.font = '500 10.5px ' + (cssVar('--mono') || 'monospace');
   ctx.fillStyle = ink;
   for (let g = 0; g <= 4; g++) {
     const y = pad.t + (ih * g) / 4;
-    ctx.strokeStyle = grid; ctx.beginPath();
+    ctx.strokeStyle = grid; ctx.lineWidth = 1; ctx.beginPath();
     ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
     const val = Math.round(max - ((max - min) * g) / 4);
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-    ctx.fillText(String(val), pad.l - 6, y);
+    ctx.fillText(String(val), pad.l - 7, y);
   }
   if (!points.length) return;
   const X = (i) => pad.l + (points.length === 1 ? iw / 2 : (iw * i) / (points.length - 1));
   const Y = (v) => pad.t + ih - ((v - min) / (max - min)) * ih;
   const grad = ctx.createLinearGradient(0, pad.t, 0, h - pad.b);
-  grad.addColorStop(0, 'rgba(79,107,240,0.25)');
-  grad.addColorStop(1, 'rgba(79,107,240,0)');
+  grad.addColorStop(0, fill);
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.beginPath();
   points.forEach((p, i) => (i === 0 ? ctx.moveTo(X(i), Y(p.value)) : ctx.lineTo(X(i), Y(p.value))));
   ctx.lineTo(X(points.length - 1), h - pad.b);
@@ -358,16 +371,16 @@ export function lineChart(canvas, points, { min = 0, max = 100 } = {}) {
   ctx.fillStyle = grad; ctx.fill();
   ctx.beginPath();
   points.forEach((p, i) => (i === 0 ? ctx.moveTo(X(i), Y(p.value)) : ctx.lineTo(X(i), Y(p.value))));
-  ctx.strokeStyle = '#4f6bf0'; ctx.lineWidth = 2.5; ctx.lineJoin = 'round'; ctx.stroke();
+  ctx.strokeStyle = brand; ctx.lineWidth = 2.2; ctx.lineJoin = 'round'; ctx.stroke();
   points.forEach((p, i) => {
     ctx.beginPath();
-    ctx.arc(X(i), Y(p.value), 3.5, 0, Math.PI * 2);
-    ctx.fillStyle = '#fff'; ctx.fill();
-    ctx.strokeStyle = '#4f6bf0'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.arc(X(i), Y(p.value), 3.4, 0, Math.PI * 2);
+    ctx.fillStyle = cardBg; ctx.fill();
+    ctx.strokeStyle = brand; ctx.lineWidth = 2; ctx.stroke();
   });
   ctx.fillStyle = ink; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
   const step = Math.ceil(points.length / 7);
-  points.forEach((p, i) => { if (i % step === 0) ctx.fillText(p.label, X(i), h - pad.b + 6); });
+  points.forEach((p, i) => { if (i % step === 0) ctx.fillText(p.label, X(i), h - pad.b + 7); });
 }
 
 /* 环形图：pct 0-100，返回 Promise（动画可选静态） */
@@ -376,15 +389,16 @@ export function donutChart(canvas, pct, { size = 44 } = {}) {
   canvas.style.height = size + 'px';
   const { ctx } = setupCanvas(canvas);
   const w = size, h = size;
-  const cx = w / 2, cy = h / 2, R = w / 2 - 4;
+  const cx = w / 2, cy = h / 2, R = w / 2 - 3.5;
+  const brand = cssVar('--brand') || '#2563eb';
   ctx.clearRect(0, 0, w, h);
   ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
-  ctx.strokeStyle = cssVar('--chart-grid') || '#e3e8f4'; ctx.lineWidth = 5; ctx.stroke();
-  const grad = ctx.createLinearGradient(0, 0, w, h);
-  grad.addColorStop(0, '#4f6bf0'); grad.addColorStop(1, '#7c5cf5');
-  ctx.beginPath();
-  ctx.arc(cx, cy, R, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(pct / 100, 1));
-  ctx.strokeStyle = grad; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.stroke();
+  ctx.strokeStyle = cssVar('--chart-grid') || '#e5e7ec'; ctx.lineWidth = 3.5; ctx.stroke();
+  if (pct > 0) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(pct / 100, 1));
+    ctx.strokeStyle = brand; ctx.lineWidth = 3.5; ctx.lineCap = 'round'; ctx.stroke();
+  }
 }
 
 /* ---------- 文件下载 ---------- */

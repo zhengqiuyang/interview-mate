@@ -333,9 +333,9 @@ async function init() {
     store.set('im_onboarded', true);
   }
 
-  // PWA：注册 Service Worker（静态缓存，离线可用）
+  // PWA：注册 Service Worker（静态缓存，离线可用；使用相对路径兼容子路径部署）
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(() => { /* 本地 http 或隐私模式，忽略 */ });
+    navigator.serviceWorker.register('./sw.js').catch(() => { /* 本地 http 或隐私模式，忽略 */ });
   }
 
   // 各视图绑定事件

@@ -25,9 +25,27 @@ const targets = [
   },
   {
     file: 'public/index.html',
+    pattern: /style\.css\?v=[\w.-]+/,
+    expect: `style.css?v=${version}`,
+    replacement: `style.css?v=${version}`,
+  },
+  {
+    file: 'public/index.html',
     pattern: /app\.js\?v=[\w.-]+/,
     expect: `app.js?v=${version}`,
     replacement: `app.js?v=${version}`,
+  },
+  {
+    file: 'public/index.html',
+    pattern: /<span class="foot-ver">v[\w.-]+/,
+    expect: `<span class="foot-ver">v${version}`,
+    replacement: `<span class="foot-ver">v${version}`,
+  },
+  {
+    file: 'public/index.html',
+    pattern: /InterviewMate v[\w.-]+ · 零依赖/,
+    expect: `InterviewMate v${version} · 零依赖`,
+    replacement: `InterviewMate v${version} · 零依赖`,
   },
 ];
 

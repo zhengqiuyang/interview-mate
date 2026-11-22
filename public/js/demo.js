@@ -13,7 +13,9 @@ const DEMO_MODEL = 'interview-mate-demo';
 export function isDemoMode() {
   if (typeof location === 'undefined') return false;
   const v = new URLSearchParams(location.search).get('demo');
-  return v === '1' || v === 'true';
+  if (v === '0' || v === 'false') return false;
+  if (v === '1' || v === 'true') return true;
+  return typeof location.hostname === 'string' && /\.github\.io$/i.test(location.hostname);
 }
 
 /* ---------------- 演示数据（岗位雷达 / 订阅源） ---------------- */
@@ -93,15 +95,11 @@ const ANSWERS = {
     '> 演示模式：以上内容为示例，真实回答由你配置的模型生成。',
   ].join('\n'),
   brief: [
-    '# 今日简报',
-    '',
     '**待复习 6 张卡**，其中 2 张已连续两次「模糊」，建议先过这两张。',
     '',
-    '- 昨天完成 1 场模拟面试（技术面），总分 78；',
-    '- 岗位雷达新增 3 个匹配岗位，其中 1 个与你简历匹配度 72%；',
+    '- 昨天完成 1 场模拟面试（技术面），总分 **78**；',
+    '- 岗位雷达新增 **3 个匹配岗位**，其中 1 个与你简历匹配度 **72%**；',
     '- 建议今天花 20 分钟补「分布式一致性」追问。',
-    '',
-    '> 演示模式：简报为示例内容。',
   ].join('\n'),
   jd: [
     '# 岗位情报速览',

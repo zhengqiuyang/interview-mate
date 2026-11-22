@@ -10,6 +10,9 @@ import { levelInfo, renderAchievements, renderLevelChip } from '../gamify.js';
 
 export function init() {
   $('#btn-brief-refresh')?.addEventListener('click', () => ensureDailyBrief(true).then(renderBrief));
+  $('#dash-go-mock')?.addEventListener('click', () => switchView('mock'));
+  $('#dash-go-agent')?.addEventListener('click', () => switchView('agent'));
+  $('#dash-go-review')?.addEventListener('click', () => switchView('review'));
 }
 
 export function onShow() { render(); ensureDailyBrief(false).then(renderBrief).catch(() => {}); }
@@ -91,15 +94,13 @@ export function render() {
     : null;
   $('#dash-streak').innerHTML = `
     ${daysLeft != null ? `
-      <div class="streak-flame" style="background:linear-gradient(135deg,#4f6bf0,#7c5cf5);box-shadow:0 4px 14px rgba(79,107,240,.45)">
-        ${daysLeft >= 0 ? daysLeft : '⏰'}
-      </div>
+      <div class="streak-flame countdown">${daysLeft >= 0 ? daysLeft : '⏰'}</div>
       <div>
         <div class="streak-num">${daysLeft >= 0 ? daysLeft + ' 天' : '已过期'}</div>
         <div class="streak-label">距目标面试（${S.targetDate}）</div>
       </div>
-      <div style="width:1px;height:34px;background:var(--line);margin:0 4px"></div>` : ''}
-    <div class="streak-flame">${icon('flame', 22)}</div>
+      <div class="streak-sep"></div>` : ''}
+    <div class="streak-flame">${icon('flame', 18)}</div>
     <div>
       <div class="streak-num">${streak} 天</div>
       <div class="streak-label">连续练习</div>
@@ -112,34 +113,42 @@ export function render() {
     ? Math.round(mocks.filter((m) => m.score != null).reduce((a, m) => a + m.score, 0) / mocks.filter((m) => m.score != null).length)
     : null;
 
+  const appsCount = S.apps.length;
+  const appsActive = S.apps.filter((a) => !['offer', 'rejected', 'paused'].includes(a.status)).length;
+  const offersCount = S.apps.filter((a) => a.status === 'offer').length;
+
   $('#dash-tiles').innerHTML = `
     <div class="tile clickable" data-goto="review">
-      <div class="tile-ico warn">${icon('repeat', 20)}</div>
-      <div><div class="tile-num" data-count="${due}">0</div><div class="tile-label">今日待复习</div></div>
+      <div class="tile-ico warn">${icon('repeat', 18)}</div>
+      <div class="tile-body"><div class="tile-num" data-count="${due}">0</div><div class="tile-label">今日待复习</div></div>
     </div>
     <div class="tile clickable" data-goto="bank">
       <div class="tile-ico">${donutHtml()}</div>
-      <div><div class="tile-num" data-count="${ms.pct}" data-suffix="%">0%</div><div class="tile-label">题库掌握率（${ms.mastered}/${ms.total}）</div></div>
-    </div>
-    <div class="tile clickable" data-goto="jobs">
-      <div class="tile-ico gold">${icon('radar', 20)}</div>
-      <div><div class="tile-num" id="d-tile-jobs">…</div><div class="tile-label">岗位雷达新岗位</div></div>
-    </div>
-    <div class="tile clickable" data-goto="knowledge">
-      <div class="tile-ico ok">${icon('brain', 20)}</div>
-      <div><div class="tile-num" data-count="${S.knowledge.length}">0</div><div class="tile-label">知识库条目</div></div>
+      <div class="tile-body"><div class="tile-num" data-count="${ms.pct}" data-suffix="%">0%</div><div class="tile-label">题库掌握率（${ms.mastered}/${ms.total}）</div></div>
     </div>
     <div class="tile clickable" data-goto="history">
-      <div class="tile-ico">${icon('mic', 20)}</div>
-      <div><div class="tile-num" data-count="${mocks.length}">0${avg != null ? ` <small style="font-size:13px;color:var(--muted)">均分 ${avg}</small>` : ''}</div><div class="tile-label">模拟面试场次</div></div>
+      <div class="tile-ico">${icon('mic', 18)}</div>
+      <div class="tile-body"><div class="tile-num" data-count="${mocks.length}">0${avg != null ? ` <small>均分 ${avg}</small>` : ''}</div><div class="tile-label">模拟面试场次</div></div>
+    </div>
+    <div class="tile clickable" data-goto="jobs">
+      <div class="tile-ico gold">${icon('radar', 18)}</div>
+      <div class="tile-body"><div class="tile-num" id="d-tile-jobs">…</div><div class="tile-label">岗位雷达新岗位</div></div>
+    </div>
+    <div class="tile clickable" data-goto="apps">
+      <div class="tile-ico ${offersCount ? 'ok' : ''}">${icon('send', 18)}</div>
+      <div class="tile-body"><div class="tile-num" data-count="${appsCount}">0${appsActive ? ` <small>进行中 ${appsActive}</small>` : ''}</div><div class="tile-label">投递跟踪${offersCount ? ` · 🎉${offersCount} Offer` : ''}</div></div>
+    </div>
+    <div class="tile clickable" data-goto="knowledge">
+      <div class="tile-ico ok">${icon('brain', 18)}</div>
+      <div class="tile-body"><div class="tile-num" data-count="${S.knowledge.length}">0</div><div class="tile-label">知识库条目</div></div>
     </div>
     <div class="tile clickable" id="d-tile-xp">
       <div class="tile-ico gold">${levelInfo(S.gamify.xp).icon}</div>
-      <div><div class="tile-num">Lv.${levelInfo(S.gamify.xp).level}</div><div class="tile-label">${levelInfo(S.gamify.xp).title} · ${S.gamify.xp} XP</div></div>
+      <div class="tile-body"><div class="tile-num">Lv.${levelInfo(S.gamify.xp).level}</div><div class="tile-label">${levelInfo(S.gamify.xp).title} · ${S.gamify.xp} XP</div></div>
     </div>
     <div class="tile clickable" id="d-tile-tokens">
-      <div class="tile-ico">${icon('cpu', 20)}</div>
-      <div><div class="tile-num" id="d-tile-tokens-num">0</div><div class="tile-label">本月 Token 用量</div></div>
+      <div class="tile-ico">${icon('cpu', 18)}</div>
+      <div class="tile-body"><div class="tile-num" id="d-tile-tokens-num">0</div><div class="tile-label">本月 Token 用量</div></div>
     </div>`;
 
   $$('[data-count]', $('#dash-tiles')).forEach((el) =>
