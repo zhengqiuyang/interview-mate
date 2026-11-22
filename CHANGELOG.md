@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 格式遵循 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/)。
 
+## [0.22.0] - 2026-11-23
+
+### Added
+- **题库深度扩容至 265 题 / 14 分类**（新增 105 道原创高质量面试题与代码模板）：
+  - **新增「C++ 专项」（35 题，`cpp-1`..`cpp-35`）**：系统覆盖指针/引用、`const`/`constexpr`/`consteval`、内存布局与对齐、虚表/菱形虚继承、移动语义与完美转发、智能指针控制块与线程安全、STL 底层实现（`vector`/`map`/`deque`/SSO）与迭代器失效、`memory_order` 无锁同步、False Sharing `alignas(64)` 与 ASan/TSan 排查
+  - **「AI / LLM 工程」扩充至 40 题（`ai-11`..`ai-40`）**：涵盖机器学习基础（偏差方差/AdamW/XGBoost/LightGBM/PR-AUC/数据泄露）、深度学习（ResNet/RMSNorm/Pre-LN/SwiGLU/RoPE 外推/Autograd）、大模型训练与对齐（GQA/MLA/MoE 负载均衡/RLHF-PPO vs DPO vs GRPO/ZeRO-FSDP-TP-PP/BF16/Scaling Laws）、推理加速与工程（PTQ-AWQ-FP8/FlashAttention Online Softmax/投机解码/VLM/受限解码 FSM/YaRN 与 Prefix Caching/Agent 评测与 Guardrails）
+  - **「算法与数据结构」扩充至 40 题（`algo-15`..`algo-40`）**：涵盖单调栈/队列、前缀和与差分、位运算与状压 DP、Trie/AC 自动机、线段树懒标记与树状数组、图论最短路/MST/Tarjan、KMP/滚动哈希、背包循环顺序与树形/区间/数位 DP、O(N log N) LIS 还原、跳表/布隆/Cuckoo Filter、蓄水池抽样、海量数据外排序与分治、A*、矩阵快速幂、交换论证与主定理
+  - **「手写代码」扩充至 26 题（`code-13`..`code-26`）**：全部配备可直接渲染一键复制的 C++ / Python 围栏代码块——手写 `SharedPtr`、`BoundedBlockingQueue`、五法则 `MyString`、TTAS `SpinLock`、PyTorch Multi-Head Attention、数值稳定 Softmax+CrossEntropy 前反向、LoRA 线性层、RoPE 旋转位置编码、柱状图最大矩形、堆优化 Dijkstra、并查集、K 组翻转链表、最小覆盖子串与 LIS/Trie
+- **模拟面试新增 C++ 与 AI/LLM 岗位**：前端岗位下拉与服务端提示词 `ROLE_MAP` 同步支持 `C++ 研发工程师` 与 `AI / LLM 工程师`
+- **演示模式样例更新**（`seedDemoData`）：补全 C++ / AI / 算法 / 手写代码练习分布，首屏直观展现完整 14 维能力雷达
+
+### Changed
+- **能力雷达图标签优化**（`dashboard.js`）：由固定 5 字符硬截断改为显式 14 分类短标签映射（`C++`、`AI/LLM`、`Go/Py`、`系统设计` 等），避免多维坐标轴出现省略号
+
 ## [0.21.0] - 2026-11-22
 
 ### Added

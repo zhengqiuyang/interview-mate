@@ -109,6 +109,8 @@ const ROLE_MAP = {
   fe: '前端工程师',
   java: '后端工程师（Java）',
   go: '后端工程师（Go）',
+  cpp: 'C++ 研发工程师',
+  ai: 'AI / LLM 工程师',
   algo: '算法工程师',
   test: '测试工程师',
   pm: '产品经理',

@@ -1,6 +1,6 @@
 {
-  "updated": "2026-11-22",
-  "source": "参考 CS-Notes / JavaGuide / tech-interview-handbook / system-design-primer 等开源项目知识体系，结合后端、Go/Python 与 AI/LLM 工程高频考点原创整理",
+  "updated": "2026-11-23",
+  "source": "参考 CS-Notes / JavaGuide / tech-interview-handbook / system-design-primer 等开源项目知识体系，结合 C++、算法手写、Go/Python 与 AI/LLM 工程高频考点原创整理",
   "categories": [
     {
       "key": "net",
@@ -37,6 +37,10 @@
     {
       "key": "go",
       "name": "Go / Python 专项"
+    },
+    {
+      "key": "cpp",
+      "name": "C++ 专项"
     },
     {
       "key": "ai",
@@ -1785,6 +1789,1270 @@
       ],
       "q": "当业务需求不断堆叠、代码腐化严重时，你是如何主导技术债治理与平稳重构的？",
       "a": "- **踩坑警告**：最忌讳「停下业务闭关重写半年」——往往烂尾或上线出大事故。\n- **高分回答路线**：\n  - **先建安全网**：在核心路径补集成测试/回归基线、加流量录制回放或影子比对（Shadow Diff）。\n  - **绞杀者模式（Strangler Fig）渐进替换**：按模块边界切流灰度，新旧双跑验证一致后再下线旧逻辑。\n  - **业务绑定**：把重构拆进日常需求迭代里，用 Bug 率下降、需求交付提速量化说服产品与管理层给研发排期。"
+    },
+    {
+      "id": "cpp-1",
+      "cat": "cpp",
+      "diff": 1,
+      "q": "指针和引用的本质区别是什么？汇编层面有何异同？什么时候优先用引用、什么时候必须用指针？",
+      "a": "**核心区别**：\n- **语义与空值**：引用是变量的**别名**，定义时必须初始化且不可改绑，理论上不能为空；指针是独立对象，存的是地址，可为空（`nullptr`）且可随时改指向。\n- **大小与运算**：`sizeof(指针)` 在 64 位下恒为 8 字节；`sizeof(引用)` 得到的是**所绑定对象**的大小。指针支持 `+/-/++` 算术运算和多级指针（`int**`），引用不存在多级引用（`int&&` 是右值引用，不是引用的引用）。\n- **const 修饰**：指针有顶层/底层 `const`（`int* const` vs `const int*`）；引用只有底层 `const`（`const int&`），引用自身天然类似 `const` 绑定。\n\n**汇编 / 底层实现**：\n- 在不涉及优化时，引用在汇编层面通常也是通过**指针（存地址并自动解引用）**实现的；在编译器可追踪作用域内，引用往往能被优化为直接访问原变量或寄存器。\n\n**选型原则**：\n- 参数传递或返回必然存在且不转移所有权的对象，优先用 `const T&` 或 `T&`（更安全、避免空指针检查）。\n- 需要表示“可选/为空”、动态改绑、指针运算或与 C 接口交互时使用指针（或观察者语义用裸指针/`std::optional`）。\n\n> **追问 / 加分项**：函数返回值不要返回局部变量的引用（会悬空），但 `const T&` 绑定临时对象可延长临时对象生命周期至该引用作用域结束（C++ 生命周期延长规则，不穿透函数返回）。",
+      "tags": [
+        "C++基础",
+        "指针与引用",
+        "内存模型"
+      ]
+    },
+    {
+      "id": "cpp-2",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "const、constexpr、consteval（C++20）的区别是什么？const 成员函数与 mutable、const_cast 的注意事项有哪些？",
+      "a": "**三者核心语义对比**：\n- **`const`（运行期只读约束）**：语义是“逻辑只读 / 不可通过该路径修改”，值既可能是编译期常量，也可能是运行期初始化后不再改的值（如 `const int x = getVal();`）。\n- **`constexpr`（C++11，可用于编译期）**：表示变量可在编译期求值，或函数**当入参为常量表达式时可在编译期求值**（入参为运行期变量时退化为普通运行期函数）。\n- **`consteval`（C++20 立即函数）**：强制函数**必须在编译期求值**，若入参不是常量表达式则直接编译报错。\n\n**`const` 成员函数与 `mutable`**：\n- `const` 成员函数把隐藏的 `this` 从 `T* const` 变成 `const T* const`，承诺不修改对象状态；`const` 对象/引用只能调用 `const` 成员函数。\n- 被 `mutable` 修饰的成员变量即使在 `const` 成员函数中也可修改，常用于缓存计算结果、访问计数器或保护 `const` 查询的 `std::mutex`。\n\n**`const_cast` 陷阱**：\n- 仅用于移除本身**不是真正 `const` 对象**上的 `const` 限定（例如通过 `const&` 传给需要非 const 指针的旧 C API）；对**原本定义为 `const` 的对象**用 `const_cast` 并写入属于**未定义行为（UB）**。\n\n> **追问 / 加分项**：C++17 引入 `if constexpr` 用于编译期分支裁剪；C++20 还引入 `constinit` 保证全局变量静态初始化，解决跨翻译单元静态初始化顺序灾难（SIOF）。",
+      "tags": [
+        "const",
+        "constexpr",
+        "现代C++"
+      ]
+    },
+    {
+      "id": "cpp-3",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "static、extern、inline 在不同作用域下的含义、链接性（Linkage）与内存分布是怎样的？",
+      "a": "**1. `static` 的四重身份**：\n- **函数内局部变量**：存储区变为静态数据区（`.data` 或 `.bss`），生命周期贯穿程序始终，仅在首次执行到此行时初始化（C++11 起**局部静态变量初始化保证线程安全**）。\n- **全局/命名空间作用域变量或函数**：赋予**内部链接性（Internal Linkage）**，仅当前翻译单元（`.cpp`）可见（现代 C++ 更推荐匿名命名空间 `namespace {}`）。\n- **类静态成员变量**：归类所有而非对象，所有实例共享同一份内存；必须在类外定义（C++17 起 `inline static` 可直接在类内初始化）。\n- **类静态成员函数**：无 `this` 指针，不能为 `virtual` / `const`，只能访问静态成员。\n\n**2. `extern` 的作用**：\n- 声明变量/函数具有**外部链接性**，告诉编译器符号在别的编译单元定义，不要重复分配内存。\n- `extern \"C\"`：按 C 风格关闭 Name Mangling（名称修饰），实现 C 与 C++ 混合链接。\n\n**3. `inline` 的演进本质**：\n- 对编译器只是“内联展开”建议，真正的硬语义是**允许同一定义出现在多个翻译单元而不违反 ODR（单一定义规则）**，由链接器合并去重。\n- 类内直接实现的成员函数、`constexpr` 函数、C++17 `inline` 变量默认自带 `inline` 语义。\n\n> **追问 / 加分项**：局部静态变量线程安全（Magic Statics）在编译器层面通常通过守卫变量 + 双检锁或 `__cxa_guard_acquire` / `__cxa_guard_release` 实现，因此 Meyer's Singleton 在 C++11 后天然线程安全。",
+      "tags": [
+        "static",
+        "链接性",
+        "ODR"
+      ]
+    },
+    {
+      "id": "cpp-4",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "C++ 程序的内存分区与结构体内存对齐（alignof/alignas/#pragma pack）规则是什么？",
+      "a": "**1. 虚拟内存五大分区（由低地址到高地址常见布局）**：\n- **代码段（`.text`）**：存放编译后的机器指令，只读共享。\n- **只读数据段（`.rodata`）**：字符串字面量、部分编译期常量。\n- **全局/静态数据区（`.data` / `.bss`）**：已初始化全局静态变量在 `.data`，未初始化或零初始化在 `.bss`（不占可执行文件磁盘体积）。\n- **堆（Heap）**：动态分配（`new`/`malloc`），向上增长，由分配器（ptmalloc/jemalloc/tcmalloc）管理，易碎片化。\n- **栈（Stack）**：局部变量、函数参数与返回地址，向下增长，分配释放仅移动栈指针，极快但容量有限（Linux 默认常见 8MB）。\n\n**2. 结构体内存对齐三大规则**：\n- 第一个成员偏移量为 0；后续成员偏移量必须是 `min(自身对齐要求, pack值)` 的整数倍。\n- 若嵌套结构体，嵌套结构体按其内部**最大成员对齐值**对齐。\n- 整个结构体总大小 `sizeof` 必须是 `min(所有成员最大对齐值, pack值)` 的整数倍（不足在末尾补 padding）。\n\n**3. 对齐控制关键字（C++11 起标准化）**：\n- `alignof(T)` 查询类型对齐字节数；`alignas(N)` 强制提高变量或类型的对齐（如 `alignas(64)` 消除缓存伪共享，SIMD 用 `alignas(32)`）。\n- 把大成员放前面、小成员凑一起排布，可显著减少 struct padding 节省内存。\n\n> **追问 / 加分项**：为什么硬件需要内存对齐？因为 CPU 按字长/Cache Line 访存，未对齐访问可能触发两次总线读取与拼接，甚至在部分架构（如早期 ARM/RISC）直接触发硬件异常 SIGBUS。",
+      "tags": [
+        "内存布局",
+        "内存对齐",
+        "alignas"
+      ]
+    },
+    {
+      "id": "cpp-5",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "new/delete 与 malloc/free 的核心区别是什么？new[] 为什么必须配对 delete[]？什么是 placement new？",
+      "a": "**1. `new`/`delete` vs `malloc`/`free`**：\n- **性质与类型安全**：`new`/`delete` 是 C++ **运算符**（可重载），直接返回精确类型指针；`malloc`/`free` 是 C 库函数，只按字节数返回 `void*`。\n- **对象生命周期**：`new` = 分配原始内存（`operator new`）+ **调用构造函数**；`delete` = **调用析构函数** + 释放内存。`malloc`/`free` 只管原始内存，不认识构造与析构。\n- **失败行为**：`new` 默认抛出 `std::bad_alloc`（可用 `new(std::nothrow)` 返回空指针）；`malloc` 失败直接返回 `NULL`。\n- **重分配**：`malloc` 支持 `realloc` 原地扩缩，C++ `new` 无对应原语（由 `std::vector` 等容器封装实现）。\n\n**2. `new[]` 为什么必须配对 `delete[]`**：\n- 对**非平凡析构类型**，`new T[N]` 会在返回指针**前额外多申请 4/8 字节存放数组长度 `N`**。\n- `delete[]` 会向前读出 `N` 并逆序调用 `N` 次析构函数，然后从偏移前的真正起始地址释放内存；若误用 `delete`，只析构 1 次且向分配器归还了错误偏移地址，导致堆损坏或崩溃（UB）。\n\n**3. Placement new（定位构造）**：\n- 语法 `new (addr) T(args...)`，**不分配新内存**，只在已有缓冲区 `addr` 上原地构造对象。\n- 必须显式手动调用析构 `ptr->~T()`，而不能调用 `delete ptr`；是 `std::vector::emplace_back` 与高性能内存池的核心基石。\n\n> **追问 / 加分项**：C++17 起支持 over-aligned new（`operator new(size_t, std::align_val_t)`），当对象 `alignas > __STDCPP_DEFAULT_NEW_ALIGNMENT__`（通常 16B）时也能正确按对齐分配。",
+      "tags": [
+        "new/delete",
+        "placement new",
+        "内存管理"
+      ]
+    },
+    {
+      "id": "cpp-6",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "C++ 四种强制类型转换（static_cast、dynamic_cast、const_cast、reinterpret_cast）各自的使用场景与底层原理？",
+      "a": "- **`static_cast`（编译期静态检查）**：用于良性隐式逆转与明确相关类型转换，如数值精度转换（`int` ↔ `double`）、`void*` 还原、类层次上行转换，以及已知真实类型时的下行转换（**无运行期检查**，不安全需自己保证）。\n- **`dynamic_cast`（运行期 RTTI 检查）**：专用于**含虚函数的多态类型**安全下行/交叉转换。通过查询 `vtable` 关联的 `type_info` 验证目标类型是否在继承链上：\n  - 指针转换失败返回 `nullptr`；引用转换失败抛出 `std::bad_cast` 异常。\n  - 需遍历或比对类型信息，有一定运行期开销，高频热路径应慎用。\n- **`const_cast`（唯一能修改 cv 限定符的转换）**：添加或剥离表达式的 `const`/`volatile` 属性；常见于复用重载实现或对接旧 C 非 const 接口，切忌修改真正只读的常量对象。\n- **`reinterpret_cast`（位模式重解释）**：仅在编译期改变指针/整数间的类型解释（如 `uintptr_t` ↔ 指针、`char*` 按字节序列化），几乎不生成转换指令，跨平台与严格别名规则（Strict Aliasing）风险最高（查看对象底层字节在 C++20 中可用 `std::bit_cast` 替代危险强转）。\n\n> **追问 / 加分项**：为什么应弃用 C 风格 `(T)x` 强转？因为 C 强转会自动组合尝试 `const_cast`/`static_cast`/`reinterpret_cast`，极其隐蔽且无法被代码检索与审查捕获。",
+      "tags": [
+        "类型转换",
+        "RTTI",
+        "dynamic_cast"
+      ]
+    },
+    {
+      "id": "cpp-7",
+      "cat": "cpp",
+      "diff": 1,
+      "q": "struct 与 class 的区别？空类的 sizeof 为什么是 1？空基类优化（EBO）是怎么回事？",
+      "a": "**1. `struct` vs `class`**：\n- C++ 中两者功能几乎完全等价（都可以有构造函数、成员函数、继承、虚函数、模板）。\n- 仅两处语法默认差异：**默认成员访问权限**（`struct` 为 `public`，`class` 为 `private`）和**默认继承方式**（`struct` 为 `public`，`class` 为 `private`）。\n- 工程习惯：纯数据聚合体（POD / DTO / 特征结构）用 `struct`；带封装不变式与资源管理的用 `class`。\n\n**2. 空类的 `sizeof` 为什么是 1**：\n- C++ 标准规定任何独立完整对象的大小不能为 0，否则无法区分同一对象数组中相邻元素（如 `Empty arr[2]` 的地址 `arr[0]` 与 `arr[1]` 会重合）。编译器插入 1 字节哑元确保唯一地址。\n\n**3. 空基类优化（EBO, Empty Base Optimization）**：\n- 若一个类**继承**自空基类（如无状态比较器、Allocator、Deleter），编译器允许基类子对象在派生类中占 **0 字节**（与派生类首成员复用地址，只要不导致同类型多个空基类地址重叠）。\n- STL 中的 `std::unique_ptr<T, Deleter>`、`std::vector<T, Alloc>` 内部往往借助类似 `compressed_pair` + EBO 避免无状态成员平白浪费 8 字节。\n\n> **追问 / 加分项**：C++20 引入 `[[no_unique_address]]` 属性，使空**成员变量**也能像 EBO 一样零开销嵌入，无需再写复杂的私有继承 `compressed_pair`。",
+      "tags": [
+        "struct/class",
+        "EBO",
+        "内存模型"
+      ]
+    },
+    {
+      "id": "cpp-8",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "深拷贝与浅拷贝的区别？什么是三/五/零法则（Rule of Three / Five / Zero）与 Copy-and-Swap 惯用法？",
+      "a": "**1. 深拷贝 vs 浅拷贝**：\n- **浅拷贝**只逐字节或逐成员复制指针地址，导致多个对象指向同一块堆内存；析构时会**二次释放（double free）**或一方修改破坏另一方。\n- **深拷贝**在拷贝构造/赋值时重新申请资源并复制底层数据，保证各对象所有权独立。\n\n**2. Rule of Three / Five / Zero**：\n- **三法则（C++98）**：只要手动管理资源并实现了**析构函数、拷贝构造、拷贝赋值**三者之一，通常三者都必须自定义。\n- **五法则（C++11）**：加上**移动构造、移动赋值**共五个特殊成员函数；一旦自定义了析构或拷贝操作，编译器不再隐式生成移动操作（或行为退化为拷贝）。\n- **零法则（最推荐）**：业务类本身不直接持有裸指针/句柄，全部交由 `unique_ptr`/`shared_ptr`/`vector`/`string` 等 RAII 类成员管理，让编译器自动生成全部默认特殊函数。\n\n**3. Copy-and-Swap 惯用法（实现强异常安全赋值）**：\n- `T& operator=(T rhs) { swap(*this, rhs); return *this; }`：按值传参完成拷贝（或移动）构造——若抛异常原对象完好无损；接着 `noexcept swap` 交换内部指针；函数返回时 `rhs` 自动释放旧资源，天然解决自赋值问题。\n\n> **追问 / 加分项**：若类显式声明了 `~Foo() = default;`，也会抑制隐式移动构造生成！因此“只要不需要自定义逻辑就不要写虚/空析构以外的 `= default` 析构”也是零法则要点之一。",
+      "tags": [
+        "RAII",
+        "五法则",
+        "Copy-and-Swap"
+      ]
+    },
+    {
+      "id": "cpp-9",
+      "cat": "cpp",
+      "diff": 3,
+      "q": "C++ 虚函数表（vtable）与虚表指针（vptr）的内存布局是怎样的？单继承、多继承、菱形虚继承各自如何布局？",
+      "a": "**1. 核心结构**：\n- 含有虚函数的类在编译期生成**类级别共享的虚函数表（vtable）**，存放在只读数据段（`.rodata`），内含各虚函数地址及 `type_info`（RTTI）与偏移信息（offset-to-top）。\n- 该类的**每个对象实例**在对象内存首部（通常偏移 0）插入一个 **vptr**（8 字节指针），在构造函数执行基类/成员初始化期间由编译器插桩赋值指向对应类的 vtable。\n\n**2. 不同继承下的布局规律**：\n- **单继承**：派生类与第一基类共享一个 vptr；派生类 vtable 先继承基类槽位（重写则覆盖槽位地址，未重写保留基类地址），末尾追加派生类新增虚函数。\n- **多继承（无虚拟）**：如果多个基类都有虚函数，派生类对象内会存在**多个 vptr**（每个基类子对象各带一个）；派生类新增虚函数挂在**第一个主基类的 vtable** 中；调用非首基类重写方法时可能伴随 `this` 指针调整（thunk）。\n- **菱形虚继承（`virtual public Base`）**：解决二义性与数据冗余问题。编译器只保留**一份共享的 `Base` 子对象**（通常放置在派生类对象末尾），各中间类对象中存放 **vbptr / vbtable（或复用 vtable 负偏移 slot）**记录到公共 `Base` 子对象的运行期偏移量。\n\n> **追问 / 加分项**：`vptr` 何时赋值？进入构造函数体之前（初始化列表阶段按继承层次从基类向派生类逐层覆盖 `vptr`），因此构造函数内部无法多态分派给尚未初始化的派生类。",
+      "tags": [
+        "vtable",
+        "内存布局",
+        "虚继承"
+      ]
+    },
+    {
+      "id": "cpp-10",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "为什么析构函数常常需要声明为 virtual，而构造函数不能是虚函数？在构造/析构函数中调用虚函数会发生什么？",
+      "a": "**1. 为什么多态基类必须有虚析构函数**：\n- 当通过基类指针删除派生类对象（`Base* p = new Derived(); delete p;`）时，若基类析构非虚函数，编译器做静态绑定，**只调用 `~Base()`**，派生类独有的资源与成员完全不析构，造成静默内存/句柄泄漏（UB）。\n- 若基类无意用于多态释放（如 Mixin/CRTP 基类），可把析构写成 `protected` 非虚析构，既免去 vptr 开销，又在编译期禁止 `delete basePtr`。\n\n**2. 为什么构造函数不能是虚函数**：\n- 虚函数派发依赖对象内存中的 `vptr` 找到 `vtable`，而构造函数的职责之一正是初始化对象和设置 `vptr`。对象还未诞生时根本没有可用的 `vptr`（先有鸡还是先有蛋）。\n- 从语义上看，构造必须明确知道创建哪个具体类，虚构态可改用“虚克隆/工厂方法（`clone()` / `create()`）”。\n\n**3. 构造与析构期间调用虚函数的行为（重点坑）**：\n- 在 `Base` 构造函数执行期间，派生类成员尚未构造，此时 `vptr` 指向 `Base` 的 vtable——调用虚函数只会调用 **`Base` 的版本**（不会触发动态派发到 `Derived`）。\n- 在 `Base` 析构执行期间，派生类部分已被销毁，`vptr` 也回退为 `Base` 的 vtable——同样只调 `Base` 版本；若在构造/析构中调用纯虚函数，往往直接引发链接错误或运行期 `pure virtual method called` 崩溃。\n\n> **追问 / 加分项**：类一旦成为抽象类（哪怕其它函数有默认实现），至少要保留 `virtual ~Base() = default;` 供派生类安全释放。",
+      "tags": [
+        "虚析构",
+        "面向对象",
+        "多态"
+      ]
+    },
+    {
+      "id": "cpp-11",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "静态多态（模板 / CRTP）与动态多态（虚函数）的区别与性能取舍？纯虚函数与抽象类有哪些使用注意点？",
+      "a": "**1. 静态多态 vs 动态多态**：\n- **动态多态（虚函数 `virtual`）**：运行期通过 `vptr -> vtable` 间接寻址完成派发。优势是支持**异构容器**（如 `vector<unique_ptr<Shape>>`）与运行期动态替换策略，支持二进制接口稳定（ABI/插件）；劣势是对象多 8 字节 `vptr`，间接跳转破坏分支预测且**阻碍函数内联（inline）**。\n- **静态多态（泛型模板 + CRTP 奇异递归模板模式）**：如 `template <class Derived> class Base { void api() { static_cast<Derived*>(this)->impl(); } };`。编译期确定调用目标，**零虚表开销，调用可直接内联优化**；劣势是类型间没有统一公共非模板基类，容易引起代码膨胀和头文件暴露实现。\n\n**2. 纯虚函数与抽象类细节**：\n- `virtual void f() = 0;` 使类成为抽象类（不能实例化，但指针与引用可用），派生类必须实现所有纯虚函数才可实例化。\n- **冷知识**：纯虚函数**可以有函数体实现**（需在类外定义），派生类可用 `Base::f()` 显式复用其默认骨架逻辑。而纯虚析构函数（`virtual ~Base() = 0;`）则**必须提供类外定义体**，因为派生类析构链最终必然调用基类析构。\n\n> **追问 / 加分项**：现代 C++ 另一类“无继承多态”是用 `std::variant` + `std::visit` 实现值语义封闭集合多态，兼具缓存友好性与无需堆分配的优势。",
+      "tags": [
+        "CRTP",
+        "静态多态",
+        "纯虚函数"
+      ]
+    },
+    {
+      "id": "cpp-12",
+      "cat": "cpp",
+      "diff": 1,
+      "q": "重载（Overload）、重写（Override）与隐藏（Hide）的区别？override 与 final 关键字解决了什么问题？",
+      "a": "**1. 三者精准区分**：\n- **重载（Overload）**：**同一作用域**内函数名相同，但参数列表（个数/类型/顺序）或成员函数 `const`/引用限定不同；仅返回值不同不能构成重载。属于**编译期静态绑定**。\n- **重写（Override，覆盖）**：发生在**基类与派生类之间**，基类函数为 `virtual`，且派生类函数签名（函数名、参数、`const`/引用限定）完全一致（协变返回类型除外）。实现**运行期动态多态**。\n- **隐藏（Hide / Name Hiding）**：当派生类定义了与基类**同名**的非虚函数，或虽然基类是虚函数但派生类**参数列表不同**时，派生类作用域内的该函数名会屏蔽基类所有同名重载版本（需用 `using Base::func;` 显式引入）。\n\n**2. C++11 `override` 与 `final`**：\n- **`override`**：加在派生类虚函数末尾，要求编译器严格校验“基类一定存在签名为此的虚函数”，彻底杜绝因手误漏写 `const`、参数微差或基类忘写 `virtual` 导致静默变成“隐藏”的 Bug。\n- **`final`**：修饰类时禁止再被继承；修饰虚函数时禁止派生类继续重写，同时还为编译器提供 **去虚化（Devirtualization）** 优化线索，允许直接内联调用。\n\n> **追问 / 加分项**：虚函数可否有默认参数？语法允许但极易踩坑——默认参数是**静态绑定**的（取决于指针静态类型），而函数体是动态绑定的，二者错配极易产生诡异结果。",
+      "tags": [
+        "overload",
+        "override",
+        "final"
+      ]
+    },
+    {
+      "id": "cpp-13",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "什么是对象切片（Object Slicing）？在容器或函数传参中如何避免？",
+      "a": "**1. 对象切片的定义**：\n- 当一个派生类对象被**按值**赋值给基类对象，或按值传递给接收基类的函数参数（`void f(Base b)`）时，编译器只会调用 `Base` 的拷贝/移动构造函数，派生类新增的成员变量被**截断丢失**，同时 `b` 的 `vptr` 会变为 `Base` 的 `vtable`（多态丧失）。\n- 常见重灾区：`std::vector<Base> vec; vec.push_back(Derived{});` 同样发生完整切片。\n\n**2. 规避方法**：\n- **按引用或指针传递多态对象**：函数签名使用 `const Base&` 或 `Base&`；容器存储智能指针 `std::vector<std::unique_ptr<Base>>`。\n- **基类防御设计（Clang-Tidy 推荐）**：把基类的拷贝/移动构造与赋值设成 `protected` 或 `= delete`，避免直接按值拷贝多态基类；若需要多态深拷贝，提供返回 `std::unique_ptr<Base>` 的虚 `clone()` 方法。\n- **替代多态方案**：对值语义固定集合改用 `std::variant<D1, D2>`；对需要值语义的多态可运用 Sean Parent 提出的类型擦除（Type Erasure）模式。\n\n> **追问 / 加分项**：`catch (Base e)` 按值捕获派生类异常同样触发对象切片丢失异常细节！异常捕获必须写 `catch (const Base& e)`。",
+      "tags": [
+        "对象切片",
+        "值语义",
+        "多态陷阱"
+      ]
+    },
+    {
+      "id": "cpp-14",
+      "cat": "cpp",
+      "diff": 3,
+      "q": "左值、右值、将亡值（xvalue）与右值引用是什么？移动语义与 std::move 的本质是什么？",
+      "a": "**1. C++11 值类别（Value Categories）体系**：\n- **左值（lvalue）**：有身份（具名/可取地址 `&`）且资源不可随意被窃取。\n- **纯右值（prvalue）**：字面量（除字符串字面量外）、临时计算结果（如 `a + b`、非引用返回值），无持久身份、可被移动（C++17 下部分场景可保证拷贝消除直到物化时才构造）。\n- **将亡值（xvalue）**：有身份但资源即将被销毁/转移的对象（如 `std::move(x)` 的返回值、返回 `T&&` 的函数调用），既可被取地址概念辨识又可被移动。\n\n**2. 移动语义的本质**：\n- 对于持有堆内存/句柄的类，拷贝必须重新 `new` + `memcpy`；移动构造（`T(T&& rhs) noexcept`）只需**窃取指针和长度成员**，再把源对象指针置为 `nullptr` 使源对象保持“有效但未定义值（可安全析构）”状态，将 O(N) 变为 O(1)。\n\n**3. `std::move` 的真正工作**：\n- `std::move` 在运行期**不生成任何移动指令**，本质只是 `static_cast<remove_reference_t<T>&&>(t)` —— 把一个左值强制转成右值引用（xvalue），告诉重载决议优先匹配**移动构造 / 移动赋值**函数。\n- 若类没有移动构造（或目标是 `const` 对象），`std::move` 会静默退化调用拷贝构造函数。\n\n> **追问 / 加分项**：一个具名的右值引用变量（`int&& r = 10;`）本身**是个左值**（因为有名字可取地址）！若继续往下转发必须再用 `std::move(r)` 或 `std::forward`。",
+      "tags": [
+        "右值引用",
+        "移动语义",
+        "std::move"
+      ]
+    },
+    {
+      "id": "cpp-15",
+      "cat": "cpp",
+      "diff": 3,
+      "q": "什么是万能引用（转发引用 T&&）、引用折叠规则与完美转发（std::forward）？",
+      "a": "**1. 区分右值引用与万能引用（Forwarding Reference）**：\n- 只有涉及**类型推导**的 `T&&`（如函数模板 `template<typename T> void f(T&& x)` 或 `auto&& x`）才是万能引用：实参传左值时推导 `T = U&`，传右值时推导 `T = U`。\n- 类模板成员函数 `void push_back(T&& x)` 若 `T` 已在类实例化时确定，则 `push_back` 的参数是普通右值引用而非万能引用；`const T&&` 也不是万能引用。\n\n**2. 引用折叠（Reference Collapsing）四条规则**：\n- 编译器在模板实例化或 `typedef` 生成“引用的引用”时按“**有左则左，全右才右**”折叠：\n  - `T& &` → `T&`、`T& &&` → `T&`、`T&& &` → `T&`\n  - `T&& &&` → `T&&`\n\n**3. 完美转发 `std::forward<T>(arg)`**：\n- 形参 `arg` 在函数体内已有名字（本身成为左值），直接往下传会丢失实参原有的左/右值属性。\n- `std::forward<T>(arg)` 内部本质等价于 `static_cast<T&&>(arg)`：配合引用折叠，若 `T` 为 `U&` 则还原成左值 `U&`，若 `T` 为 `U` 则转成右值 `U&&`，让被调工厂/构造函数精确保留原值类别与 cv 属性。\n\n> **追问 / 加分项**：万能引用构造函数的陷阱——类里写 `template<typename T> Person(T&& n)` 会比普通拷贝构造 `Person(const Person&)` **更贪婪**地匹配非常量左值 `Person p2(p1)`（因前者无需加 `const` 转换）！可用 C++20 `requires` 约束或 `std::enable_if_t<!std::is_same_v<std::decay_t<T>, Person>>` 排除自身类型。",
+      "tags": [
+        "完美转发",
+        "引用折叠",
+        "万能引用"
+      ]
+    },
+    {
+      "id": "cpp-16",
+      "cat": "cpp",
+      "diff": 3,
+      "q": "unique_ptr、shared_ptr、weak_ptr 的底层实现原理？shared_ptr 的控制块、线程安全性边界及 make_shared 的优缺点是什么？",
+      "a": "**1. 三大智能指针职责与开销**：\n- **`unique_ptr`**：独占所有权，禁止拷贝只允许移动。无状态删除器结合 EBO 实现**零额外开销**（大小等于一个裸指针）。\n- **`shared_ptr`**：共享所有权（大小通常为 **2 个指针**）：一个指向目标对象，一个指向堆上**控制块（Control Block）**，内含强引用计数 `use_count`、弱引用计数 `weak_count`、自定义删除器与分配器（均做类型擦除）。\n- **`weak_ptr`**：不增加强引用计数、只递增 `weak_count`，用于观察对象并**打破循环引用**（如双向链表/观察者列表）；访问前必须通过 `lock()` 原子检查并提升为 `shared_ptr`（防止并发析构竞态），不可用 `expired()` + 直接取值代替 `lock()`。\n\n**2. `shared_ptr` 的线程安全边界（必考）**：\n- **控制块引用计数的增减是原子的**（内部原子操作），因此不同线程读写**各自拷贝的 `shared_ptr` 实例**是安全的。\n- 但**多个线程并发写入/重置同一个 `shared_ptr` 变量**（改变其内部指针指向），以及多线程对**所指目标对象**（`*ptr`）的**并发读写**，均非线程安全！需要外部加锁（或用 C++20 `std::atomic<std::shared_ptr<T>>`）。\n\n**3. `std::make_shared` 的利与弊**：\n- **优点**：将“对象内存 + 控制块内存”合并为**一次堆分配**，提升性能与局部性；同时避免 `foo(shared_ptr(new A), bar())` 在 C++17 前因求值顺序交错触发异常内存泄漏。\n- **缺点**：无法传入自定义删除器；由于对象与控制块同居一块堆内存，只要还有存活的 `weak_ptr`，**强计数归 0 后虽然析构了对象，整块内存要等所有 `weak_ptr` 也销毁才归还**，大对象长期被 `weak_ptr` 牵制时会造成“伪内存泄漏”。\n\n> **追问 / 加分项**：若类需在成员函数内部安全地生成指向自己的 `shared_ptr`，必须继承 `std::enable_shared_from_this<T>` 并调用 `shared_from_this()`，切忌直接用 `shared_ptr<T>(this)`（会产生两套独立控制块导致 double free）。",
+      "tags": [
+        "智能指针",
+        "控制块",
+        "线程安全"
+      ]
+    },
+    {
+      "id": "cpp-17",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "Lambda 表达式的底层实现（闭包类）是什么？值捕获/引用捕获/广义捕获有哪些悬空引用陷阱？",
+      "a": "**1. 底层实现原理**：\n- 编译器为每个 Lambda 表达式生成一个匿名的**唯一闭包类（Closure Type）**：捕获列表的变量成为该类的**成员变量**，参数与函数体成为重载的 **`operator()`**。\n- `operator()` 默认是 **`const` 成员函数**（所以值捕获的变量在 Lambda 内部默认不可改，加上 `mutable` 后去掉 `const` 限定才允许改，改的仍是闭包自身副本）。\n- 无捕获的 Lambda 可隐式转换为普通函数指针，带捕获的则不行。\n\n**2. 捕获方式与经典陷阱**：\n- **`[=]` 隐式值捕获成员变量的假象（重灾区）**：在成员函数里写 `[=]` 实际上捕获的是 **`this` 指针**而非拷贝成员变量！若异步回调时当前对象已销毁，`this` 悬空即崩溃；应显式捕获 `[self = shared_from_this()]` 或使用 C++17 的 `[*this]` 来**值拷贝当前对象**。\n- **`[&]` / `[&x]` 异步悬空**：只要 Lambda 生命周期超出当前作用域（如丢进线程池、返回给外层、`std::function` 保存），引用捕获局部栈变量必然悬空。\n- **C++14 广义初始化捕获**：`[p = std::move(uptr)]` 支持直接**移动捕获**只移类型，弥补了 C++11 Lambda 无法接管 `unique_ptr` 的遗憾。\n\n> **追问 / 加分项**：能用 `auto` 存 Lambda 就不用 `std::function`，因为 `std::function` 涉及类型擦除、可能的堆分配与虚函数/间接调用开销，会阻碍内联。",
+      "tags": [
+        "Lambda",
+        "闭包",
+        "悬空引用"
+      ]
+    },
+    {
+      "id": "cpp-18",
+      "cat": "cpp",
+      "diff": 3,
+      "q": "函数模板与类模板的特化、SFINAE（enable_if）以及 C++20 Concepts 如何改善模板约束与报错？",
+      "a": "**1. 全特化 vs 偏特化**：\n- **类模板**既支持全特化也支持**偏特化（部分特化）**（如 `template<typename T> class Box<T*>`）；\n- **函数模板**语法上只支持**全特化**、不支持偏特化（函数应优先使用**函数重载**或内部代理给类模板/ `if constexpr` 实现部分特化，因为函数重载决议先找非模板或基础模板再考虑特化，混用极易出现反直觉匹配）。\n\n**2. SFINAE（Substitution Failure Is Not An Error，替换失败不是错误）**：\n- 编译器在模板实参替换阶段如果形成无效类型（如对 `int` 取 `T::iterator`），不会立刻报错，而是静默把该重载从候选集剔除。\n- C++11/14 常用 `std::enable_if_t<cond, T>`、`decltype` 尾置返回或 `void_t` 萃取实现类型特征分派，但写法晦涩、报错动辄数百行模板栈。\n\n**3. C++20 Concepts（概念约束）与 `requires` 子句**：\n- 允许显式定义语义化的类型约束（如 `template<std::integral T>` 或 `concept Hashable = requires(T a) { { std::hash<T>{}(a) } -> std::convertible_to<size_t>; };`）。\n- **三大收益**：出错直接在调用点清晰指出哪条约束不满足；支持**偏序包容（Subsumption）**自动挑选约束更严格的那个重载，不再需要相互排斥的 `enable_if`；可读性堪比强类型接口。\n\n> **追问 / 加分项**：模板为何通常必须把定义也写在头文件 `.h/.hpp` 中？因为模板按需在每个使用具体类型的编译单元延迟实例化，分到 `.cpp` 编译除非显式实例化（`template class Foo<int>;`），否则链接期会找不到对应实例化符号。",
+      "tags": [
+        "模板",
+        "SFINAE",
+        "Concepts"
+      ]
+    },
+    {
+      "id": "cpp-19",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "C++17 std::optional、std::variant、std::any、std::string_view 各自解决了什么痛点？使用 string_view 有什么生命周期风险？",
+      "a": "- **`std::optional<T>`**：栈上表达“可能有值也可能无值”，优雅替代“返回魔法值（`-1`/`nullptr`）”或 `bool + 出参指针` 的老派 API；大小约 `sizeof(T) + 1B(+对齐)`，无堆分配。\n- **`std::variant<Ts...>`**：类型安全的联合体（Tagged Union），栈上分配大小按最大备选类型 + 索引标签；配合 `std::visit` 实现静态穷举访问，比基类继承虚函数体系更轻量、缓存更友好。\n- **`std::any`**：可存储任意可拷贝构造类型的“值语义安全 `void*`”，小对象有 SBO（Small Buffer Optimization），大对象触发堆分配，取用通过 `any_cast` 进行类型校验。\n- **`std::string_view`**：只读字符串视图（内部仅 `{ const char* data, size_t size }` 16 字节），零拷贝接纳 `const char*`、字面量和 `std::string`，极大减少临时 `std::string` 构造开销。\n\n**`std::string_view` 的两大高频坑**：\n1. **非拥有语义，极易悬空**：`string_view sv = getTempString();` 中 `getTempString()` 返回的临时 `std::string` 在分号处销毁，`sv` 成为悬空指针；同样**禁止作为函数返回值返回指向局部 `string` 的 `string_view`**（可安全做函数入参，谨慎做返回值）。\n2. **不保证以 `'\\0'` 结尾**：取子串 `sv.substr(...)` 后直接拿 `sv.data()` 传给期望 C 风格空字符结尾的 `printf`/`open` 会越界读取！需要 C 字符串时应显式转为 `std::string`。\n\n> **追问 / 加分项**：若函数最终必须把字符串存为内部成员变量（需要占有权），参数直接按值传 `std::string s` 配合内部 `std::move(s)` 往往比传 `string_view` 再拷贝一次多一次移动消除的机会。",
+      "tags": [
+        "C++17",
+        "string_view",
+        "代数数据类型"
+      ]
+    },
+    {
+      "id": "cpp-20",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "编译期计算（constexpr / if constexpr）、变参模板与折叠表达式（Fold Expressions）如何替代传统宏和递归模板？",
+      "a": "**1. 从宏与模板递归到现代编译期表达**：\n- 宏（`#define`）没有作用域、不做类型检查且易因重复求值产生副作用；现代 C++ 用 `constexpr` 函数和模板替代计算类宏，保留完全的类型安全与调试体验。\n- C++14/17/20 放开了 `constexpr` 函数体限制（允许循环、局部变量，甚至 C++20 起可在编译期有限使用 `new`/`std::vector`/`std::string` 只要不逃逸到运行期）。\n\n**2. `if constexpr`（C++17 编译期分支丢弃）**：\n- 运行期 `if` 要求两个分支的代码对当前模板类型 `T` **都必须合法可编译**（比如对 `int` 调用 `.size()` 会报错）；\n- `if constexpr (cond)` 只实例化条件为真的那条分支，假分支被直接丢弃（Discard），使代码比传统的 Tag Dispatch / SFINAE 重载简洁数倍。\n\n**3. 变参模板 + C++17 折叠表达式**：\n- C++11 处理参数包 `Args...` 必须写“递归展开 + 零参终止重载”，易产生大量中间模板实例；\n- C++17 折叠表达式一行写定四类展开：如一元右折 `(args + ...)`、二元左折 `(std::cout << ... << args)`，写法简洁且编译期更快、生成符号更少。\n\n> **追问 / 加分项**：`constexpr` 函数什么时候**一定**在编译期运行？只有结果用于**常量上下文**（数组维度、模板非类型实参、赋给 `constexpr`/`consteval` 变量、`static_assert`）时才强制编译期求值；赋给普通局部变量编译器只视成本“选择性”优化。",
+      "tags": [
+        "constexpr",
+        "if constexpr",
+        "折叠表达式"
+      ]
+    },
+    {
+      "id": "cpp-21",
+      "cat": "cpp",
+      "diff": 3,
+      "q": "C++20 无栈协程（Stackless Coroutine：co_await/co_yield/co_return）的底层机制与有栈协程有何区别？",
+      "a": "**1. 什么是无栈协程及其底层拆解**：\n- 函数体内出现 `co_await`、`co_yield` 或 `co_return` 即成为协程。编译器把函数重写为**状态机 + 堆上分配的协程帧（Coroutine Frame）**，记录挂起点的恢复地址序号、参数及跨越挂起点的局部变量。\n- 与 Go/libco 等**有栈协程**相比，无栈协程**不独立分配固定大小的调用栈（通常几 KB–几 MB）**，内存按实际局部变量精确计算，并且借助 **HALO（Heap Allocation Elision Optimization）** 在生命周期确定时甚至能完全省掉堆分配；切换只需几条指令保存状态与跳转，性能极高（可达十纳秒级）。\n- **代价比对**：有栈协程对业务代码几乎无侵入（任意嵌套子函数都可直接挂起）；无栈协程具有“函数染色（Function Coloring）”特性，必须沿调用链显式传播 `co_await`。\n\n**2. 核心三大组件**：\n- **`promise_type`**：藏在协程帧内控制协程生命周期（`initial_suspend`、`final_suspend`、`return_value`、`unhandled_exception`），负责构造返回给调用方的句柄/Task 对象。\n- **`std::coroutine_handle<>`**：轻量级非拥有型句柄，外部调度器通过 `handle.resume()` 恢复执行，`handle.destroy()` 销毁协程帧。\n- **Awaitable / Awaiter 对象**：实现 `await_ready()`、`await_suspend()`、`await_resume()` 三个回调，决定“要不要挂起、挂起后控制权交给谁（支持对称转移 Symmetric Transfer 防爆栈）、恢复后返回什么值”。\n\n> **追问 / 加分项**：C++20 仅提供了协程语言核心机制，尚未带标准异步 I/O 调度库（`std::generator` 到 C++23 才入标准），工程常配合 Asio/io_uring 封装成异步框架。",
+      "tags": [
+        "C++20协程",
+        "状态机",
+        "无栈协程"
+      ]
+    },
+    {
+      "id": "cpp-22",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "std::vector 的扩容策略（1.5x vs 2x）、reserve vs resize、emplace_back vs push_back 及迭代器失效条件是什么？",
+      "a": "**1. 扩容因子为什么通常是 1.5x（MSVC）或 2x（GCC libstdc++ / Clang libc++）**：\n- 等差增量（如每次 +10）会导致 N 次 `push_back` 总复制次数为 O(N²)，均摊 O(N)；只有**等比扩容**才能保证均摊 O(1)。\n- **2x vs 1.5x 数学权衡**：设原容量依次按 r 倍增长，r=2 时先前所有旧块容量之和（1+2+4+…+2^(k-1) < 2^k）始终小于下一次所需容量，**旧堆块无法在未来扩容中复用**；而 r ≤ (1+√5)/2 ≈ 1.618（如 1.5x）经过几次释放合并后旧内存池可复用，内存利用率更友好，只是复制略多几次。\n\n**2. `reserve` vs `resize`**：\n- `reserve(n)` 只改变 **`capacity`**（预留未构造的原始容量），`size()` 不变；适合已知上限前提前消除扩容搬迁与失效。\n- `resize(n)` 同时改变 **`size`**（会默认构造新增元素或析构尾部多余元素），直接可按 `[0..n-1]` 下标读写。\n- 清空元素时 `clear()` 会析构元素但**不归还 `capacity`**；彻底释放内存需用 `shrink_to_fit()`（或经典 swap 技巧 `vector<T>().swap(v)`）。\n\n**3. `emplace_back` vs `push_back`**：\n- 若直接传入构造参数列表（如 `v.emplace_back(a, b)`），`emplace_back` 通过 placement new 在尾端直接原地构造，省去“临时对象构造 + 移动/拷贝 + 析构”；但若传入已有对象或隐式转换后对象，二者几乎等价。注意 `emplace_back` 可调用 `explicit` 构造函数，误传单个整数给 `vector<vector<int>>` 可能意外构造成大小。\n\n**4. 迭代器失效规则**：\n- 一旦触发**重新分配内存**，所有迭代器、指针和引用**全部失效**；未扩容时插入/删除仅使其**后方**元素（及被删位置）的迭代器失效。**移动/扩容时要求元素移动构造为 `noexcept`**，否则为保强异常安全会退化为更慢的拷贝！\n\n> **追问 / 加分项**：循环遍历删除满足条件的元素，旧式用 `it = v.erase(it)` 接住下一位置避免失效，C++20 起可直接用统一擦除算法 `std::erase_if(v, pred)`（Erase-Remove 惯用法自动化）。",
+      "tags": [
+        "vector",
+        "扩容策略",
+        "迭代器失效"
+      ]
+    },
+    {
+      "id": "cpp-23",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "std::map（红黑树）与 std::unordered_map（哈希桶）的底层结构、复杂度与选型权衡？自定义类型作 key 需要什么？",
+      "a": "**1. 底层与复杂度对比**：\n- **`std::map` / `std::set`**：底层为**红黑树**（自平衡二叉搜索树）。查找/插入/删除稳定最坏 O(log N)，按键严格有序（支持范围查询 `lower_bound`/`upper_bound` 和前驱后继），节点指针与引用在其它元素增删后**永不失效**。缺点是每次节点单独堆分配、指针跳转导致缓存命中率低。\n- **`std::unordered_map` / `std::unordered_set`**：底层通常为**开链法哈希表（桶数组 + 单链表）**（标准要求元素指针/引用稳定性与本地迭代器，基本排除纯开放寻址，GCC 用单链表穿起节点并维护 `max_load_factor` 默认 1.0）。平均 O(1)，最坏退化 O(N)；rehash 时全表迭代器失效（节点指针与引用在标准保证下仍不失效！）。\n\n**2. 工程选型建议**：\n- 需要有序遍历、前缀/区间查或严格避免最坏延迟尖峰（如实时系统）→ `std::map`（或 C++23 `std::flat_map` 提高局部性）。\n- 高频点查、无序要求 → 哈希表；若追求极限吞吐且允许迭代器不稳定，生产常见 Abseil `flat_hash_map` / `ankerl::unordered_dense`（开放寻址连续数组）通常比 `std::unordered_map` 快 3–5 倍。\n\n**3. 自定义类型作 Key 的必要条件**：\n- 作 `std::map` 的 Key：提供严格弱序比较（重载 `operator<` 或自定义仿函数比较器，且必须满足非自反、反对称、传递性，否则插不进去或树结构损坏）。\n- 作 `std::unordered_map` 的 Key：同时提供**相等比较 `operator==`** 与**哈希函数（特化 `std::hash<Key>` 或传入自定义 Hash 仿函数）**。\n\n> **追问 / 加分项**：为什么 `operator<` 不小心写成 `a.x <= b.x` 是致命错误？因为违反严格弱序的不可比性定义，红黑树比较时会认定 `(a < a)` 为真导致 UB 甚至死循环。",
+      "tags": [
+        "map",
+        "unordered_map",
+        "红黑树与哈希"
+      ]
+    },
+    {
+      "id": "cpp-24",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "std::deque 的分段连续数组结构是怎样的？为什么 std::stack/std::queue 默认以 deque 为底层容器？",
+      "a": "**1. `std::deque` 的内部双层结构**：\n- `deque` 既不像 `vector` 完全整段连续，也不像 `list` 逐节点散落，而是由一个**中控指针数组（map 数组）**管理若干**固定大小的连续缓冲区（buffer / chunk，通常几百到 4KB）**。\n- 迭代器由四个指针组成：`cur`（当前元素）、`first`（当前块首）、`last`（当前块尾）、`node`（指向中控数组中当前块槽位），实现“假装连续”的随机访问 `operator[]`。\n- 当首尾超出当前块时只需新分配一个定长小块并挂到中控数组前后端，中控数组满时只需复制几个指针而不必迁移所有真实元素。\n\n**2. 为什么 `stack` / `queue` 默认用 `deque` 而非 `vector` 或 `list`**：\n- **相对 `vector`**：`queue` 需要频繁 `pop_front`，`vector` 头部删除是 O(N) 不可接受；即使 `stack` 不涉及头部操作，在大容量扩容时 `deque` **无需拷贝搬迁大块历史元素**、峰值内存占用也远低于 `vector` 的 2 倍预分配。\n- **相对 `list`**：`list` 每个节点单独 `new` 一次，多出 16 字节前后指针，内存碎片多且 CPU Cache 局部性极差；`deque` 块内元素连续，缓存友好度与批量分配效率远胜 `list`。\n\n> **追问 / 加分项**：`deque` 唯一的明显短板是中段插入删除 O(N)，以及随机访问比 `vector` 多一次中控解引用与取模跳转，因此需要和外部 C API 连续内存指针交互时仍必须用 `vector`（`vector::data()`）。",
+      "tags": [
+        "deque",
+        "容器适配器",
+        "STL底层"
+      ]
+    },
+    {
+      "id": "cpp-25",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "std::list vs std::vector：为什么很多场景下即使涉及中间插入删除，vector 实际性能仍远快于 list？",
+      "a": "**核心原因：现代 CPU 的性能瓶颈往往在“内存延迟与缓存未命中（Cache Miss）”，而不是纯粹的计算次数。**\n\n- **Cache 局部性（Spatial Locality）差距**：\n  - `std::vector` 所有元素连续紧密存放。遍历时硬件预取器（Prefetcher）能轻松命中 L1/L2 Cache，单个 64B 缓存行就能打包装下十几个整型元素。\n  - `std::list` 是双向链表，每个节点都要单独走一次堆分配（通常伴随着分配器头部元数据和前后两个 8B 指针 = 额外 16–32B 开销），节点散落在虚拟内存各处，几乎每一次 `node->next` 都触发 **Pointer Chasing 指针追踪导致的 Cache Miss（一次主存访存耗时 ≈ 100ns，够 CPU 做上百次简单整数移动了）**。\n- **渐近复杂度 vs 常数开销**：当先“查找到目标位置”再“插入/删除”时，`list` 必须 O(N) 线性遍历找到节点（全程 Cache Miss），这一步的耗时就已经远远超过了 `vector` 用 `memmove`/SIMD 向量化整体平移连续内存的成本（据 Bjarne Stroustrup 经典测试，数万规模以下随机位置增删，`vector` 往往快一个数量级）。\n\n**何时才真正选 `std::list`**：\n- 元素本身极重、不可/极高成本移动；或需要**迭代器与指针绝对不失效**（`splice` O(1) 节点跨链表无缝转移是 `list` 杀手级特性，常用于实现 LRU 缓存）。\n\n> **追问 / 加分项**：如果只需要单向遍历与极低开销链表，优先 `std::forward_list`（省一半指针开销，甚至没有维护 `size`）。",
+      "tags": [
+        "Cache局部性",
+        "vector vs list",
+        "性能优化"
+      ]
+    },
+    {
+      "id": "cpp-26",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "std::string 的短字符串优化（SSO）与写时复制（COW）为什么在 C++11 后被废弃？Allocator 内存池的核心作用是什么？",
+      "a": "**1. 为什么 COW（Copy-on-Write）在 C++11 被标准禁止**：\n- **多线程灾难**：COW 虽然让字符串拷贝 O(1)，但引用计数的原子增减开销在无竞争单线程也白白吃掉大量 CPU；且一旦有共享存在，连**取下标非 const `s[0]` 或取迭代器**这种表面看起来只读的操作都必须悲观触发深拷贝分裂（因为用户可能随后通过引用修改，同时要求迭代器不失效违反无抛出/复杂度保证），极易引起隐藏竞态。\n- **SSO（Small String Optimization）取而代之**：现代三大标准库全部使用 SSO，利用 `std::string` 自身的堆指针/容量字段共用的 `union` 空间直接内联存储短字符串（如 `libstdc++` 在 64 位下内联 ≤15 字节，`libc++` 可内联 ≤22 字节），**零堆分配、多线程完全只读共享无原子计数争用**。\n\n**2. `Allocator` 与 C++17 `std::pmr` 多态分配器**：\n- STL 默认 `std::allocator` 每次调用全局堆分配，在高频小对象容器（如 `map`/`list`）下容易触发锁竞争与碎片化。\n- C++17 引入 `std::pmr`（Polymorphic Memory Resources，如 `monotonic_buffer_resource` 栈上预分配 + `unsynchronized_pool_resource`）：让不同内存池策略的容器保持**相同的类型**（`std::pmr::vector<int>`），无需把 `Allocator` 写进模板参数造成类型污染，请求处理完直接整池重置 O(1) 释放。\n\n> **追问 / 加分项**：`libstdc++` 使用内联指向自己的指针实现 SSO（因此 `std::string` 不能简单用 `memcpy` 按字节迁移）；`libc++` 用联合体标志位把短串与长串区分开。",
+      "tags": [
+        "SSO",
+        "COW",
+        "Allocator"
+      ]
+    },
+    {
+      "id": "cpp-27",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "STL 五类迭代器的区别？常见容器的迭代器失效矩阵应该怎样系统记忆？",
+      "a": "**1. 五类（C++20 六类）迭代器能力递进关系**：\n- **Input / Output Iterator**：单遍只读 / 只写，只支持 `++`（如 `istream_iterator`、`back_inserter`）。\n- **Forward Iterator**：支持多遍遍历（如 `forward_list`、`unordered_*`）。\n- **Bidirectional Iterator**：增加 `--` 双向移动（如 `list`、`map`、`set`）。\n- **Random Access Iterator**：支持 `+n`、`-n`、`[n]` 与 `<` 比较（如 `vector`、`deque`、`array`），`std::sort` 强制要求至少到此级别。\n- **C++20 新增 Contiguous Iterator**：物理内存绝对连续，保证 `&*(it + n) == &*it + n`（`vector`、`string`、`span`）。\n\n**2. 迭代器失效系统记忆法（看底层是否连续与重分配）**：\n- **`vector` / `string`**：触发扩容（`capacity` 改变）→ **全部**迭代器/指针/引用失效；未扩容时插入/删除 → **操作点及之后**全部失效。\n- **`deque`**：首尾 `push`/`pop` → **所有迭代器失效**，但已有元素的指针/引用居然**不失效**！中间插删 → 全失效。\n- **关联容器（`map`/`set`/`list`）**：节点独立分配，插入不失效；删除仅使**指向被删节点的迭代器**失效，其它元素迭代器与引用安全稳定。\n- **哈希容器**（`unordered_map` / `unordered_set`）：触发 `rehash` 时**全部迭代器失效**（指针/引用不失效）；未触发 `rehash` 时规则同链表。\n\n> **追问 / 加分项**：为什么 `std::list` 不能用 `std::sort`？因为 `std::sort` 内部快速/内省排序需要 RandomAccessIterator，而 `list` 只提供 BidirectionalIterator，所以只能调用成员函数 `lst.sort()`（内部采用归并排序）。",
+      "tags": [
+        "迭代器",
+        "迭代器失效",
+        "STL"
+      ]
+    },
+    {
+      "id": "cpp-28",
+      "cat": "cpp",
+      "diff": 3,
+      "q": "C++11 内存模型与 std::atomic 的六种内存序分别保证什么？如何用 Acquire-Release 实现无锁跨线程同步？",
+      "a": "**1. 为什么要内存序**：为了抵消“编译器指令重排”与“CPU 乱序执行 / Store Buffer / Invalidate Queue”导致的多核可见性违背常规直觉问题。\n\n**2. 原子操作内存序三大梯队（6 个枚举）**：\n- **`memory_order_relaxed`**：仅保证单个原子变量自身读取/修改的**原子性**及单变量修改顺序，不提供任何跨变量排序与 happens-before 约束；适合纯计数（如指标统计 `cnt.fetch_add(1, relaxed)`）。\n- **`acquire` / `release` / `acq_rel`（重点实战）**：构建跨线程 **Synchronizes-With（同步）** 关系：\n  - **Release 写**（常用于生产者写入完载荷后立 flag）：禁止其**前面**的任何普通或原子读写重排到该写操作之后；\n  - **Acquire 读**（常用于消费者读到 flag 为真后读载荷）：禁止其**后面**的任何读写重排到该读操作之前；\n  - 当 Acquire 读到了同一个原子变量 Release 写出的值时，释放前的一切内存副作用对获取后全部可见（在 ARM/POWER 弱内存序架构下显著快于 `seq_cst`）。\n- **`memory_order_consume`**：原本用于数据依赖排序，现实编译器基本都按 `acquire` 实现，**C++17 已不建议使用**。\n- **`memory_order_seq_cst`（默认最强序）**：除了 Acquire-Release 保证，还保证所有线程看到全系统所有 `seq_cst` 原子操作遵循**单一全局一致全序**（在 x86 上写入常伴随 `MFENCE` 或带隐式全屏障的 `XCHG`，ARM 下需要 `DMB` 或 `LDAR/STLR`）。\n\n> **追问 / 加分项**：用 CAS（`compare_exchange_weak` vs `_strong`）写无锁循环有什么区别？在 LL/SC 架构（如 ARM）下 `weak` 允许伪失败（Spurious Failure）但放在 `while` 循环里减少额外嵌套检查反而更快；单次条件判定必须用 `_strong`。",
+      "tags": [
+        "memory_order",
+        "std::atomic",
+        "无锁并发"
+      ]
+    },
+    {
+      "id": "cpp-29",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "std::mutex、lock_guard、unique_lock、shared_mutex 与 condition_variable 的用法及“虚假唤醒”如何防范？",
+      "a": "**1. 互斥锁与 RAII 守卫选型**：\n- **`std::lock_guard`**：最轻量级作用域 RAII 锁，构造加锁、析构解锁，不支持中途手动解锁与移动。\n- **`std::scoped_lock`（C++17 首选替代多锁场景）**：利用死锁避免算法同时安全锁定多个互斥量（等价旧式 `std::lock(m1, m2)` + `adopt_lock`），彻底防 AB-BA 死锁。\n- **`std::unique_lock`**：支持延迟加锁（`defer_lock`）、手动提前 `unlock()`（缩小临界区）、`try_lock_for` 以及**配合 `condition_variable` 等待**（因为等待期间需要解锁释放再重新加锁）。\n- **`std::shared_mutex`（C++17 读写锁）**：`shared_lock` 共享读（多读并发），`unique_lock` 独占写（防写饥饿取决于实现）。\n\n**2. 条件变量 `condition_variable` 与虚假唤醒（Spurious Wakeup）**：\n- 操作系统或调度器原因可能导致等待线程在**没有任何线程调用 `notify_one`/`notify_all` 的情况下意外从 `wait()` 醒来**，或醒来前条件已被另一抢先线程消耗。\n- **绝对铁律**：`cv.wait` 必须永远带谓词 lambda（或放在 `while (!ready)` 循环中）：`cv.wait(lk, [&]{ return !q.empty() || stop; });`，绝对不能写成 `if (!ready) cv.wait(lk);`！\n\n> **追问 / 加分项**：通知前要不要解锁？推荐在修改共享状态并在加锁保护下更新条件后，**先解锁 `lk.unlock()` 再 `cv.notify_one()`**，避免被唤醒线程刚醒就立刻撞上还握在原线程手里的锁而二次上下文切换（\"Hurry up and wait\" 退化）。",
+      "tags": [
+        "并发",
+        "condition_variable",
+        "虚假唤醒"
+      ]
+    },
+    {
+      "id": "cpp-30",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "C++ 从源码到可执行文件的四个阶段发生了什么？什么是 Name Mangling、extern \"C\" 与静态库/动态库的区别？",
+      "a": "**1. 编译链接四阶段**：\n- **预处理（Preprocessing → `.i`）**：展开 `#include` 头文件内容、替换 `#define` 宏、处理 `#if`/`#ifdef` 条件编译、删去注释。\n- **编译（Compilation → `.s`）**：词法/语法/语义分析、模板实例化、中端 IR 优化（如内联、死代码消除、向量化），最终生成**汇编代码**。\n- **汇编（Assembly → `.o`/`.obj`）**：把汇编指令翻译为机器码，生成包含 `.text`/`.data` 与未决议符号表的可重定位目标文件。\n- **链接（Linking → 可执行文件 / `.so`）**：符号解析与合并（检查跨单元声明是否都有唯一定义，否则报 `undefined reference` 或 `multiple definition`）、重定位内存偏移地址。\n\n**2. Name Mangling 与 `extern \"C\"`**：\n- C++ 支持函数重载、命名空间和类作用域，因此编译器会把函数名编码揉合参数类型生成唯一修饰符（如 `_Z3addii`），这就叫 Name Mangling；而 C 语言不编码直接用原名 `_add`。用 `extern \"C\"` 即可关闭名称修饰实现互调。\n\n**3. 静态库（`.a`/`.lib`）vs 动态库（`.so`/`.dll`）**：\n- **静态库**：目标文件归档打包，链接时**整段代码复制到最终二进制**；运行时无外部依赖、易触发跨模块全局内联优化，但体积大且库更新需全量重编程序。\n- **动态库**：编译需加 `-fPIC`（位置无关码），链接仅记录符号与依赖表，运行时按需加载并通过 **GOT/PLT 表**延迟重定位，多个进程可物理内存共享同一份 `.so` 代码段，支持热替换但需注意 ABI 兼容性（如 Pimpl 模式隔离内部成员变更）。\n\n> **追问 / 加分项**：工程编译慢怎么办？使用前置声明减少头文件传播、Pimpl 模式解耦、预编译头（PCH）、C++20 Modules 或分布式编译（sccache/distcc）与 `-gsplit-dwarf` + `lld`/`mold` 现代高速链接器。",
+      "tags": [
+        "编译链接",
+        "Name Mangling",
+        "静态库动态库"
+      ]
+    },
+    {
+      "id": "cpp-31",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "返回值优化（RVO / NRVO）与 C++17 强制拷贝消除的原理？什么时候手动写 return std::move(x) 反而会劣化性能？",
+      "a": "**1. RVO / NRVO 的底层实现**：\n- 在 ABI 层面，调用方会在自己的栈帧提前腾出返回大对象 `Ret` 所需的空间，并将其地址作为一个**隐藏指针参数**传给被调函数；被调函数**直接在这个目标地址上原地构造对象**，从而实现“零拷贝、零移动”。\n- **RVO**（返回无名临时对象 `return Foo(args);`）：在 **C++17 起成为强制标准要求（Guaranteed Copy Elision）**，即便 `Foo` 把拷贝和移动构造函数全部 `= delete` 也能正常编译通过！\n- **NRVO**（返回具名局部变量 `Foo res; ... return res;`）：依然属于编译器优化而非强制（如不同 `if` 分支返回不同局部变量时 NRVO 会失效），因此类型必须保留可用的移动或拷贝构造。\n\n**2. 为什么千万不要轻易写 `return std::move(local_var);`**：\n- 编译器执行 NRVO 有明确前提：返回表达式必须是**局部变量名字本身**。一旦写成 `return std::move(local_var);`，表达式类型变成了函数调用产生的 `Foo&&` 而不再是局部变量名，这会**直接废掉 NRVO 的“零拷贝零移动原地构造”资格**，强迫程序额外执行一次移动构造！\n- 即使在 NRVO 无法生效的情况下（例如返回成员变量、入参或分支不同对象），标准也早规定了对局部自动变量/值参 **隐式把 `return x` 视作右值优先尝试移动**，只有极少数返回局部子对象成员或特定引用转换才需考虑显式 move。\n\n> **追问 / 加分项**：RVO/NRVO 对全局静态变量无效；同样对按值传入函数内的形参也一般不直接触发 NRVO（调用方已建好栈帧），这时函数内确实会自动转为隐式移动。",
+      "tags": [
+        "RVO/NRVO",
+        "拷贝消除",
+        "C++17"
+      ]
+    },
+    {
+      "id": "cpp-32",
+      "cat": "cpp",
+      "diff": 3,
+      "q": "什么是 CPU 伪共享（False Sharing）与缓存行（Cache Line）？多线程高频写场景如何彻底消除？",
+      "a": "**1. 原理机制**：\n- 现代 x86/ARM CPU 的 L1/L2 Cache 以 **Cache Line（通常 64 字节）** 为最小同步单位，依靠 MESI 等缓存一致性协议保证多核视图一致。\n- **伪共享**指：多个线程分别写入**彼此完全独立、逻辑上毫不相干**的变量（比如 `struct { atomic<long> cntA; atomic<long> cntB; }`），但这两个变量恰好落在**同一个 64 字节 Cache Line** 里。\n- 当核 1 修改 `cntA` 时，会把整个缓存行置为 Modified，并向核 2 发 Invalidate 失效通知；核 2 下次哪怕只读写完全无关的 `cntB`，也必须触发 Cache Miss 重新从远端缓存或总线拉取整行（Cache Ping-Pong），多线程扩展吞吐甚至**倒退比单线程慢数倍**！\n\n**2. 消除方案**：\n- **内存对齐填充**：C++11 起使用 `alignas(64)`（C++17 标准库提供 `std::hardware_destructive_interference_size`），让每个热点线程独占状态占据独立缓存行。\n- **线程本地聚合（Thread-Local）**：先在各线程私有的栈变量或 `thread_local` 变量里高频累加，结束或定期批量原子合并到全局汇总变量，从源头减少跨核总线流量。\n- **隔离只读与高频写字段**：构造热点结构体时把只读元数据和频繁写的原子计数器分区隔离在不同缓存行内。\n\n> **追问 / 加分项**：警惕 `std::vector<Counter>` 或对象池！如果只对 `Counter` 内部字段做对齐却未对 `Counter` 整个结构体本身做 `alignas(64)`，数组相邻元素末尾和下一个元素头部仍可能挤进同一条缓存行。",
+      "tags": [
+        "False Sharing",
+        "Cache Line",
+        "高性能并发"
+      ]
+    },
+    {
+      "id": "cpp-33",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "C++ 线上内存泄漏、越界、悬空指针与数据竞争如何系统排查（ASan / TSan / UBSan / Valgrind / perf）？",
+      "a": "**1. 编译器插桩 Sanitizers（测试/灰度环境核武器）**：\n- **ASan + LSan（`-fsanitize=address`）**：利用 Shadow Memory 检测堆/栈/全局越界（OOB）、释放后使用（UAF）、double free 及进程退出时的内存泄漏，开销仅约 **2x**（远快于 Valgrind 的 20x）。\n- **TSan（`-fsanitize=thread`）**：检测多线程**数据竞争（Data Race）**和潜在死锁（维护每个字节的访问线程历史向量）。注意不能与 ASan 同时开启。\n- **UBSan（`-fsanitize=undefined`）**：捕获有符号整数溢出、空指针解引用、移位越界、未对齐访存等隐蔽未定义行为（线上轻量化部署也可开部分子项）。\n\n**2. 不可编译重跑的线上/生产排查利器**：\n- **Core Dump + `gdb`**：开启 `ulimit -c unlimited`，事后用 `bt` / `thread apply all bt` 看崩溃点栈帧与局部变量（Release 包需保留 `-g` 调试符号或分离 `.debug` 符号表）。\n- **内存泄漏与碎片定位**：`jemalloc` 开启 `prof:true` 导出内存火焰图（`jeprof`）、`valgrind --tool=memcheck`（无须重编译但巨慢仅离线小样本），或用 eBPF（`bcc/memleak`）在不停服时追踪长期增长的未释放调用栈。\n- **CPU 与锁瓶颈**：`perf record -F 99 -g` + FlameGraph（火焰图），配合 `perf c2c` 专抓跨 NUMA 伪共享热点。\n\n> **追问 / 加分项**：为什么 ASan 下依然要留意 Release + `-O2`？因为有些悬空读取/OOB 依赖特定激进编译优化后才变成实质毁坏，建议 CI 至少保留一组 `RelWithDebInfo + ASan/UBSan` 单元测试门禁。",
+      "tags": [
+        "ASan",
+        "TSan",
+        "性能剖析与调试"
+      ]
+    },
+    {
+      "id": "cpp-34",
+      "cat": "cpp",
+      "diff": 2,
+      "q": "什么是 RAII 与异常安全的三个保证级别？为什么移动构造函数应尽量标 noexcept？",
+      "a": "**1. RAII（Resource Acquisition Is Initialization）**：\n- 把任何受限资源（堆内存、文件描述符、`mutex` 锁、数据库连接）的生命周期绑定到栈上局部对象的构造函数获取、析构函数自动释放中。\n- 利用 C++ **栈展开（Stack Unwinding）**机制保证：无论是正常 `return` 还是中途抛出异常跳出作用域，栈对象的析构函数 100% 自动执行，实现“绝不泄漏”。\n\n**2. 异常安全三大保证级别（Abrahams Guarantees）**：\n- **基本保证（Basic）**：抛异常后不泄漏资源，且对象处于**某种合法但状态可能已改变**的可用状态。\n- **强保证（Strong，提交或回滚语义）**：抛异常时程序状态**完全回滚**到操作开始前的样子（典型实现手法：先在临时副本上干完所有可能抛异常的操作，最后用 `noexcept` 的 `swap` 原子提交）。\n- **不抛异常保证（Nothrow / `noexcept`）**：承诺绝对不外泄任何异常，析构函数、移动操作、`swap` 应当永远保证不抛异常。\n\n**3. 为什么移动构造要标 `noexcept`（STL 高频必问）**：\n- 例如 `std::vector::push_back` 触发扩容把旧数组元素搬到新内存时，容器必须向调用者承诺**强异常安全**（如果第 5 个元素搬到一半失败抛异常，前面 4 个从旧容器已经搬走破坏掉了，根本无法回滚复原！）。\n- 因此 STL 内部使用了 `std::move_if_noexcept`：只有检测到你的类型移动构造函数显式带 `noexcept`（或编译器确认不抛），才会放心移动搬迁；否则会悲观地全部退化成昂贵的**拷贝构造**！\n\n> **追问 / 加分项**：标了 `noexcept` 的函数内部如果意外真的抛出了异常且未在内部 catch，编译器不会进行栈展开，而是直接调用 **`std::terminate()`** 终止进程。",
+      "tags": [
+        "RAII",
+        "异常安全",
+        "noexcept"
+      ]
+    },
+    {
+      "id": "cpp-35",
+      "cat": "cpp",
+      "diff": 3,
+      "q": "什么是零开销抽象（Zero-Overhead Abstraction）？高频低延迟 C++ 服务常见优化手段有哪些？",
+      "a": "**1. 零开销抽象原则（Bjarne Stroustrup 定义）**：\n- **你不需要的东西，绝不付出成本**（What you don't use, you don't pay for）；\n- **你需要且用上的高级抽象，手写底层 C/汇编也无法做得比它更快**（如 `unique_ptr` 无自定义删除器时尺寸等于裸指针、`std::sort` 内联比较器吊打 C 标准库函数指针 `qsort`、`std::span`/`string_view` 封装无额外运行开销）。\n\n**2. 低延迟 / 高吞吐 C++ 服务常见系统性优化清单**：\n- **内存与布局层**：用对象池/`pmr` 单调缓冲消除 `malloc`/`free` 热路径抖动；数据结构采用 **SoA（Struct of Arrays）** 与冷热数据分离提高 Cache 命中率与 SIMD 向量化机会；热点每线程独立统计 `alignas(64)` 防伪共享。\n- **控制流与编译层**：热路径消除虚函数间接派发（模板/CRTP/`final`）、利用 C++20 `[[likely]]`/`[[unlikely]]` 引导分支布局（极少走报错路径加 `[[unlikely]]`）、关闭热函数不必要锁用 SPSC 无锁环形队列（RingBuffer）替代 `mutex + queue`。\n- **系统交互层**：使用 `std::string_view`/`span` 减少中间拷贝；批量处理与零拷贝 I/O（`io_uring`、内核旁路 DPDK、内存映射 `mmap`）；CPU 绑核（`pthread_setaffinity_np`）与禁用透明大页异常抖动。\n\n> **追问 / 加分项**：为什么 `std::sort` 比 C 标准库 `qsort` 快得多？因为 `qsort` 接收函数指针，每次比较都有间接函数调用成本且几乎无法内联；而 `std::sort` 模板实例化后把比较器直接内联进循环寄存器里！",
+      "tags": [
+        "零开销抽象",
+        "低延迟优化",
+        "系统性能"
+      ]
+    },
+    {
+      "id": "ai-11",
+      "cat": "ai",
+      "diff": 2,
+      "q": "偏差-方差权衡（Bias-Variance Tradeoff）是什么？L1 与 L2 正则化的数学形式、几何解释及过拟合缓解手段有哪些？",
+      "a": "**1. 偏差-方差分解（泛化误差 = Bias² + Variance + 不可约噪声）**：\n- **高偏差（Bias / 欠拟合）**：模型假设过于简单，未能抓住真实数据规律，训练集与验证集误差都很高；对策：增大模型容量、增加有效特征、降低正则化强度。\n- **高方差（Variance / 过拟合）**：模型过度拟合训练集噪声与细节，训练误差极低但测试误差很高；对策：增大数据量与数据增强、L1/L2 正则、Dropout、Early Stopping、集成学习。\n\n**2. L1（Lasso）vs L2（Ridge / Weight Decay）正则化**：\n- **L1 正则**：在损失中加入 `λ·Σ|w_i|`。几何上可行域是个带尖角的**菱形/多面体**，等高线最容易在坐标轴尖角处相交；且在 0 点次梯度恒为 ±λ（不随 w 变小而衰减），因此会把大量不重要特征权重精准压到 **0**，实现特征选择与模型稀疏化。\n- **L2 正则**：在损失中加入 `λ·Σw_i²`。可行域为光滑超球面，梯度为 `2λw`（越接近 0 衰减越慢），倾向于让所有权重**均匀变小但不为 0**，数值优化光滑稳定（对应贝叶斯先验分别等价于拉普拉斯先验 vs 高斯先验）。\n\n> **追问 / 加分项**：在极深神经网络中也会看到 **Double Descent（双下降）**现象——参数量远超样本数进入过参数化区间后，测试误差反而随平滑插值再次下降。",
+      "tags": [
+        "机器学习",
+        "偏差方差",
+        "L1/L2正则"
+      ]
+    },
+    {
+      "id": "ai-12",
+      "cat": "ai",
+      "diff": 2,
+      "q": "常见优化器演进：SGD、Momentum、RMSProp、Adam 到 AdamW 的核心改进是什么？为什么 LLM 训练普遍用 AdamW 而非 Adam？",
+      "a": "**1. 从一阶梯度的“方向震荡”与“尺度差异”出发**：\n- **SGD**：直接沿负梯度更新 `w ← w - η·g`，遇到病态狭长山谷易在陡峭方向震荡、平坦方向极慢。\n- **Momentum（一阶动量）**：引入历史梯度的指数移动平均 `m_t = β1·m_{t-1} + (1-β1)·g_t`，像物理重球滚下山坡一样冲过局部平坦区并抑制高频垂直震荡。\n- **RMSProp（二阶自适应步长）**：维护梯度平方的指数移动平均 `v_t = β2·v_{t-1} + (1-β2)·g_t²`，更新时除以 `√v_t + ε`，自适应地为更新剧烈的参数缩小步长、给稀疏特征放大步长。\n- **Adam（Momentum + RMSProp + 偏差修正）**：同时跟踪一阶矩 `m_t` 与二阶矩 `v_t`，并在初期对冷启动偏向 0 做 `/ (1 - β^t)` 偏差修正，收敛极快。\n\n**2. Adam vs AdamW（Decoupled Weight Decay）的核心差异**：\n- 在原始 **Adam + L2 正则** 中，正则项梯度 `λw` 直接加进了 `g_t`，结果随后**也会被 `√v_t` 除掉**！这意味着历史梯度很大的权重承受的有效权重衰减变弱了，正则强度和自适应步长耦合失效。\n- **AdamW** 把权重衰减从梯度计算中彻底解耦，只在参数更新最后单独执行 `w ← w - η·λ·w`。实验证明 AdamW 的最优学习率与 weight decay 超参相互独立，在大规模 Transformer / LLM 训练中泛化显著优于 L2-Adam。\n\n> **追问 / 加分项**：LLM 优化器状态极其吃显存——标准 AdamW 每个 FP16 参数需要额外维护 FP32 参数副本、FP32 梯度、一阶动量 `m` 和二阶动量 `v`（合计每参数约 12–16 字节！），因此常搭配 ZeRO-1/2/3、8-bit Adam 或 Muon/Adafactor 压缩状态。",
+      "tags": [
+        "AdamW",
+        "优化器",
+        "LLM训练"
+      ]
+    },
+    {
+      "id": "ai-13",
+      "cat": "ai",
+      "diff": 2,
+      "q": "逻辑回归、交叉熵损失与 Softmax 的数学推导？工程实现 Softmax 时为什么必须减去最大值（Log-Sum-Exp 技巧）？",
+      "a": "**1. 逻辑回归与二元交叉熵（BCE）**：\n- 逻辑回归对线性输出 `z = w·x + b` 过 Sigmoid `p = σ(z) = 1 / (1 + e^-z)` 映射为正类概率。\n- 从**极大似然估计（MLE）**取负对数直接导出交叉熵损失 `L = -[y·log(p) + (1-y)·log(1-p)]`。之所以不用 MSE 配 Sigmoid，因为 Sigmoid 两端饱和导数近 0，MSE 求导乘上 `σ'(z)` 极易梯度消失；而交叉熵导数神奇地化简为 `p - y`，误差越大梯度越大、凸性良好！\n\n**2. Softmax 与多分类交叉熵（Cross-Entropy）**：\n- `Softmax(z_i) = e^(z_i) / Σ_j e^(z_j)` 把任意 logits 分布转化为严格正、和为 1 的概率分布，配负对数似然 `-log(p_target)` 对 `z_i` 求导同样简洁优美：`∂L/∂z_i = p_i - y_i`。\n\n**3. 工程数值稳定性（平移不变性与 Log-Sum-Exp）**：\n- 若直接算 `exp(z_i)`，当 `z_i = 90` 时 FP32 就能溢出成 `inf`（FP16 仅 `z_i > 11` 即 `inf`！），导致 `inf / inf = NaN`；若全都为很大负数则会下溢归 0 引发 `0 / 0 = NaN` 或 `log(0) = -inf`。\n- 利用恒等式 **平移不变性**：上下同除以 `e^M`（取 `M = max(z)`），即算 `exp(z_i - M) / Σ exp(z_j - M)`。此时指数自变量最大值恒为 0（`e^0 = 1`，分母至少 ≥ 1），绝对不会上溢也不会全下溢归 0！算 Cross-Entropy 时更是直接算 **`log_softmax(z) = (z - M) - log Σ exp(z_j - M)`**，避免先 exp 再 log 的精度损失。\n\n> **追问 / 加分项**：FlashAttention 中的 **Online Softmax** 技巧正是基于该恒等式分块动态更新局部 `max` 与缩放分母和 `d`，无需保存完整 N×N 注意力分数矩阵！",
+      "tags": [
+        "Softmax",
+        "交叉熵",
+        "数值稳定性"
+      ]
+    },
+    {
+      "id": "ai-14",
+      "cat": "ai",
+      "diff": 2,
+      "q": "集成学习中 Bagging（随机森林）与 Boosting（GBDT / XGBoost / LightGBM）的核心区别？XGBoost 与 LightGBM 优化原理是什么？",
+      "a": "**1. Bagging vs Boosting（偏差与方差哲学不同）**：\n- **Bagging（代表：Random Forest 随机森林）**：有放回自助采样（Bootstrap）构造多份子数据集**并行**训练弱相关基模型（额外加入列采样选最优特征子集），最终投票或平均。重在**显著降低方差**、极抗噪且几乎不易过拟合，每棵深树各自偏差低。\n- **Boosting（代表：GBDT / XGBoost / LightGBM）**：**串行**迭代训练，每轮训练一棵新弱树专门去拟合前一轮集成预测结果的残差/负梯度。重在**不断逼近降低偏差**，表格数据精度上限高，但串行依赖强且对异常噪点较敏感。\n\n**2. XGBoost 相比传统 GBDT 的关键升级**：\n- 将目标函数做**二阶泰勒展开**（同时利用一阶导 `g_i` 和二阶导 `h_i`，如牛顿法般收敛更准更支持自定义二阶可微损失）；\n- 目标函数显式加入叶子节点数 `T` 与叶子权重 L2 正则 `γT + 0.5·λΣw_j²`；\n- 支持缺失值自动学习默认分裂方向、特征预排序与 Block 并行计算切分增益。\n\n**3. LightGBM 提速与内存压缩三大绝技**：\n- **Histogram 直方图算法**：把连续浮点特征离散分桶为 `k` 个整数箱（如 256），找最优切分点复杂度从 O(数据量) 降为 O(箱数)，且加速直方图作差（父直方图 - 左子 = 右子）。\n- **Leaf-wise（带最大深度限制）生长策略**：每次挑全树收益最大的单叶分裂，精度更高、比 Level-wise 少算很多低增益叶节点。\n- **GOSS（单边梯度采样）与 EFB（互斥特征捆绑）**：保留大梯度样本、降采样小梯度样本；把稀疏互斥 One-hot 特征捆绑降维。\n\n> **追问 / 加分项**：如果是**大量类别特征**且追求几乎零调参，为什么业界还会选 **CatBoost**？因为 CatBoost 的 Ordered Target Statistics 与对称树（Oblivious Trees）有效缓解了目标编码的数据泄露并加速推理缓存预测。",
+      "tags": [
+        "XGBoost",
+        "LightGBM",
+        "集成学习"
+      ]
+    },
+    {
+      "id": "ai-15",
+      "cat": "ai",
+      "diff": 1,
+      "q": "决策树的分裂准则（ID3 信息增益、C4.5 信息增益率、CART 基尼指数）与预剪枝/后剪枝策略？",
+      "a": "**1. 三大核心分裂准则对比**：\n- **ID3 — 信息增益**：用划分前信息熵减去划分后条件熵 `Gain(D, a) = H(D) - H(D|a)`。经典坑：**强烈偏爱取值数目极多的特征**（极端如“用户 ID”，每个 ID 自成一叶熵直接变 0，毫无泛化力）。\n- **C4.5 — 信息增益率**：用分裂信息 `IV(a)` 作分母惩罚多值特征：`Gain_ratio = Gain / IV(a)`。工程实践常先找信息增益高于平均值的特征，再从中选增益率最高的（防偏向取值极少特征）。\n- **CART — 基尼指数 / 平方误差**：分类用 **Gini 指数 `1 - Σp_k²`**（无对数计算，更快更简洁；几何意义接近于熵在 1/2 处展开的一阶近似），严格生成**二叉树**；回归任务则按最小化子节点均方误差（MSE / 平方残差和）切分，同样天然支持连续值切分与特征多次复用。\n\n**2. 预剪枝（Pre-Pruning）vs 后剪枝（Post-Pruning）**：\n- **预剪枝**：建树过程中在切分前通过 `max_depth`、`min_samples_leaf`、`min_impurity_decrease` 提前叫停。优点：训练极快；缺点：可能**欠拟合**（因为某些特征单独看收益不高，但再往下一层联合其他特征能暴涨收益——“视野短视效应”）。\n- **后剪枝（如 CCP 代价复杂度剪枝 `ccp_alpha`）**：先放任长出一棵完全过拟合的深树，再自底向上检验合并子树成单叶后验证集误差是否下降或加了正则惩罚总损失变小。优点：泛化更好、避免短视；缺点：建树与剪枝耗时更长。\n\n> **追问 / 加分项**：单棵决策树为什么通常不需要对连续特征做归一化（StandardScaler）？因为切分只看特征值的相对大小排序与阈值划分，单调缩放完全不改变分裂点顺序！",
+      "tags": [
+        "决策树",
+        "基尼指数",
+        "剪枝"
+      ]
+    },
+    {
+      "id": "ai-16",
+      "cat": "ai",
+      "diff": 2,
+      "q": "样本极度不平衡时为什么准确率（Accuracy）会失效？Precision、Recall、F1、ROC-AUC 与 PR-AUC 如何选择与解读？",
+      "a": "**1. 准确率悖论**：当正样本仅占 1%（如欺诈识别、疾病筛查、异常告警）时，哪怕把所有样本傻瓜式全预测为负类，Accuracy 依然高达 99%，模型实际毫无用处。\n\n**2. 分类核心指标与业务取舍**：\n- **Precision（精确率 = TP / (TP + FP)）**：“模型报为正的里，有多少是真的正？”（风控拦截/广告推荐防误伤重 Precision）。\n- **Recall（召回率 = TP / (TP + FN)）**：“真实正样本里，被我捞回了多少？”（癌症筛查/安全漏洞告警重 Recall）。\n- **F1 Score / Fβ**：Precision 与 Recall 的调和平均（避免某一端极高另一端极低掩盖短板），F2 偏重 Recall，F0.5 偏重 Precision。\n\n**3. ROC-AUC vs PR-AUC（关键辨析）**：\n- **ROC 曲线**以 FPR = FP/(FP+TN) 为横轴、TPR(=Recall) 为纵轴。AUC 物理意义：**随机抽一对正负样本，正样本得分高于负样本的概率**，对全局排序敏感且**对正负类别比例不敏感**。\n- **正负极度失衡坑点**：由于 TN 数量极其庞大，哪怕模型误报（FP）增加了一倍导致精确率腰斩，FPR 的分母（FP+TN）太大导致横轴几乎看不出波动，**ROC-AUC 依然看着虚高到 0.98**！\n- **PR 曲线（Precision-Recall AUC）**不包含 TN，对极少数正类的误报极为敏感！极不平衡场景必须重点看 **PR-AUC** 与高阈值段的 Recall@Precision。\n\n> **追问 / 加分项**：极不平衡数据集训练除重采样（SMOTE/欠采样）与 Class Weight 外，常见还有 **Focal Loss** `(1-p_t)^γ · (-log p_t)` 动态压低大量易分负样本梯度权重，以及上线后用 Platt Scaling / Isotonic Calibration 做概率校准。",
+      "tags": [
+        "评估指标",
+        "类别不平衡",
+        "PR-AUC"
+      ]
+    },
+    {
+      "id": "ai-17",
+      "cat": "ai",
+      "diff": 2,
+      "q": "PCA 主成分分析的数学原理是什么？特征工程中常见的数据泄露（Data Leakage）坑有哪些？",
+      "a": "**1. PCA 的两大等价推导视角**：\n- **最大方差理论**：投影到降维后的低维正交子空间上，希望保留最大的样本方差分散度（信息损耗最小）；\n- **最小重构误差**：让原向量与投影重构向量间均方误差最小。\n- **标准求解步骤**：对每个特征做**去中心化（零均值，量纲差异大时需先标准化）** → 计算协方差矩阵 `Σ = (1/n)·X^T X` → 对 `Σ` 做特征值分解（或直接对中心化矩阵 `X` 做 **SVD 奇异值分解**，数值更稳且避免显式算超高维 `X^T X`）→ 取前 k 个最大特征值对应的单位正交特征向量构成投影矩阵，累计方差贡献率 `Σ_{i=1..k} λ_i / Σ λ` 常取 ≥ 90%~95%。\n- **局限**：PCA 仅保留线性全局方差，不利用标签（非监督，高方差未必最有判别力，可与有监督 LDA 对比）；非线性流形可视化常用 t-SNE 或 UMAP。\n\n**2. 数据泄露（Data Leakage）常见四大深坑**：\n- **先全量预处理再切分 Train/Test**：均值方差标准化、缺失值均值填充、PCA 拟合、SMOTE 过采样必须在**仅训练集上 `fit`**，再 `transform` 验证与测试集，否则测试分布已泄露进训练。\n- **目标编码（Target Encoding）直接在全集算平均**：应做 K-Fold Out-of-Fold 平滑计算。\n- **时序穿越（Future Leakage）**：时序预测中做了随机 K 折交叉验证而不是按时间滚动切分（TimeSeriesSplit），导致模型偷看到未来趋势。\n- **特征里混入“果之后才会产生的结果字段”**：如用“最终退款处理时长”去预测“下单是否会退款”。\n\n> **追问 / 加分项**：工程排查线上效果骤降时，写一套严格的 `sklearn.pipeline.Pipeline` 把所有依赖统计量的预处理包进交叉验证循环内部，是杜绝预处理泄露最可靠的防线。",
+      "tags": [
+        "PCA",
+        "特征工程",
+        "数据泄露"
+      ]
+    },
+    {
+      "id": "ai-18",
+      "cat": "ai",
+      "diff": 2,
+      "q": "反向传播与梯度消失/梯度爆炸的成因是什么？ResNet、梯度裁剪与 Xavier/Kaiming 初始化如何缓解？",
+      "a": "**1. 根本成因（链式法则连乘效应）**：\n- 深层网络反向传播由输出层逐层向左乘雅可比矩阵和激活函数导数：`∂L/∂x_1 = (∂L/∂x_L) · Π (W_k^T · σ'(z_k))`。\n- 若层间连乘因子平均模长小于 1（如 Sigmoid 最大导数仅 0.25，再乘小权重，经过 10 层便缩至 `0.25^10 < 10^-6`），底层权重梯度几乎清零→**梯度消失**；\n- 若特征值长期大于 1（RNN 长序列权重矩阵连乘、权重初始化过大），梯度指数级暴涨溢出 `NaN`→**梯度爆炸**。\n\n**2. 四大经典治理手段**：\n- **残差连接（ResNet Skip Connection `y = x + F(x)`）**：求导多出恒等项 `1 + ∂F/∂x`，哪怕深层 `∂F/∂x` 趋近于 0，总有一条高速公路让梯度无损直达浅层。\n- **方差保持初始化**：**Xavier（Glorot）**按线性/Tanh 假设令每层输出与梯度方差不变（正态方差 `2/(n_in + n_out)`）；**Kaiming（He）初始化**专门针对 ReLU 砍掉一半负半轴的特性把方差翻倍为 `2/n_in`。\n- **激活函数与归一化**：用非正半轴饱和的 ReLU / GELU / SiLU 替代 Sigmoid；用 BatchNorm / LayerNorm / RMSNorm 把中间激活拉回合理动态范围。\n- **梯度裁剪（Gradient Clipping）**：LLM 训练标配 `clip_grad_norm_(params, max_norm=1.0)`——若整体参数梯度的 L2 范数超过阈值，按同比例整体缩放，保方向不动而压住瞬时尖峰防爆炸（解决不了梯度消失）。\n\n> **追问 / 加分项**：Transformer/GPT 残差分支输出层权重还会按层深 `1 / √(2·num_layers)` 额外缩小初始化方差，避免随着层数增加残差和标准差逐层累积发散。",
+      "tags": [
+        "梯度消失爆炸",
+        "ResNet",
+        "参数初始化"
+      ]
+    },
+    {
+      "id": "ai-19",
+      "cat": "ai",
+      "diff": 3,
+      "q": "BatchNorm、LayerNorm 与 RMSNorm 的计算维度和差异是什么？为什么现代 LLM 普遍采用 Pre-LN + RMSNorm？",
+      "a": "**1. 计算维度差异（以张量形状 `[B, L, D]`，即 Batch×序列长×隐藏维 为例）**：\n- **BatchNorm（BN）**：沿着 **`B`（以及空间 H×W）**对同一通道特征跨样本求均值方差；强依赖大 BatchSize，推理时必须用训练阶段滑动统计的 `running_mean`/`running_var`；对变长序列、小 Batch 多卡分散效果差。\n- **LayerNorm（LN）**：针对**单个样本的单个 Token 内部所有 `D` 维特征**独立归一化；**与 BatchSize 和序列长度彻底无关**，训练与推理行为完全一致！\n- **RMSNorm（Root Mean Square Norm）**：在 LayerNorm 基础上**去掉“减去均值”的重心平移步骤**，只按均方根缩放：`x_norm = x / √(mean(x²) + ε) · γ`。\n\n**2. 为什么 LLM（LLaMA/Qwen/Gemma）偏爱 RMSNorm + Pre-LN**：\n- **为什么选 RMSNorm**：研究发现 LayerNorm 的有效收益主要来自**重缩放（re-scaling）**而非减均值平移（re-centering）；去掉均值统计后减少一次全特征规约扫面与内存读写带宽，实测速度提升约 7%~30% 而困惑度几乎零损失。\n- **Pre-LN vs Post-LN**：\n  - 原始 Post-LN 把 Norm 放在残差加法之后 `x_{l+1} = LN(x_l + F(x_l))`，会导致越靠近输入层梯度被逐层 Norm 缩放打折或初期梯度集中在顶层，必须小心 Warmup 否则深模型不收敛；\n  - **Pre-LN** 把 Norm 移进子层之前 `x_{l+1} = x_l + F(LN(x_l))`，保护了一条**完全干净无阻的残差主干高速公路**，训练极稳甚至百层几乎免 Warmup，代价是深层表示可能略冗余（部分模型引入 QK-Norm 或 DeepNorm 折中）。\n\n> **追问 / 加分项**：微调或继续预训练时不要随意修改模型已学好的 `eps`（例如 `1e-5` vs `1e-6`）与 RMSNorm/LN 类型，且 Norm 统计部分在 AMP 混合精度下务必强转 **FP32 计算**防方差下溢。",
+      "tags": [
+        "RMSNorm",
+        "LayerNorm",
+        "Pre-LN"
+      ]
+    },
+    {
+      "id": "ai-20",
+      "cat": "ai",
+      "diff": 2,
+      "q": "激活函数演进：Sigmoid、Tanh、ReLU、GELU 到 SwiGLU 的优缺点及为什么现代 LLM 偏爱 SwiGLU？",
+      "a": "**1. 早期经典激活与痛点**：\n- **Sigmoid / Tanh**：处处可微但两端严重饱和梯度趋零；Sigmoid 输出恒正导致下层权重更新走“之”字形低效路径（Tanh 解决了零中心，仍逃不开饱和）。\n- **ReLU（`max(0, x)`）**：正区间导数恒 1，极大缓解梯度消失且计算极快，引爆 CNN 时代。缺点是 **Dead ReLU（神经元死区）**问题——若权重被大梯度推入全负域，之后梯度永远为 0 再也无法唤醒（LeakyReLU / PReLU 给负半轴微小斜率缓解）。\n\n**2. 平滑近似与门控激活的崛起**：\n- **GELU（Gaussian Error Linear Unit）**：`x · Φ(x)`，把输入与自身遵循标准正态的概率 CDF 相乘，在 0 附近平滑过渡、负区间有微小非单调凹槽，比生硬折角更有利于深层 Transformer 优化（BERT / GPT-2 / GPT-3 采用）。\n- **SwiGLU（Swish + GLU 门控线性单元）**：本质把普通双层 FFN 扩展为**三条投影**：`FFN_SwiGLU(x) = (Swish(x W_gate) ⊙ (x W_up)) W_down`，其中 `Swish/SiLU(x) = x · σ(x)`，两路分别负责计算语义与动态内容门控逐元素相乘！\n\n**3. 为什么现代 LLM（LLaMA/Qwen/DeepSeek/PaLM）清一色用 SwiGLU**：\n- 双线性门控允许网络动态抑制或放大特定通道激活（类比注意力式的特征门控），大幅提升表达能力与验证集 Loss；\n- 为保总参数与 FLOPs 与原 4d 隐藏层普通 FFN 对齐，SwiGLU 通常把 FFN 中间维从 `4d` 缩为 **`8d/3`（常见向上取整到 128/256 倍数对齐 Tensor Core）**，同计算量下效果稳定压倒 GELU/ReLU。\n\n> **追问 / 加分项**：GLU 变体带来“三矩阵并行”结构，推理工程中可以把 `W_gate` 和 `W_up` 在列维度拼成一个大权重矩阵做单次融合 GEMM 降低 Kernel Launch 与访存开销。",
+      "tags": [
+        "SwiGLU",
+        "GELU",
+        "激活函数"
+      ]
+    },
+    {
+      "id": "ai-21",
+      "cat": "ai",
+      "diff": 1,
+      "q": "Dropout 的工作原理是什么？为什么主流框架采用 Inverted Dropout，且训练与推理阶段行为必须区分？",
+      "a": "**1. 工作原理**：\n- 训练前向传播时，以概率 `p` 随机将部分隐层神经元激活置 0，强迫网络不依赖某几个孤立特定特征的“共适应（Co-adaptation）”，促使权值分散学习冗余表征；\n- 也可看作每次迭代训练指数级隐式子网络（Ensemble 隐式模型集成）的高效近似。\n\n**2. Inverted Dropout（反向缩放 Dropout）工程标准**：\n- 假设保留概率为 `1 - p`，训练时随机置 0 后会导致整层期望激活幅值缩小到原来的 `1 - p` 倍；如果训练时不补救，推理全开时就必须把所有输出乘 `1 - p` 来对齐期望。\n- **Inverted Dropout** 直接在**训练期将留存神经元除以 `1 - p`**（`mask / (1 - p)`），使得**推理阶段（`model.eval()`）完全不用做任何额外乘法和判断，直接全量透传**！既零成本简化推理部署，也能灵活改动训练 `p` 不影响推理链路。\n\n**3. 训练 vs 推理的工程排查坑**：\n- 验证、评测或推理前**必须调用 `model.eval()`** 并套上 `torch.no_grad()`！若漏掉 `model.eval()`，不仅结果随机不可复现、测试指标抖动下降，还同时会导致 BatchNorm 使用当前小 Batch 统计量（BatchSize=1 直接挂掉）而不是全局滑动统计。\n\n> **追问 / 加分项**：为什么现代预训练 LLM（如 LLaMA 等万亿 Token 级训练）往往将 Dropout 设为 `0.0`？因为在超大 Token 数据量下几乎每个样本只扫一遍（Single-Epoch），模型主要担心**拟合能力不够而非过拟合训练集**，开 Dropout 反而浪费有效容量与增加显存掩码开销（小数据 SFT 阶段才酌情重开 0.05~0.1）。",
+      "tags": [
+        "Dropout",
+        "PyTorch基础",
+        "正则化"
+      ]
+    },
+    {
+      "id": "ai-22",
+      "cat": "ai",
+      "diff": 3,
+      "q": "Transformer 位置编码演进：正弦编码、学习式编码、ALiBi 到 RoPE（旋转位置编码）的核心思想与外推原理是什么？",
+      "a": "**1. 位置编码为什么不可或缺**：Self-Attention 对输入集合是**置换等变（Permutation Equivariant）**的——打乱词序注意力输出只按对应位置重排却分不清前后语序，因此必须注入位置信息。\n\n**2. 四代位置编码演进路线**：\n- **绝对正弦（Sinusoidal，原版 Transformer）**：不同维度以几何级数衰减的 sin/cos 编码加到 Embedding 上，`PE(pos+k)` 可线性表示为 `PE(pos)` 的三角矩阵变换，理论上隐含相对关系但直接外推长度仍迅速崩塌。\n- **可学习绝对位置向量（Learned Pos Emb，BERT/GPT-2）**：效果稳健但在超过训练最大长度（如 512）时位置表根本没有定义，长度完全锁死。\n- **ALiBi（Attention with Linear Biases）**：彻底不改 Embedding，直接在 Attention Score 上按距离减去与 head 相关的线性衰减惩罚 `-m · |i - j|`。外推能力很强，但远距离感受野被硬惩罚衰减可能影响长文精确回溯（Needle-in-a-Haystack）。\n- **RoPE（Rotary Position Embedding，现代主流）**：将每两个相邻维度视作复平面二维向量，按所在位置 `m` 乘以**旋转角 `mθ_i`** 对 **Q 和 K**（注意**不加到 V**）做旋转操作。通过复数乘法性质推导，Q_m 和 K_n 做内积时绝对位置刚好相减消去，结果**严格只依赖相对位置 `m - n` 与各自特征角度**！以绝对位置的形式完美实现了相对位置编码并天然兼容 KV Cache 与线性复杂度扩展。\n\n> **追问 / 加分项**：RoPE 如何外推到更长上下文（如 4K → 128K）？高频维周期短适合局部分辨、低频维跨度长代表全局，直接外推低频维度从未见过超大角度会崩；**PI 线性插值**压缩整体角度、**NTK-aware / YaRN** 则智能做到“高频少压缩保局部精细，低频多外推插值或拉高 Base 频率 `10000 → 500000+`”，配合少量长文继续预训练即可实现高准确率百万级上下文。",
+      "tags": [
+        "RoPE",
+        "位置编码",
+        "长上下文"
+      ]
+    },
+    {
+      "id": "ai-23",
+      "cat": "ai",
+      "diff": 2,
+      "q": "CNN 感受野、1×1 卷积、深度可分离卷积的作用？ViT（Vision Transformer）如何将图像输入 Transformer？",
+      "a": "**1. CNN 经典组件的核心价值**：\n- **感受野（Receptive Field）与堆叠小核优势**：连续两个 3×3 卷积拥有与单个 5×5 卷积相同的感受野，但参数量从 `25C²` 降至 `18C²`（两层 3×3），且中间多一次非线性激活函数增强表达力（三个 3×3 等效一个 7×7，参数 `27 vs 49`）。\n- **1×1 卷积**：跨通道做点式线性组合（相当于每个像素单独过一次通道全连接），核心用来**极低成本升降维通道数**（ResNet Bottleneck 经典先 1×1 降维 → 3×3 提取 → 1×1 恢复），并在跨通道信息交互后注入非线性。\n- **深度可分离卷积（Depthwise Separable Conv，MobileNet 核心）**：把标准卷积分解为两步——① **Depthwise 空间过滤**：每个输入通道独立用 1 个 3×3 核卷积（只混合空间不跨通道）；② **Pointwise 1×1 卷积**：再跨通道融合特征。计算量直接降至普通卷积的约 **`1/C_out + 1/K²`（约 1/8~1/9）**！\n\n**2. ViT（Vision Transformer）图像序列化链路**：\n- 将 `H×W×C` 图像切成不重叠的 `P×P`（如 16×16）小图块 **Patches**（等价把图像过一次 `kernel=P, stride=P` 的卷积实现展平映射）；\n- 线性投影每个 Patch 成 `D` 维 Patch Embedding Token，序列前可拼接一个 `[CLS]` token（或最终 Global Avg Pooling），加上二维/一维可学习位置编码（或现代多模态里用 2D-RoPE / 动态分辨率 NaViT）送入标准 Transformer Encoder。\n\n> **追问 / 加分项**：CNN 具备局部性（Locality）和平移等变性两大强**归纳偏置（Inductive Bias）**，小数据集非常强；ViT 缺少这些先验，但大数据集/自监督/多模态统一预训练下拥有极强全局跨区域关联建模与 Scaling 上限。",
+      "tags": [
+        "CNN",
+        "ViT",
+        "深度可分离卷积"
+      ]
+    },
+    {
+      "id": "ai-24",
+      "cat": "ai",
+      "diff": 2,
+      "q": "PyTorch Autograd 动态计算图原理是什么？zero_grad()、no_grad() 与 Activation Checkpointing 各自解决什么问题？",
+      "a": "**1. 动态计算图（Define-by-Run）与反向求导**：\n- 对 `requires_grad=True` 的叶子张量执行前向运算时，PyTorch 会实时动态记录每步运算生成的 `grad_fn` 节点，串联成一张反向有向无环图（DAG）。\n- 调用 `loss.backward()` 时从输出标量按拓扑逆序沿着 `grad_fn` 自动链式传播偏导并**累加**到各个叶子张量的 `.grad` 属性中，计算完后默认**自动释放中间计算图与大部分临时激活缓冲**（除非指定 `retain_graph=True`）。\n\n**2. 三个高频核心 API 细节**：\n- **`optimizer.zero_grad(set_to_none=True)`**：PyTorch 默认对 `.grad` 做**累加而非覆盖**（方便实现 Gradient Accumulation 大 Batch 等效与多损失累加）。因此每次独立步更新前必须显式清零；传入 `set_to_none=True` 直接把梯度释放为 `None` 比填全 0 更省显存与更快。\n- **`with torch.no_grad():`（及更严格的 `torch.inference_mode()`）**：前向运算时彻底关闭计算图追踪、不保存任何中间激活 Tensor，评估与推理阶段可大幅节约显存与加速（注意这和 `model.eval()` 管 Dropout/BN 是**两件正交的事**，常需双管齐下）。\n- **Gradient / Activation Checkpointing（激活重计算）**：反向算线性层权重梯度必需拿到前向输入激活！超长上下文或大模型哪怕权重不大，激活值也会爆显存。开启 Checkpointing 后前向只按 Layer 粒度保留少量节点检查点，其余中间激活当场丢弃，**反向走到该块时再临时重跑一遍局部前向算回来**——以约 **+33% 多一次前向算力成本，换取数倍乃至 O(√N) 级别的激活显存大幅节省**！\n\n> **追问 / 加分项**：如果出现 `RuntimeError: Trying to backward through the graph a second time` 或原地修改错 `in-place operation modified tensor needed for gradient`，核心排查思路就是是否忘了 `.detach()` 截断旧图、多次 backward 同一个 loss，或对依赖激活做了原地 `x += 1`。",
+      "tags": [
+        "Autograd",
+        "显存优化",
+        "Checkpointing"
+      ]
+    },
+    {
+      "id": "ai-25",
+      "cat": "ai",
+      "diff": 2,
+      "q": "Decoder-Only（GPT/LLaMA）、Encoder-Only（BERT）与 Encoder-Decoder（T5）架构的注意力掩码差异及为何 Decoder-Only 胜出？",
+      "a": "**1. 三大架构的注意力掩码（Attention Mask）格局**：\n- **Encoder-Only（如 BERT / RoBERTa）**：全可见**双向自注意力**，每个 Token 可以同时看到整句左右两侧全部上下文。天作之合于理解任务（分类、NER、向量 Embedding 模型），但不直接适合流畅自回归自由生成。\n- **Encoder-Decoder（如 T5 / 原始 Transformer）**：Encoder 对源输入做双向编码；Decoder 用因果掩码自回归生成目标，并通过 **Cross-Attention** 跨端对齐查询 Encoder 的 Key/Value。典型用于机器翻译、摘要等明确源-目映射任务。\n- **Decoder-Only（如 GPT / LLaMA / Qwen / DeepSeek）**：单一模型通过**下三角因果掩码（Causal Mask）**强制第 i 个 Token 只能关注 `1..i`（绝不偷看未来），以 Next-Token Prediction 统一一切输入 Prompt 与输出 Completion。\n\n**2. 为什么 Decoder-Only 最终在大规模 LLM 军备竞赛中一统天下**：\n- **全序列高密度监督信号**：双向 Masked LM 每句仅能拿 15% 被遮盖词产生梯度；Causal LM 序列里**每一个位置都能作为下一个 Token 的标签贡献损失**，样本训练效率高得多。\n- **In-Context Learning（ICL）涌现与无瓶颈表达**：Decoder-Only 不需要跨编码器强制压缩成定长上下文 Bottleneck，所有历史层都对上文保持完整隐状态逐层深加工。\n- **KV Cache 与长对话极度友好**：多轮对话追加新提问时，因果掩码保证先前所有前缀 Token 的 Key/Value 绝对不变，直接 100% 缓存增量续算；而双向 Encoder 只要末尾新加一个字，整篇所有层都要重新算一遍！\n- **秩表达理论支撑**：研究证明双向对称掩码矩阵存在一定低秩退化限制，而下三角因果注意力矩阵满秩表达能力更强。\n\n> **追问 / 加分项**：唯一需要双向注意力的场景——文本 Embedding 检索模型（如 BGE/Qwen3-Embedding）仍可用 Encoder-Only 或直接把开源 Decoder-Only 模型去掉因果掩码改造微调。",
+      "tags": [
+        "Decoder-Only",
+        "注意力掩码",
+        "LLM架构"
+      ]
+    },
+    {
+      "id": "ai-26",
+      "cat": "ai",
+      "diff": 3,
+      "q": "MHA、MQA 与 GQA 的 KV Head 共享机制及显存/带宽收益？DeepSeek MLA（Multi-Head Latent Attention）核心思想是什么？",
+      "a": "**1. 从“计算瓶颈”转向“HBM 访存带宽瓶颈”**：\n- 在自回归 Decode 阶段（逐 Token 生成），每次只处理 1 个新 Query，却必须从显存里把前面几万个 Token 的全部 **KV Cache** 完整搬进 SRAM 计算！计算强度（FLOPs/Byte）极低，**Decode 几乎 100% 是 Memory-Bandwidth Bound**。\n\n**2. MHA → MQA → GQA 演进（只缩 KV，不缩 Q 表达力）**：\n- **MHA（标准多头）**：`n_q = n_kv`（如 32 个 Q 头配 32 套独立 K/V 头），KV Cache 体积巨高，并发批处理 Batch Size 上不去。\n- **MQA（Multi-Query Attention）**：保留 `n_q` 个独立 Q 头，但**所有 Q 头共享唯一 1 组 K/V 头**（KV Cache 直降 `n_q` 倍！），极快但大容量下模型质量与训练稳定性略下滑。\n- **GQA（Grouped-Query Attention，LLaMA-2-70B/LLaMA-3/Qwen2.5 标配）**：折中把 Q 头分成 `G` 组（比如 32 个 Q 头配 8 个 KV 头，每 4 个 Q 共享 1 组 KV），几乎追平 MHA 精度，同时 KV Cache 与访存带宽直降 4–8 倍，还可天然契合张量并行多卡切分（每卡分得完整若干 KV 头）。\n\n**3. DeepSeek MLA（Multi-Head Latent Attention）黑科技**：\n- **核心思路：低秩联合压缩！** 不直接存膨胀的高维多头 K 和 V，而是先把隐状态 `h_t` 投影压缩为一个极小的**共享低秩隐向量 `c_t^KV`（如仅 512 维，远小于常规多头总维度 `32×128=4096`）**，推理时只把 **`c_t^KV`**（外加很小一段解耦 RoPE Key）存入 KV Cache！\n- 结合矩阵吸收恒等技巧（在计算 Attention 时将上投影升维矩阵 `W^UK` 直接乘进 `W^Q` 侧预融合），**无需真正物理还原出膨胀大 K 矩阵**即可做点积，做到比传统 GQA 压缩率更高（单 Token KV 降到仅几百维），效果却**反超普通 MHA**！\n\n> **追问 / 加分项**：为什么 MLA 里要把 RoPE 和压缩通道**解耦**分开存一小份？因为旋转矩阵 `R_m` 是随位置变化且非线性的，夹在中间会导致 `W^Q` 与 `W^UK` 无法在静态权重里提前代数吸收合并！",
+      "tags": [
+        "GQA",
+        "MQA",
+        "MLA",
+        "KV Cache"
+      ]
+    },
+    {
+      "id": "ai-27",
+      "cat": "ai",
+      "diff": 3,
+      "q": "MoE（混合专家模型）的稀疏门控路由（Top-K Router）原理是什么？如何用负载均衡辅助损失避免路由坍塌？",
+      "a": "**1. MoE 核心动机（用总参数换取极低单次激活计算量 FLOPs）**：\n- 把 Transformer 里的单一巨大稠密 FFN 替换为并行的 `E` 个小型专家 FFN（如 8 个或 64/256 个细粒度专家），门控网络 Router 对每个 Token 计算各专家打分概率并只激活 **Top-K（常见 K=2 或 8）** 个专家输出做加权求和；往往还能配 1–2 个始终激活的 **Shared Experts** 承接通用常识（如 DeepSeekMoE）。\n- 结果：模型可以轻松做到 **几百 B 总参数记忆海量知识，而每个 Token 实际只消耗十几 B~几十 B 参数量的推理算力与速度**。\n\n**2. 路由坍塌（Routing Collapse）与解决方案**：\n- **问题根源**：训练初期哪怕某个专家偶然表现稍好、拿到略大梯度，Router 就更倾向把它派给更多 Token → 该专家得到更多训练变得更强 → 形成“马太效应”，最终所有 Token 全挤进 1–2 个热门专家，其余 90% 专家彻底闲置死掉（不仅浪费容量，跨卡 Expert Parallel 还会造成严重木桶效应长尾拖慢）！\n- **经典方案 1：Auxiliary Load Balancing Loss（辅助均衡损失）**：惩罚各专家实际分配到的 Token 占比 `f_i` 与路由概率平均值 `P_i` 乘积和 `α · N · Σ(f_i · P_i)`（两者同步均匀时均值平方最小），但过强辅助损失可能干扰主语言建模精度。\n- **经典方案 2：无辅助损失均衡（DeepSeek-V3 Auxiliary-Loss-Free）**：直接给每个专家的路由打分加上一个**动态调整的偏置项 `bias_i`**（不参与梯度反向传播）：发现哪个专家这批负载太高就把它的 bias 略微调低、太闲则调高，既精准均衡多卡负载又不污染训练主梯度！\n- **工程配合**：设定每个专家缓冲池容量因子（Capacity Factor），或 Token Dropping 与 Expert Choice 反向选择路由。\n\n> **追问 / 加分项**：MoE 模型推理部署虽然单步算力小，但**静态显存占用依然需要塞下全部总参数**，且小 Batch（Batch=1）逐词生成时各个 Token 还是可能激发大部分不同专家导致需要搬运大量专家权重（Memory Bound），必须靠高并发凑大 Batch 或 EP/TP 混合并才能发挥真正吞吐威力！",
+      "tags": [
+        "MoE",
+        "负载均衡",
+        "路由坍塌"
+      ]
+    },
+    {
+      "id": "ai-28",
+      "cat": "ai",
+      "diff": 2,
+      "q": "BPE、WordPiece 与 SentencePiece（Unigram）分词算法原理？词表大小与中文切分效率如何影响推理与上下文？",
+      "a": "**1. 为什么用 Subword 子词切分**：\n- 纯 Word 级词表无穷大且遇生僻词 OOV 失效；纯 Char 字节级虽然零 OOV 但把一句话扯成超长序列，O(L²) 注意力开销炸裂且语素信息破碎。Subword 在词频统计上折中平衡！\n\n**2. 三大经典分词算法原理**：\n- **BPE（Byte-Pair Encoding，GPT / LLaMA-3 / Qwen 采用 Byte-level BPE）**：从基础字节或字符集出发，统计训练语料中**相邻出现频次最高的符号对**，逐轮将其合并为新 Subword 加入词表，直到达到目标词表大小（`vocab_size`）。Byte-level BPE 基于 256 个 UTF-8 基础字节起步，彻底实现 **0 `<unk>` 未知词**（连生僻 emoji/外语全能编码）。\n- **WordPiece（BERT）**：与 BPE 类似自底向上合并，但挑选准则不是纯高频，而是看合并后能**最大化训练语料似然值（互信息增益 `freq(xy) / (freq(x)·freq(y))`）**，即偏爱“单拆各自没那么常用但凑在一起高度捆绑”的词根。\n- **Unigram / SentencePiece（T5 / 早期 LLaMA）**：**自顶向下裁剪**——先建一个超大候选词表，按语言模型一元似然反复计算删除哪个词后损失增长最小并迭代淘汰；**SentencePiece** 核心亮点是把空格也编码为普通符号 ` `（U+2581），不依赖语言特定预分词规则、实现“端到端完全无损可逆还原”。\n\n**3. 词表大小（Vocab Size）与中文切分工程影响**：\n- 早期英文为主词表（如 LLaMA-2 仅 32K）里一个常见汉字往往要拆成 **2–3 个 UTF-8 byte token**，导致同样一段中文消耗 **3 倍长上下文和 3 倍 Decode 时间**！\n- 现代中文大模型（Qwen 152K / LLaMA-3 128K）把词表扩大收录数万常见汉字与高频词组（1 个汉字常仅占 0.5–1 个 token），大幅压低长度、加速首字与生成速度；代价是末尾 LM Head 分类层投影矩阵与 Embedding 参数表膨胀占据较多显存与计算，需配合大语料充分训练低频长尾词嵌入。\n\n> **追问 / 加分项**：切分敏感导致的经典坑：**Token Boundary Healing（词边界愈合）** 或“数草莓里有几个 r”困难——模型看到的不是字母拼写而是完整子词数字 ID（如整词被编为一个独立整数 id），需要训练多粒度拼写或字符级感知数据补足！",
+      "tags": [
+        "Tokenizer",
+        "BPE",
+        "SentencePiece"
+      ]
+    },
+    {
+      "id": "ai-29",
+      "cat": "ai",
+      "diff": 3,
+      "q": "大模型后训练全流程：SFT → RLHF（PPO）与 DPO、GRPO 的核心直觉、显存开销与工程取舍是什么？",
+      "a": "**1. 后训练阶段演进目标**：Pretrain 注入广博世界知识（但只会接着文本胡乱续写）；**SFT** 教会问答指令格式与基本任务遵循；**对齐与强化推理（RLHF / DPO / GRPO）**则把偏好边界、安全性与多步自我纠错推向更高上限。\n\n**2. 三大偏好对齐与推理强化方案对比**：\n- **RLHF-PPO**：标准四模型架构（Actor 待训模型 + Reference 冻结参考模型算 KL 惩罚防作弊崩溃 + Critic 价值模型估计基线 + Reward Model 人类偏好打分模型）。优势：Online 在线试错采样天花板高；痛点：**四模型同场显存极度恐怖**、奖励欺骗（Reward Hacking）难调、工程复杂度极高。\n- **DPO（Direct Preference Optimization）**：数学上通过推导发现最佳策略与奖励函数存在闭式解析解，从而**彻底砍掉了单独训练的 Reward Model 与 Critic Model，只剩 Actor + 冻结 Reference 两个模型**！直接在成对偏好数据 `(y_w > y_l)` 上做类似二元交叉熵的监督优化提高好回答相对坏回答的对数概率比。痛点：属于 Offline 数据静态分布，容易发生模型对好坏样本概率同向双降的偏移问题。\n- **GRPO（Group Relative Policy Optimization，DeepSeek-R1 核心）**：专门为了省掉庞大高方差的 Critic 价值模型而设计！针对同一道题目在线采样一组（Group，如 8–16 条）回答，利用可验证规则奖惩（数学对错/单测通过）或偏好给每条算出标量奖励后，直接以**组内均值和标准差作归一化算出相对优势 `A_i = (r_i - mean) / std`** 指导策略梯度更新，并叠加 KL 散度正则！既保留了 Online RL 探索推理能力（激发“Aha Moment”长思维链反思），又直接省去一个与策略模型同规模的 Critic 显存与超参敏感性！\n\n> **追问 / 加分项**：为什么 DPO / RLHF 一定必须带一个冻结的 Reference Model 算 KL 惩罚？否则策略会疯狂输出某几个讨好 Reward 的无意义高分高频垃圾词或破坏原先预训练语言流畅度（语言退化坍塌）。",
+      "tags": [
+        "RLHF",
+        "DPO",
+        "GRPO",
+        "后训练"
+      ]
+    },
+    {
+      "id": "ai-30",
+      "cat": "ai",
+      "diff": 3,
+      "q": "大模型分布式训练并行策略：DP/DDP、ZeRO-1/2/3（FSDP）、张量并行（TP）与流水线并行（PP）各自切分什么？",
+      "a": "**核心痛点：单卡放不下模型与海量激活，且跨卡通信速度（NVLink 900GB/s vs 跨机 RoCE/IB 50GB/s）差距巨大，必须按硬件拓扑做 3D/4D 混合并行！**\n\n- **DDP（数据并行）**：每卡存完整模型复制品，只把输入 Batch 数据切给 N 张卡各自独立前向+反向，最后用 **Ring All-Reduce** 同步平均梯度。实现最简单通信少，但单卡显存要求装得下整个模型与优化器。\n- **ZeRO（Zero Redundancy Optimizer，PyTorch FSDP 本质近似 ZeRO-3）**：核心理念是**消除数据并行卡之间的冗余状态副本**，在保证数学等价前提下把东西打散分片（Shard）并在需要那层时临时 All-Gather、用完即丢：\n  - **ZeRO-1**：仅切分**优化器状态**（瞬间省去大头显存，通信量同 DDP 完全不增）；\n  - **ZeRO-2**：再切分**梯度**（反向算完一层立刻 Reduce-Scatter 归约分片并销毁它卡片段，总通信量仍约与 DDP 齐平！）；\n  - **ZeRO-3 / FSDP**：连**模型参数本身**也按层切散到多卡！每次前向和反向计算某层前 All-Gather 拼回完整权重、算完即释放，通信量增大约 **1.5 倍**，对网卡带宽要求较高。\n- **张量并行（TP，Megatron-LM 层内并行）**：直接把单层内部的巨大线性矩阵乘法按**列切分（Column Parallel）+ 行切分（Row Parallel）**拆到多张 GPU 并行算，每层前向和反向都产生密集的 **All-Reduce** 同步通信——**通信延迟极敏感，绝不能跨节点，通常严格限制在单机 8 卡 NVLink 内部**！\n- **流水线并行（PP，层间并行）**：把 80 层模型切段分配给不同节点（卡 0 跑 1–20 层，卡 1 跑 21–40 层），仅卡间通过轻量点对点 **Send/Recv 传相邻激活张量**（极其适合跨机节点间！）。为减少空闲气泡（Pipeline Bubble），将大 Batch 拆为 Micro-batches，采用 **1F1B（One Forward One Backward）** 或交错 Interleaved 调度把空转率压到极低。\n\n> **追问 / 加分项**：还有处理超长序列必备的 **CP（Context Parallelism / Ring Attention）**与专门拆分 MoE 专家层的 **EP（Expert Parallelism，用 All-to-All 通信把 Token 路由发往对应专家卡再收回）**。",
+      "tags": [
+        "分布式训练",
+        "ZeRO/FSDP",
+        "TP与PP"
+      ]
+    },
+    {
+      "id": "ai-31",
+      "cat": "ai",
+      "diff": 2,
+      "q": "混合精度训练（AMP）：FP16 为什么需要 Loss Scaling 和 FP32 Master Weights？BF16 相比 FP16 为什么更稳定？",
+      "a": "**1. 为什么用混合精度**：FP16/BF16 让 Tensor Core 矩阵算力翻倍并直接把权重和激活内存腰斩（访存吞吐翻倍），但全程盲目纯用 FP16 会立刻炸锅！\n\n**2. FP16 的三大致命伤与 AMP 救治方案**：\n- **表示范围过窄易溢出（1 位符号 + 5 位指数 + 10 位尾数）**：最大正数仅 `65504`，最小正规正数约 `6×10^-5`。梯度往往很小（`10^-6 ~ 10^-8`），在 FP16 下直接**下溢归 0（Underflow）**导致学不动。\n  - **对策：Dynamic Loss Scaling**：前向算完标量 Loss 后乘上一个放大系数 S（如 65536）再反向传播，把全部微弱梯度整体推高进入 FP16 安全表示区间；在真正更新权重前再把梯度除以 S 还原（若遇到 Inf/NaN 溢出则自动跳过本步更新并把 S 减半！）。\n- **小步长权重更新精度丢失（Swamping）**：权重本身为 `1.0` 量级，若叠加一个 `10^-4` 的更新步长，受限于 FP16 仅 10 位尾数精度的加减对齐截断，权重加完后竟然纹丝不动！\n  - **对策：FP32 Master Weights**：优化器始终维护一份 **FP32 主权重副本**用于精准累加微小更新量，仅在前向计算前按需转为 FP16 副本。\n\n**3. BF16（Brain Floating Point）何以成为现代大模型标配**：\n- BF16（1 符号 + **8 指数** + 7 尾数）与 FP32 拥有**一模一样宽广的动态指数范围（最高可达 `3.4×10^38`！）**，只是牺牲了一点小数尾数分辨率（7 位约两位十进制有效数字，对噪声鲁棒的神经网络完全够用）。\n- 因此 BF16 **彻底摆脱了梯度的上溢和下溢灾难，直接无需繁琐易错的 Loss Scaling**，在 LLM 大规模训练中稳定性甩开 FP16 几条街！\n\n> **追问 / 加分项**：即便全链路使用 BF16，Softmax 指数求和、LayerNorm/RMSNorm 方差统计和交叉熵累加依然强烈要求在算子内先 upcast 成 FP32 累加避免精度累积误差！",
+      "tags": [
+        "混合精度",
+        "BF16 vs FP16",
+        "Loss Scaling"
+      ]
+    },
+    {
+      "id": "ai-32",
+      "cat": "ai",
+      "diff": 2,
+      "q": "Chinchilla Scaling Laws 揭示了参数量与 Token 数的什么关系？模型蒸馏与合成数据在中小模型落地中如何应用？",
+      "a": "**1. Chinchilla Scaling Laws（DeepMind 计算最优法则）**：\n- 早期 Kaplan 法则错判“算力增多时应该把 70%+ 预算砸在堆更大参数量上”，导致大量大模型实际上处于严重**训练不足（Under-trained）**状态。\n- Chinchilla 实验指出：在给定固定训练总算力预算（`C ≈ 6·N·D`）下实现验证 Loss 最低，**模型参数量 `N` 与训练 Token 数 `D` 必须同比重等比例放大**——具体约保持 **`D ≈ 20 × N`**（如 70B 参数最经济至少配 1.4T 高质量 Token）。\n- **工程转向（Inference-Optimal Over-training）**：现实里大模型往往要服务千万次调用，部署开销远超一次性训练！因此现代开源模型（如 LLaMA-3-8B 喂进 **15T Token**、Qwen3 小尺寸重训）会故意突破 20× 倍率重度“过训练”中小尺寸模型，用更贵的一次性预训练换取极致便宜好用的线上推理小模型！\n\n**2. 知识蒸馏（Distillation）与合成数据（Synthetic Data）**：\n- **知识蒸馏**：让小模型（Student）同时拟合真实硬标签与强教师模型（Teacher）输出的**软概率分布 / Logits**（携带“狗长得更像狼而不像卡车”的暗知识 Dark Knowledge）或直接蒸馏思维链推理轨迹（如 DeepSeek-R1 蒸馏出极强的 7B/32B 小模型）。注意词表不一致时用离线高质量响应采样 SFT（Sequence-Level Distillation）即可跨家族通用落地。\n- **合成数据闭环（Self-Play / Judge-Filter）**：用超强教师模型按主题覆盖率大批量生成多样化难题、代码与数学推理链，再经过**单元测试执行 / 符号验证器 / 裁判模型去重过滤错漏**（拒绝采样 Rejection Sampling）喂给小模型训练，防止无过滤自我循环导致模型崩溃（Model Collapse）。\n\n> **追问 / 加分项**：如果垂域微调发现加数据量后 Loss 不再掉，往往不是算力不够而是数据质量瓶颈（大量模板重复或脏噪音），高质量去重清洗配比远胜盲目堆 Token 数。",
+      "tags": [
+        "Scaling Laws",
+        "模型蒸馏",
+        "合成数据"
+      ]
+    },
+    {
+      "id": "ai-33",
+      "cat": "ai",
+      "diff": 3,
+      "q": "模型量化原理：PTQ 与 QAT 的区别？INT8/INT4/FP8 及 GPTQ、AWQ 如何保护显著权重降低精度损失？",
+      "a": "**1. 量化核心目的**：把 FP16/BF16 权重（甚至激活）映射到低比特整数（INT8/INT4）或 FP8 表示，核心收益是**倍减显存占用与把 Decode 访存受限的带宽翻倍~四倍提速**！\n\n**2. PTQ（训练后量化）vs QAT（量化感知训练）**：\n- **PTQ（Post-Training Quantization）**：不需要完整重训模型，仅拿几百条小型校准集（Calibration Set）前向跑一遍统计分布定出量化比例因子 Scale / Zero-Point（如仅权重量化 W4A16 或 W8A8）。成本极低分钟级完成，是 LLM 部署主力。\n- **QAT（Quantization-Aware Training）**：在训练图中插入伪量化模拟节点，并用 **STE（直通估计器 Straight-Through Estimator）**绕过不可微的取整 `round()` 反向更新权重适应截断噪音，极低比特（INT4 权重+激活全量化）精度保真度更高，代价是要耗费训练成本重训。\n\n**3. 常见 LLM 量化难点（Activation Outliers 离群值）与主流解法**：\n- 大模型激活张量极少数通道存在比常规大百倍的极端离群大值，直接全局对称均匀量化会把正常通道压扁丢失全部分辨率！\n  - **SmoothQuant（W8A8）**：通过数学等价缩放系数 `s`，把激活中刺头的巨幅波动**平滑转移（Migrate）一部分到更规整好处理的权重一侧**，使两边都能安全做 INT8 矩阵乘。\n  - **GPTQ（W4A16）**：逐层基于二阶海森逆矩阵估算每个权重被量化舍入后对输出重构误差的影响，动态调整同组尚未量化的其余邻居权重做**误差补偿**。\n  - **AWQ（Activation-aware Weight Quantization）**：核心洞察是“**权重本身重要与否不由权重大小决定，而由它对应乘上的输入激活幅度（最显著那 0.1%~1% 通道）决定**”！通过对这些对应显著激活的权重通道按放大倍数做等价数学缩放（权重放大、对应前一层激活等比缩小）提升它们在量化格点里的分辨率，无需像 GPTQ 那样依赖小校准集过度拟合即可保持极高泛化精度与更快解密速率！\n- **FP8（E4M3 / E5M2）**：Hopper/Ada H100/4090 原生硬件 Tensor Core 支持，保留指数动态范围处理离群值游刃有余，几乎无损降半显存与算力翻倍。\n\n> **追问 / 加分项**：量化到底在加速哪部分？**W4A16 仅压权重**在大 Batch Compute-Bound 的 Prefill 阶段反而可能因为多出反量化拆包算子变慢，它的真正主战场是中小并发 Batch 的 Memory-Bound Decode 阶段；大吞吐 Prefill+Decode 兼顾需上原生 FP8 或 W8A8。",
+      "tags": [
+        "模型量化",
+        "AWQ",
+        "GPTQ",
+        "FP8"
+      ]
+    },
+    {
+      "id": "ai-34",
+      "cat": "ai",
+      "diff": 3,
+      "q": "FlashAttention 的核心优化思想是什么？为什么不减少任何 FLOPs 理论计算量，却能大幅提速且把显存从 O(N²) 降为 O(N)？",
+      "a": "**核心洞察：GPU 有极快但容量极小（仅数十 MB）的片上 SRAM（L1/Shared Memory），和容量大但慢一个量级的片外 HBM 显存！标准 Attention 的真正性能黑洞不是乘法次数，而是反复在 HBM 里读写那张巨大的 `N×N` 注意力矩阵！**\n\n**1. 标准 Attention 慢在哪里**：\n- 算完 `S = Q·K^T`（`N×N`）写回 HBM → 再从 HBM 读出来跑逐行 `Softmax` 得到 `P` 写回 HBM（Softmax 需要知道整行最大值与总和所以传统做法得先落盘整行！）→ 再从 HBM 读出 `P` 乘 `V` 写出结果。且反向求导还需把巨无霸 `P` 一直憋在 HBM 显存直到反向，长文本直接 OOM！\n\n**2. FlashAttention 三大核心技术**：\n- **分块融合（Tiling + Kernel Fusion）**：把 `Q`、`K`、`V` 切成一个个小块（Tile）搬入片上高速 SRAM，在同一个 CUDA Kernel 里一气呵成完成小块点积 + Softmax + 乘以 `V` 并行累加，**中间那个庞大的 `N×N` 矩阵从未真正实体化写进过 HBM 显存**！\n- **Online Softmax（分块流式归约递推）**：逐块扫描计算同一行的新局部 `K_j` 时，只需要边走边维护当前已知局部最大值 `m` 与修正后指数分母 `l`，遇到更大的局部最大值 `m_new` 时，用缩放因子 `exp(m_old - m_new)` 动态修正历史累计结果，**一遍扫完就能得出全局 100% 数学精确等价（仅极微浮点误差）的 Softmax**！\n- **反向传播重计算（Recomputation）**：前向只省下两个很小的一维行统计向量 `(m, l)`（总显存开销彻底降至 **O(N) 线性**！），反向传播用到局部 `P` 时直接拿 `Q, K, m, l` 在 SRAM 里飞速重算小块，算力略微多花一点点，却因为彻底干掉 HBM 反复读写，端到端真实运行速度反而猛提 **2–4 倍**！\n\n> **追问 / 加分项**：FlashAttention-2 进一步调整内外循环顺序减少非矩阵乘（non-matmul）指令并按序列划分 Warp 减少通信同步；FlashAttention-3 针对 Hopper H100 引入 TMA 异步搬运重叠与原生 FP8 低精度块计算。",
+      "tags": [
+        "FlashAttention",
+        "IO感知",
+        "Online Softmax"
+      ]
+    },
+    {
+      "id": "ai-35",
+      "cat": "ai",
+      "diff": 3,
+      "q": "投机解码（Speculative Decoding）如何实现严格无损推理加速？草稿方案选择与接收率受什么影响？",
+      "a": "**1. 痛点直击**：大模型 Decode 阶段每生成一个 Token 都要把几十上百 GB 的全部权重完整读一遍，GPU 矩阵算力极度闲置（验证 5 个 Token 与验证 1 个 Token 耗时几乎一样长！）。\n\n**2. 核心流程（Draft-then-Verify，“小马探路，大马并行批改”）**：\n- **Draft（起草）**：用一个轻量级草稿模型（如 0.5B 同族小模型、或无需额外模型的 **EAGLE / Medusa** 多头/轻量草稿头、甚至直接匹配 Prompt/代码上下文 N-gram 查找）串行极速猜出未来 `γ`（如 4–5）个候选 Token 及各自概率分布 `q(x)`。\n- **Parallel Verify（并行验证）**：把这 `γ` 个候选 Token 拼成批一次性塞进目标大模型做**单次并行前向计算**，同时拿到大模型在每个位置上的精确分布 `p(x)`！\n- **Speculative Sampling 无损拒绝采样判断**：对第 i 个位置，如果大模型比草稿更认可（`p(x) >= q(x)`），100% 接收；若 `p(x) < q(x)`，则以概率 **`p(x)/q(x)` 接收**，一旦某步被拒绝，就停止接纳后面的并从修正残差分布 **`norm(max(0, p(x) - q(x)))` 中重新抽一个合法真样本**，外加全接收时大模型最后还附赠多吐第 `γ+1` 个 Token！\n- **数学严格保证无损**：通过该拒绝修正分布规则，可以严格证明最终生成序列在每个 Token 上的边缘概率分布**100% 数学等价于目标大模型独立采样本身**！\n\n**3. 工程实战影响因素**：\n- **接收率 `α`（Acceptance Rate）**：依赖草稿与目标模型分布对齐度及任务可预测性——代码补全、摘要抽取、RAG 原文搬运等确定性高场景接收率可超 75%~85%（提速 2.5–3.5×）；高创意发散写诗或大 Batch 高算力饱和负载下，草稿与并行校验额外计算反而可能拖累收益。\n\n> **追问 / 加分项**：草稿模型必须和目标模型**严格共享完全一致的 Tokenizer 词表**，否则 token 边界错位无法逐位置校验；无需额外独立草稿模型、直接在原模型末层隐藏状态挂载单层自回归预测头的 **EAGLE-2/3** 往往更省显存且接收率更高！",
+      "tags": [
+        "投机解码",
+        "推理加速",
+        "Speculative Decoding"
+      ]
+    },
+    {
+      "id": "ai-36",
+      "cat": "ai",
+      "diff": 2,
+      "q": "LLM 解码采样策略：Greedy、Beam Search、Temperature、Top-K、Top-P 与 Repetition Penalty 的原理与配合？",
+      "a": "**1. 常见解码模式与参数机制**：\n- **Greedy Search（贪心，等效 `T → 0`）**：每步永远挑最高概率 Token。确定性极强、零随机、适合代码单测与客观标准答案，但长文本容易单调或陷入局部机械复读循环。\n- **Beam Search（束搜索）**：维护评分最高的 `B` 条路径整体最优（常配长度惩罚）。在传统机器翻译（序列确定性高）表现优异，但自由开放生成场景反而倾向反复挑平庸高概率高频安全词导致索然无味与 KV Cache 内存翻 `B` 倍，现代开放 LLM 对话极少开启。\n- **Temperature `T`**：在过 Softmax 前将 logits 整体除以 `T`（`z_i / T`）。**`T < 1` 尖锐化**分布（高概率更绝对，回答严谨一致）；**`T > 1` 平坦化**分布（抬高长尾冷门词机会，更具创造力也更容易胡说八道崩溃）。\n- **Top-K 截断**：只保留得分最高的前 K 个候选重归一化采样。弱点是固定 K 无法适应“某些词几乎唯一确定（第 1 词概率 99%）”与“某些词平分秋色（几百个词都能接）”的动态分布差异！\n- **Top-P（Nucleus Sampling 核采样）**：按概率降序累加刚好超过阈值 P（如 `0.9` 或 `0.95`）构成最小候选集合。完美实现“分布集中时只留 1–2 个，分布发散时保留上百个”的**自适应候选集**（工程常同时设如 `top_k=50, top_p=0.9, T=0.7` 先做 Top-K 再过滤 Top-P 并温度缩放，注意先 T 后 P/K 的实现顺序细节）。\n- **Repetition / Frequency / Presence Penalty**：给历史已出现过的 Token 的 logits 减去惩罚或按出现次数线性扣除，打破复读机死循环（注意过高会误杀代码中反复出现的合法括号和关键词如 `return` / `self`！）。\n\n> **追问 / 加分项**：生产结构化输出、Tool Call 或数学严肃评估通常用 `T=0`（或极低温 `0.1~0.2`）保证稳定复现；头脑风暴/创意写作配合 `T=0.7~0.9` + `top_p=0.9` + `min_p=0.05`（相对最高概率比例裁掉极端垃圾噪声尾部比单纯 Top-P 更鲁棒！）。",
+      "tags": [
+        "解码采样",
+        "Top-P",
+        "Temperature"
+      ]
+    },
+    {
+      "id": "ai-37",
+      "cat": "ai",
+      "diff": 2,
+      "q": "多模态大模型对齐机制：CLIP 双塔对比学习与 LLaVA/Qwen-VL 视觉编码器 + Projector 接入 LLM 的架构差异？",
+      "a": "**1. CLIP（跨模态对齐基座 — 双塔各自编码，浅层点积对齐）**：\n- **架构**：Image Encoder（ViT/ResNet）+ Text Encoder 两条完全独立的双塔分别编码整张图与文本描述得到全局向量，在顶部做余弦相似度对比对齐。\n- **InfoNCE 对比损失**：一个 Batch 里 N 对图文构成 `N×N` 矩阵——拉近对角线上 N 个真实匹配对，同时用力推开其余 `N² - N` 个错误配对负样本（含对称 Image→Text 与 Text→Image 双向交叉熵损失）。\n- **局限**：仅适合图搜文/零样本分类，由于两塔特征只在最后汇总向量做一次点积，难以完成细粒度看图细节问答、OCR 或复杂逻辑推理。\n\n**2. 现代生成式 VLM（代表：LLaVA / Qwen-VL — ViT + Projector + LLM 自回归融合）**：\n- **架构链路**：`Image → 预训练 ViT 提取全图视觉 Patch 序列特征 → Projector 跨模态投影器（线性层 / 2层 MLP / Q-Former / Pixel-Shuffle 下采样压缩） → 映射对齐到与文字词表相同的嵌入维度空间 → 当作视觉前缀 Tokens 与文字 Prompt 拼在同一序列送入 LLM 内部逐层深交互！`\n- **典型多阶段训练策略**：\n  1. **阶段一（特征预对齐）**：冻结 ViT 和 LLM，**只训 Projector**，用大规模图文描述数据把视觉空间翻译进 LLM 能听懂的语意空间；\n  2. **阶段二（视觉指令微调）**：放开 Projector + LLM（甚至在更高清阶段连 ViT 一起放开用较小 LR 联合微调），喂进细致的多模态推理/OCR/图表数据激活细节理解力。\n\n> **追问 / 加分项**：为什么直接缩放强塞固定低分辨率图进 ViT 会直接变成“高度近视”（看不清表格小字）？因此现代 Qwen2-VL / InternVL 引入了 **Dynamic High Resolution（动态切分局部瓦片 + 全局缩略图）+ 2D-RoPE 原生自适应分辨率 + Token 相邻 2×2 合并压缩**，显著兼顾超清 OCR 与推理序列长度可控！",
+      "tags": [
+        "CLIP",
+        "多模态VLM",
+        "对比学习"
+      ]
+    },
+    {
+      "id": "ai-38",
+      "cat": "ai",
+      "diff": 2,
+      "q": "如何保证 LLM 稳定输出严格合法的 JSON / Schema（Structured Outputs）？受限解码（FSM/Grammar）与 Prompt 重试如何取舍？",
+      "a": "**核心痛点：业务网关/Agent 依赖程序精确解析 JSON 调下游函数，即使模型 99% 情况下守规矩，1% 的多了一个逗号、包了一层 markdown 代码块或少个引号就会让在线工作流直接崩溃！**\n\n**1. 三层可靠性递增方案对比**：\n- **Prompt 强约束 + 示例 + JSON Repair 重试（兜底方案）**：在 Prompt 明示 Schema 并配 Few-shot，解析失败用容错 JSON 修复器或把报错栈回塞模型重跑；但面对小模型或复杂深嵌套结构仍可能连错，且浪费额外延迟与 Token 费用。\n- **厂商 Structured Outputs / JSON Mode**：在 API 请求传 `response_format: { type: \"json_schema\", json_schema: ... }`。\n- **底层推理引擎受限解码（Constrained Decoding，如 Outlines / vLLM xgrammar / SGLang Compressed FSM）**：\n  - **核心机制**：提前把用户指定的 JSON Schema / 正则 / 上下文无关文法（CFG）编译为一个**确定性有限状态机（FSM / PDA）**，并映射到 Tokenizer 词表中；\n  - 在每个 Decode 步计算完 `logits` 后、做采样之前，查询状态机当前所允许的所有合法下一 Token，把其余所有非法 Token 的 logit 强行**掩码为 `-inf`**（0 概率）！从而**100% 物理级保证**绝不可能吐出任何语法不合规字符，甚至可以批量跳过固定结构标点符号直接 **Jump-Forward 跳跃填充**加速！\n\n**2. 受限解码的隐藏陷阱（必知实战细节）**：\n- **不要无脑强锁复杂模型自由度而窒息它的“思考过程”**！若 Schema 字段顺序直接一上来就要求先输出 `final_answer` 或分类标签再输出 `reason`，在没有先展开思维铺垫时强行掩码会严重拉低推理正确率！应合理设计 Schema 字段顺序（先 `reasoning` 再 `decision`），或让 Reasoning 标签先走自由 CoT 再触发约束 Schema。\n\n> **追问 / 加分项**：Token 边界交叉风险——例如 JSON 期望闭合 `\"}` 时模型吐出的单个复合 token `\"},` 会提前跨越两个文法边界，优秀引擎（如 xgrammar）能把词表事先按字符字节级别精准剖析构建预缓存掩码矩阵，开销可压到单步几十微秒级！",
+      "tags": [
+        "Structured Outputs",
+        "受限解码",
+        "FSM"
+      ]
+    },
+    {
+      "id": "ai-39",
+      "cat": "ai",
+      "diff": 3,
+      "q": "长上下文（128K / 1M）工程与模型挑战：RoPE 插值（YaRN）、Ring Attention、Prefix Caching 各自解决什么瓶颈？",
+      "a": "**长上下文绝不是“把 max_position_embeddings 改大”就行，它会同时撞碎三大关：外推位置精度崩塌、单卡显存 OOM、超长输入极慢首字延迟（TTFT）与高昂算力成本！**\n\n- **1. 模型位置表征瓶颈 → RoPE 频率插值（NTK / YaRN）**：直接输入超越预训练窗口的长度会导致位置编码处于未见高频外推分布而乱码；通过调整基底旋转基数 `rope_theta` 或分段对高低频做温度/幅度缩放（YaRN），只需极少长文继续预训练即可高质量支撑 128K~1M 上下文检索。\n- **2. 单机训练/推理显存墙 → 分布式上下文并行（Ring Attention / Ulysses）**：即使用了 FlashAttention 把空间压到 O(N)，1M 长文仅前向激活与 KV 状态单卡仍放不下！**Ring Attention** 把超长序列切成 N 段分摊给 N 张卡呈环形传递 K/V 块，并在通信传输下一块 KV 的同时并发计算当前本地块的 FlashAttention，让**通信完美掩盖在计算耗时之下**；DeepSpeed Ulysses 则利用多头独立性做 All-to-All 在头维度并行切分再各自做全序列 Attention。\n- **3. 线上重复长前缀推理算力浪费 → Prefix Caching / RadixAttention**：Multi-Turn 多轮对话、超长系统提示词、Agent 工具定义或本地代码库问答往往有 90% 的前端 Token 是重复固定的。SGLang **RadixAttention** 与 vLLM **Automatic Prefix Caching（APC）** 用基数树/块哈希管理全局物理显存页，新请求如果命中历史前缀块的哈希键直接 **0 计算复用历史 KV Cache**，直接让首字延迟（TTFT）雪崩式下降 5–10 倍！\n\n> **追问 / 加分项**：模型即使宣称支持 1M 上下文，真实性能还要重点跑 **RULER / Needle-in-a-Haystack（大海捞针） / 多针推理**验证“有效上下文窗口（Effective Context）”，避免中段迷失（Lost in the Middle）现象！",
+      "tags": [
+        "长上下文",
+        "Ring Attention",
+        "Prefix Caching"
+      ]
+    },
+    {
+      "id": "ai-40",
+      "cat": "ai",
+      "diff": 2,
+      "q": "生产级 AI Agent 如何做系统评测与稳定性治理（轨迹评估、Pass@k、工具沙箱、Guardrails 与熔断）？",
+      "a": "**Agent 不同于单轮闲聊模型：单步看似 95% 准确率，连续调 10 步工具不加治理，端到端全链路成功率就跌成 0.95^10 ≈ 60%，且有真写库、删文件或死循环烧钱风险！**\n\n**1. 科学评测体系（不仅看最终答案，更看中间过程）**：\n- **轨迹评估（Trajectory Evaluation）**：记录并拆解验证每一步 Tool Call 的工具名、结构化入参准确性（Precision/Recall）、无用冗余轮次，区分到底是“没找着信息”还是“找对了结果却推理总结错”。\n- **稳定性指标 `Pass@k` vs `Pass^k`**：`Pass@k`（跑 k 次至少成功 1 次）衡量能力上限探索度；真实生产体验极其严苛，必须追求 **`Pass^k`**（同个问题连续跑 k 次**全都一次稳定通过**的一致率！）。\n- **分层裁判机制**：能写确定性代码断言（JSON 格式、SQL 执行结果/单测通过、精确字符串正则/状态变更 diff）的**绝不交给大模型打分**；主观开放质量则结合 **LLM-as-a-Judge** 配严格评分 Rubric 与双向位置消偏检测。\n\n**2. 线上运行时安全与稳定性护栏（Guardrails）**：\n- **权限隔离与执行沙箱**：代码执行、Shell 命令强制隔离在无特权容器/MicroVM（如 Firecracker/E2B/gVisor），只读与写操作权限分离，高危不可逆外部写入必须接入 **Human-in-the-Loop 二次确认**。\n- **Prompt Injection 防御与状态机防失控**：明确隔离不可信外部网页/文档数据通道；限制**最大递归迭代轮数 `max_steps`、单请求 Token 总额熔断预算**，以及识别相邻连续发出完全相同无效工具调用的死循环检测与熔断降级。\n\n> **追问 / 加分项**：Agent 调试与持续迭代最重要的是把线上 **Trace（全链路 LLM prompt/response、工具输入输出耗时与报错码）** 完整结构化落盘并把高频 Bad Case 一键回流转化成 CI 黄金回归评测集！",
+      "tags": [
+        "Agent评测",
+        "Guardrails",
+        "生产稳定性"
+      ]
+    },
+    {
+      "id": "algo-15",
+      "cat": "algo",
+      "diff": 2,
+      "q": "单调栈和单调队列各自解决哪类问题？为什么它们能把 O(N²) 降为均摊 O(N)？",
+      "a": "**1. 单调栈（Monotonic Stack）**：\n- **核心场景**：为每个元素寻找左侧或右侧**“第一个更大 / 更小”**元素（如每日温度、下一个更大元素、柱状图最大矩形、接雨水）。\n- **模板思路**：遍历数组时维护栈内元素单调递增（找更小）或递减（找更大）；一旦新元素破坏单调性，就不断弹出栈顶并计算栈顶元素的答案（此时新元素正是它右侧首个破坏单调性的边界！），再将新元素压栈。\n\n**2. 单调队列（Monotonic Queue / Deque）**：\n- **核心场景**：求**滑动窗口内的最值**（如大小为 `k` 的窗口最大值，或限制长度的子数组最大和结合前缀和）。\n- **操作要点**：用双端队列存**下标**——入队前从**队尾**淘汰所有不如当前值优的元素（既没有当前值强、生命周期又比当前短，永远没机会成为未来窗口最值）；随后从**队头**弹出已滑出 `[i - k + 1, i]` 左边界的过期下标；此时队头恒为当前窗口最值。\n\n**3. 为什么是均摊 O(N) 而不是 O(N²)**：\n- 尽管 `while` 循环嵌套在 `for` 循环内部，但全过程中每个下标**最多入栈/入队一次、出栈/出队一次**。总操作数不超过 `2N`，单次均摊 O(1)。\n\n> **追问 / 加分项**：写柱状图最大矩形时在首尾各加一个高度 0 的哨兵元素，就能统一触发所有栈中元素结算，省去循环外单独清空栈的边界代码。",
+      "tags": [
+        "单调栈",
+        "单调队列",
+        "均摊复杂度"
+      ]
+    },
+    {
+      "id": "algo-16",
+      "cat": "algo",
+      "diff": 1,
+      "q": "前缀和（一维/二维）与差分数组的核心思想是什么？配合哈希表能解哪些高频子数组题？",
+      "a": "**1. 前缀和（静态区间查询 O(1)）**：\n- 定义 `pre[i]` 为前 i 项累加和（一维 `sum(l..r) = pre[r+1] - pre[l]`），二维矩阵用容斥原理：`sum(r1,c1..r2,c2) = P[r2+1][c2+1] - P[r1][c2+1] - P[r2+1][c1] + P[r1][c1]`。\n- 预留下标 0 的哑元 `pre[0] = 0` 可完美消除左边界 `l = 0` 时的越界特判！适合数据不频繁改、高频查询区间和。\n\n**2. 差分数组（静态批量区间修改 O(1)）**：\n- 定义 `diff[i] = a[i] - a[i-1]`。要给区间 `[l, r]` 统一加 `val`，只需两步 O(1) 修改：**`diff[l] += val`、`diff[r + 1] -= val`**；全部修改完成后对 `diff` 求一遍前缀和即还原最终数组（经典应用：航班预订、拼车容量检查、二维矩形覆盖）。\n\n**3. 前缀和 + 哈希表（高频套路：存在负数的连续子数组目标匹配）**：\n- 当数组含负数时滑动窗口不再具有单调性，必须改用“**Two-Sum 思想化前缀和**”：若 `pre[r] - pre[l] == k`，则边遍历 `pre[r]` 边在哈希表统计历史上 **`pre[r] - k` 出现了多少次 / 最早出现的下标**（注意预先放入 `{0: 1}` 或 `{0: -1}`）。\n- 典型变体：和为 K 的子数组、0 和 1 个数相等最长子数组（把 0 视作 -1 求和为 0）、和可被 K 整除的子数组（用正余数 `((pre % k) + k) % k` 作 Key）。\n\n> **追问 / 加分项**：若既要频繁**单点修改**又要频繁**区间求和**，静态前缀和失效，必须升级为**树状数组（BIT）或线段树**达到双 O(log N)。",
+      "tags": [
+        "前缀和",
+        "差分数组",
+        "哈希表"
+      ]
+    },
+    {
+      "id": "algo-17",
+      "cat": "algo",
+      "diff": 2,
+      "q": "位运算常见技巧与状态压缩 DP（Bitmask DP）的适用边界是什么？",
+      "a": "**1. 面试必知位运算技巧**：\n- **异或 `^` 性质（自反与归零）**：`a ^ a = 0`、`a ^ 0 = a`。数组中唯一出现 1 次的数直接全员异或；若有两个出现 1 次的数，先全员异或得 `xor_ab`，取 **`lowbit = xor_ab & (-xor_ab)`**（最低位为 1 的比特，表示 a 与 b 在该位必不相同）将数组分成两组再各自异或。\n- **`n & (n - 1)`（消除二进制最低位的 1）**：用于 O(1 的个数) 统计汉明权重，以及 **O(1) 判断 2 的幂**：`n > 0 && (n & (n - 1)) == 0`。\n- **`x & (-x)`（提取最低位的 1）**：树状数组核心运算（`i += lowbit(i)` 跳父节点）与子集枚举。\n- **枚举 `mask` 的所有非空真子集**：`for (int sub = mask; sub; sub = (sub - 1) & mask)`，整个 2^n 所有状态对其子集再遍历一次的总操作量只有 **O(3^n)**（二项式定理 `(1+2)^n`）。\n\n**2. 状态压缩 DP 边界**：\n- 当一个维度的集合选/未选状态需要完整记入 DP 状态，而该维度大小 **`N ≤ 20`**（2^20 ≈ 10^6，N ≤ 12 则 3^12 ≈ 5.3×10^5）时，用一个整型比特位 `mask` 编码整个集合状态（如 TSP 旅行商问题 `dp[mask][last]`、网格棋盘轮廓线 DP、我能赢吗）。\n\n> **追问 / 加分项**：无符号右移与负数右移在 C++ 中要注意带符号数左移溢出会触发 UB，位掩码运算应习惯使用 `unsigned int / uint32_t / uint64_t` 与 `1ULL << k`。",
+      "tags": [
+        "位运算",
+        "状态压缩DP",
+        "lowbit"
+      ]
+    },
+    {
+      "id": "algo-18",
+      "cat": "algo",
+      "diff": 2,
+      "q": "字典树（Trie）的原理、空间优化与典型应用？AC 自动机是如何做多模式串匹配的？",
+      "a": "**1. 字典树（Trie / Prefix Tree）**：\n- **原理**：利用字符串公共前缀复用树节点，每条边代表一个字符，节点记录 `isEnd` / `passCount` / 附加权重，查询与插入均仅需 **O(L)**（L 为单词长度，与词库总规模 N 无关！）。\n- **典型应用**：输入法/搜索框**前缀自动补全**、敏感词过滤、IP 路由最长前缀匹配，以及**0-1 Trie 解决最大异或对（Max XOR Pair）**——把整数视作 31 位二进制串，从最高位贪心走相反比特分支！\n- **空间优化**：传统静态定长数组 `children[26]` 在稀疏字符集或 Unicode 场景极为浪费；工程常用 **哈希表子节点、三向搜索树（TST）、基数树（Radix Tree / 压缩单链路径，如 HTTP 路由 / Redis Rax）** 或双数组 Trie（Double-Array Trie）。\n\n**2. AC 自动机（Aho-Corasick = Trie + KMP 失配指针）**：\n- **场景**：给定 10,000 个敏感词和一篇长文章，如果对每个敏感词各跑一次 KMP 是 O(词数 × 文章长度)；AC 自动机把所有模式串建成一棵 Trie，然后用 **BFS 逐层构造类似 KMP 的 `fail` 失配指针**：指向“当前路径后缀能在整棵 Trie 里匹配到的最长真前缀节点”。\n- **效果**：扫描长文章一遍 **O(文本长度 + 命中输出总数)** 就能一次性把成千上万个敏感词全扫出来！\n\n> **追问 / 加分项**：AC 自动机施工小优化：**Trie 图（直接把空儿子指针重定向到 `fail` 对应的子节点 `next[u][c] = next[fail[u]][c]`）**，匹配时彻底省掉沿 `fail` 链循环回跳的开销，但切记收集命中结果时仍需沿 `fail` 或 `last` 链统计被包含的短后缀模式词！",
+      "tags": [
+        "Trie",
+        "AC自动机",
+        "字符串"
+      ]
+    },
+    {
+      "id": "algo-19",
+      "cat": "algo",
+      "diff": 3,
+      "q": "线段树（Segment Tree）与树状数组（Fenwick Tree / BIT）的原理、懒标记及选型对比？",
+      "a": "**1. 树状数组（Binary Indexed Tree / Fenwick Tree）**：\n- **原理**：借助整数下标二进制 `lowbit(i) = i & (-i)` 管辖不同长度的前缀区间块，`tree[i]` 存结尾为 `i`、长度为 `lowbit(i)` 的和。\n- **核心操作**（代码通常仅 10 行）：单点更新向上跳 `i += lowbit(i)`，前缀查询向下跳 `i -= lowbit(i)`，双 **O(log N)**。典型用于动态单点加+区间和、离散化后统计**逆序对**。\n- **局限**：核心要求运算具备**可逆性**（有加法逆元如前缀和减法、异或），因此原版 BIT 不能直接求动态任意区间 `max`/`min`。\n\n**2. 线段树（Segment Tree）与 Lazy Propagation 懒标记**：\n- **原理**：把区间 `[1..N]` 递归二分构建满二叉树（通常开 `4N` 大小），每个节点汇总左右子树答案。不仅支持求和，还支持任意**满足结合律（Monoid）的区间信息**（区间最值、GCD、区间最大连续子段和）。\n- **懒标记（Lazy Tag）核心思想**：当要求给大区间 `[L, R]` 整体加 `val`（或赋值）时，若某线段树节点刚好被完全覆盖，**立即更新当前节点汇总值并挂上 `lazy` 记账标记，然后直接 return 不继续往下拆散递归**！直到后续查询或部分修改真正需要穿过该节点下探左右儿子时，再调用 `pushDown` 把积攒的懒标记下推一层给左右儿子并清零自己——保证区间修改 + 区间查询严格保持 **O(log N)**！\n\n**3. 选型建议**：\n- 仅单点改 + 区间和/异或/计数 → 首选**树状数组**（代码极短、常数极小、内存只需 1N）。\n- 涉及区间最值、区间批量加乘/赋值覆盖、动态开点（值域跨度 10^9）或扫描线矩形面积并 → 必须上**线段树**。\n\n> **追问 / 加分项**：当下标范围高达 10^9 但查询点数不多时，不提前离散化也可使用**动态开点线段树**，仅在真正访问到左右儿子时按需分配节点（内存 O(Q log U)）。",
+      "tags": [
+        "线段树",
+        "树状数组",
+        "懒标记"
+      ]
+    },
+    {
+      "id": "algo-20",
+      "cat": "algo",
+      "diff": 2,
+      "q": "图论最短路径算法全景：BFS、0-1 BFS、Dijkstra、Bellman-Ford、SPFA 与 Floyd-Warshall 如何选型？",
+      "a": "**核心按“边权特性”与“单源/全源”两维直接秒选**：\n\n- **无权图 / 边权全为 1 → BFS**：队列天然按步数分层单调递增，**O(V + E)** 首次出队/入队即最短。\n- **边权只有 `0` 和 `1` → 0-1 BFS**：用**双端队列 `deque`** 替代优先队列——走 `0` 边从队头压入（保持同距离层），走 `1` 边从队尾压入，严格保证队列内距离单调且做到 **O(V + E)**，比 Dijkstra 还少一个 log 因子！\n- **非负权单源最短路 → Dijkstra（堆优化）**：基于贪心思想“每次从尚未确定的点里挑 `dist` 最小的，它的最短路已被锁定绝不会被其它未定非负路径再缩短”。复杂度 **O((V + E) log V)**；严禁用于含**负权边**的图！\n- **含负权边 / 限最多 K 条边 / 负环检测 → Bellman-Ford**：做 `V - 1` 轮全边松弛，第 V 轮还能继续松弛说明必有从源点可达的负权环；复杂度 **O(V · E)**。（限制恰好或最多 K 步最短路如“K 站中转内最便宜航班”，用备份上一轮 `dist` 数组的 Bellman-Ford 刚好天然解出！）\n- **SPFA**：Bellman-Ford 的队列优化（仅由上一轮成功松弛变短的点再去松弛邻居），随机稀疏图平均很快，但极易被构造网格图卡回 **O(V · E)**。\n- **全源任意两点最短路（或允许负权无负环、`V ≤ 400`）→ Floyd-Warshall**：三重循环插点 DP `d[i][j] = min(d[i][j], d[i][k] + d[k][j])`，时间 **O(V³)**，注意中间枢纽点 **`k` 必须放在最外层循环**！\n\n> **追问 / 加分项**：如果图是**有向无环图（DAG）**就算带负权也可以不做 Bellman-Ford，直接跑一遍**拓扑排序按拓扑序依次松弛**即可实现全无环下 **O(V + E)** 线性最优！",
+      "tags": [
+        "最短路径",
+        "Dijkstra",
+        "Bellman-Ford"
+      ]
+    },
+    {
+      "id": "algo-21",
+      "cat": "algo",
+      "diff": 2,
+      "q": "最小生成树（Prim vs Kruskal）的原理与选型权衡？如何用染色法判定二分图？",
+      "a": "**1. 最小生成树（MST）两大经典贪心**：\n- **Kruskal（加边法 — 稀疏图首选）**：把所有边按权值从小到大排序，利用**并查集（Union-Find）**逐一考察两端点是否已连通；不连通则加入生成树并合并，凑齐 `V - 1` 条边即完成。复杂度 **O(E log E)**（瓶颈仅在边排序），极其契合边数不多的稀疏图与“给出散落边列表”的题目。\n- **Prim（加点法 — 稠密图首选）**：类似 Dijkstra 维护“已入选点集到外界各点的最小连边距离”，每次挑离当前树最近的点并入，更新其邻接点到树的距离。朴素版 **O(V²)** 无堆开销（对完全图/稠密图远快于 `E log E`）；堆优化版 O((V+E) log V)。\n\n**2. 二分图（Bipartite Graph）判定与核心等价定理**：\n- **等价充要条件**：一张图是二分图 ⟺ 图中**不包含任何奇数条边的环（奇环）**。\n- **染色法（O(V + E)）**：枚举所有未染色的连通分量起点染成颜色 1，跑 BFS 或 DFS 把其邻接点全部染成相反色（-1）；若遇到邻接点已被染过且颜色**与当前点相同**，立刻冲突返回 `false`（常见变体：把矛盾/互斥关系视作连边检查“可能的二分法”）。\n\n> **追问 / 加分项**：如何求解“次小生成树”或“某条边必须在 MST 中”？可先把必选边强制用并查集合并进去再跑 Kruskal；或建好 MST 后用倍增 LCA 查环上除了新边以外的最大边权做替换。",
+      "tags": [
+        "最小生成树",
+        "二分图",
+        "图论"
+      ]
+    },
+    {
+      "id": "algo-22",
+      "cat": "algo",
+      "diff": 3,
+      "q": "字符串匹配算法 KMP 的 next（LPS）数组原理是什么？Rabin-Karp 滚动哈希为何在工程中更常用？",
+      "a": "**1. KMP 的核心消除暴力回退**：\n- 暴力匹配失配时主串指针 `i` 要笨重回退重算；KMP 保证**主串指针 `i` 永远不回退**，全靠预处理模式串 `P` 得到的 **`next[j]`（也称 `pi[j]` / LPS）数组**告诉模式串指针 `j` 在失配时直接回跳到哪个位置继续。\n- **`next[j]`（前缀函数）的精准物理含义**：子串 `P[0..j]` 中，**长度严格小于自身的最长相等真前缀与真后缀的长度**。\n- **线性构造（均摊 O(M)）**：设 `len = pi[i-1]` 为上一个前缀的最长边界；若 `P[i] == P[len]` 直接延伸 `pi[i] = len + 1`；否则不断令 `len = pi[len - 1]` 往更短相同前后缀回退试探，直到匹配或归 0。整趟匹配复杂度稳定最坏 **O(N + M)**，绝不退化！\n\n**2. Rabin-Karp 滚动哈希（Rolling Hash）何以在工程广泛胜出**：\n- 把长度为 `M` 的子串看作一个 `B` 进制大整数（取模 `P`，常用双哈希或 64 位无符号自然溢出 + 大质数底 `131/13331` 防碰撞），窗口向右滑动一格时只需 O(1) 执行“减去最高位权、整体乘进制、加上新字符”即可算出新哈希值！\n- **工程胜出点**：写起来极简洁且**天然跨界适配二维矩阵模式匹配**、**查找最长重复子串**（二分答案长度 + 滚动哈希把子串丢进哈希表查重）和**海量文档抄袭指纹（MinHash/SimHash/Rabin指纹切块去重）**。仅当理论最坏碰撞验证会退化为 O(NM)，若选双模哈希碰撞概率可压至近乎零。\n\n> **追问 / 加分项**：文本编辑器搜单词常用的是更快的 **Boyer-Moore / Sunday**（从后往前比对利用“坏字符规则”直接大跨步跳跃，实际往往只需检查 O(N/M) 亚线性字符！），而正则引擎或需要最坏确定性保证时则离不开 KMP / Z-Algorithm / AC 自动机。",
+      "tags": [
+        "KMP",
+        "滚动哈希",
+        "字符串匹配"
+      ]
+    },
+    {
+      "id": "algo-23",
+      "cat": "algo",
+      "diff": 2,
+      "q": "背包 DP 三大家族（0-1 背包、完全背包、多重背包）的一维滚动优化时，内外层遍历顺序为何不同？",
+      "a": "**核心区别全看状态转移公式中需要用“上一层还没选当前物品时的旧值”，还是“当前层刚更新过的可重复累加新值”！**\n\n- **1. 0-1 背包（每件最多选 1 次）**：\n  - 一维状态压缩公式：`dp[j] = max(dp[j], dp[j - w] + v)`。\n  - **外层遍历物品 `i`，内层容量 `j` 必须从大到小倒序枚举**！因为算 `dp[j]` 用到的 `dp[j - w]` 必须还保持着“未放物品 i 之前上一行的旧值”；如果正序遍历，更新 `j - w` 后又在同层紧接着被 `j` 用上，等效于同一件物品被反复放进了多次！\n- **2. 完全背包（每件可选无限次）**：\n  - **外层物品，内层容量 `j` 改成从小到大正序枚举**！恰好反过来利用“同层刚更新的新值”允许同一个物品连续被选 1 次、2 次、k 次……\n  - **组合数 vs 排列数高频变体坑（如零钱兑换 II vs 组合总和 IV）**：求**组合数（不计顺序）**必须**外层物品、内层正序背包容量**（保证先用完硬币 1 再用硬币 2，不会混出 `(1,2)` 和 `(2,1)` 两种）；若求**排列数（区分顺序）**则**外层背包容量正序、内层遍历物品**，让任意容量尾端都能接上任意一种物品结尾！\n- **3. 多重背包（第 i 件最多选 `s_i` 次）**：\n  - **二进制分组拆分优化（最实用必会）**：把数量 `s` 按 `1, 2, 4, 8, ..., 剩余余数` 拆分成 `O(log s)` 个捆绑新物品（因为这些 2 的幂叠加能凑出 `[0..s]` 里的任何整数！），直接降维打击转化为标准 **0-1 背包**求解！追求极限线性复杂度还可上单调队列优化按余数同余分组。\n\n> **追问 / 加分项**：若题目要求“**恰好装满**容量” vs “不超过容量最大价值”，唯一区别在初始化：求最大价值不超过时 `dp[0..W] = 0`；求恰好装满/最小代价/方案数时只有 `dp[0]` 合法（`0` 或 `1`），其余 `dp[1..W]` 应设成 `-INF` / `+INF` / `0` 标记不可达。",
+      "tags": [
+        "背包DP",
+        "循环顺序",
+        "动态规划"
+      ]
+    },
+    {
+      "id": "algo-24",
+      "cat": "algo",
+      "diff": 3,
+      "q": "区间 DP、树形 DP 与数位 DP 各自的状态设计范式与高频母题是什么？",
+      "a": "- **1. 区间 DP（代表题：戳气球、石子合并、最长回文子序列）**：\n  - **范式**：`dp[i][j]` 表示区间 `[i, j]` 内的最优代价/得分。遍历时**外层枚举区间长度 `len = 2..N`（或 `i` 从大到小倒推、`j` 从小到大）**，内层枚举中间分割点 `k`，确保算大区间时左右小区间早已就绪！\n  - **戳气球逆向思考神来之笔**：正着考虑戳爆谁会导致左右邻居合并改变依赖，改为设 **`dp[i][j]` 表示戳完开区间 `(i, j)` 内所有气球、保留两端 `i` 和 `j` 不戳的最大收益**，枚举区间内**最后一个才被戳破的气球 `k`**——此时左右两边早已戳空只剩 `i, k, j` 相邻，子问题彻底独立！\n- **2. 树形 DP（代表题：打家劫舍 III、二叉树监控相机、树的直径/换根 DP）**：\n  - **范式**：后序遍历（自底向上），每个节点向上返回一个状态元组（如 `[选当前节点最优, 不选当前节点最优]` 或 `[已覆盖有相机, 已覆盖无相机, 未被覆盖]`）。\n  - **换根 DP（Rerooting）**：第一次 DFS 以 0 为根算出所有子树信息，第二次 DFS 从上往下推算“父节点向外界其余连通分量的贡献”，O(N) 一次求出以**每个点为根**的结果（如树中距离之和）。\n- **3. 数位 DP（代表题：数字 1 的个数、至多 N 为止的合法数统计）**：\n  - **范式**：解决“求区间 `[L, R]` 内满足某位特征的整数个数”。转换为 `solve(R) - solve(L - 1)`，用记忆化搜索 **`dfs(pos, state, isLimit, isNum)`**：`isLimit` 标识当前位是否受限于原数字上界、`isNum` 处理前导零是否已经开始填有效数字（当 `!isLimit && isNum` 时状态完全自由可安全复用 `memo` 缓存！）。\n\n> **追问 / 加分项**：若树形 DP 遇上类似“树上背包合并子树”复杂度常直观误判为 O(N³)，其实每次合并仅按“已扫描子树实际总大小 × 当前新子树大小”上界做上下界剪枝，全树每对节点只在它们唯一 LCA 处相遇一次，精确复杂度只有 **O(N²)**！",
+      "tags": [
+        "区间DP",
+        "树形DP",
+        "数位DP"
+      ]
+    },
+    {
+      "id": "algo-25",
+      "cat": "algo",
+      "diff": 2,
+      "q": "最长递增子序列（LIS）如何从 O(N²) DP 优化到 O(N log N)？如果要同时还原输出实际的子序列怎么做？",
+      "a": "**1. 传统 O(N²) DP**：`dp[i] = max(dp[j] + 1)`（对所有 `j < i && a[j] < a[i]`），瓶颈在于向前找可接续前缀花了线性 O(N)。\n\n**2. 贪心 + 二分查找 O(N log N)（Patience Sorting 耐心排序思想）**：\n- 维护一个单调严格递增数组 **`tails`**：`tails[k]` 存放当前已发现的所有长度为 `k + 1` 的递增子序列中，**末尾元素的最小可能值**（潜力最大！末尾越小后面越容易接上新数）。\n- 遍历每个新元素 `x`：\n  - 若 `x > tails.back()`（非严格递增则 `>=`），直接拼接加长最长长度：`tails.push_back(x)`；\n  - 否则在有序的 `tails` 中用 **`lower_bound` 二分找到第一个 `>= x` 的位置**（非严格递增用 `upper_bound` 第一个 `> x` 的位置），直接用更小更有潜力的 `x` 原地覆盖掉该位置的值！\n- 最终 **`tails.size()`** 即为 LIS 长度！\n\n**3. 必考陷阱：如何还原出真实的递增子序列（`tails` 数组本身不是答案！）**：\n- 覆盖操作会把后方元素硬插进前方槽位，导致 `tails` 里装的元素下标顺序未必原本先后一致（比如 `[10, 9, 2, 5, 3, 7, 1]` 走完最后 `tails` 可能出现 `[1, 3, 7]`，但 1 原本在 7 后面！）。\n- **精确还原 O(N log N) 做法**：维护与下标对应的 `tails_idx[k]`（存实际数组下标）、每个元素的前驱数组 `prev[i]`，以及记录当时入槽下标：`idx = lower_bound(...)` 时若入在第 `k` 位，令 **`prev[i] = (k > 0 ? tails_idx[k-1] : -1)`** 并更新 `tails_idx[k] = i`。全部扫完从 `tails_idx.back()` 顺着 `prev` 逆推到底再反转，百分百还原真实合法序列！\n\n> **追问 / 加分项**：俄罗斯套娃信封问题（二维 LIS）如何降维？把宽度 `w` 升序排列，**关键技巧：当宽度相同时把高度 `h` 降序排列**，然后对高度一维直接跑 LIS，这样就绝不会误选两个等宽信封！",
+      "tags": [
+        "LIS",
+        "贪心二分",
+        "状态还原"
+      ]
+    },
+    {
+      "id": "algo-26",
+      "cat": "algo",
+      "diff": 2,
+      "q": "最长公共子序列（LCS）与编辑距离（Levenshtein Distance）的状态定义、转移与空间 O(min(M, N)) 优化？",
+      "a": "**1. 最长公共子序列（LCS）**：\n- 状态：`dp[i][j]` 表示 `s[0..i-1]` 与 `t[0..j-1]` 的最长公共子序列长度。\n- 转移：若 `s[i-1] == t[j-1]`，则 **`dp[i][j] = dp[i-1][j-1] + 1`**；否则无法同时匹配结尾，取 **`max(dp[i-1][j], dp[i][j-1])`**。\n\n**2. 编辑距离（将 `word1` 变为 `word2` 最少插入/删除/替换次数）**：\n- 边界：`dp[i][0] = i`（全删掉），`dp[0][j] = j`（全插入）。\n- 转移：若 `w1[i-1] == w2[j-1]` 无需改动直接继承 **`dp[i-1][j-1]`**；否则取三选一加 1：\n  - **替换**：`dp[i-1][j-1] + 1`\n  - **删除 `w1[i-1]`**：`dp[i-1][j] + 1`\n  - **在 `w1` 插入对应 `w2[j-1]`**：`dp[i][j-1] + 1`\n\n**3. 滚动一维空间优化 O(min(M, N)) 的关键细节**：\n- 先确保把较短的串放到内层列方向（控制一维数组大小仅 `min(M, N) + 1`）。\n- 因为转移需要用左上角旧值 **`dp[i-1][j-1]`**，如果直接把二维压成一维 `dp[j]` 并在正序 `j` 更新时覆盖了 `dp[j-1]`，就找不到上一行的左上角旧值了！\n- **解法**：内层开始处理前用临时变量 `prev_diag = dp[0]` 保存上一行左上方旧值，每次遍历 `j = 1..n` 先用 `temp = dp[j]` 暂存当前列旧值（供下一轮作为左上角），更新完毕 `dp[j]` 后令 `prev_diag = temp`！\n\n> **追问 / 加分项**：最长回文子序列问题等价于求原串 `s` 与反转串 `reverse(s)` 的 LCS；而字符集全互不相同的 LCS 还可以把第二个串元素映射成第一个串下标转化为 **O(N log N) LIS** 提速！",
+      "tags": [
+        "LCS",
+        "编辑距离",
+        "空间优化"
+      ]
+    },
+    {
+      "id": "algo-27",
+      "cat": "algo",
+      "diff": 1,
+      "q": "链表高频套路总结：哑节点（Dummy Head）、快慢指针（Floyd 找入环点的数学证明）与原地反转？",
+      "a": "**1. 哑节点（Dummy Node）的万能价值**：\n- 只要链表头节点本身可能发生变动（合并链表、删除倒数第 K / 指定值节点、K 组反转、奇偶/分隔链表），立刻在最前面构造 `ListNode dummy(0, head);`，统一让所有节点都有前驱，函数末尾干净返回 `dummy.next` 并在堆配场景下注意栈上构造防泄漏！\n\n**2. 快慢指针与 Floyd 判环 + 找入环点证明**：\n- 找中点：`fast` 走 2 步、`slow` 走 1 步。注意偶数长度时取“左中点（回文/归并切断更安全）”需写 `while (fast->next && fast->next->next)` 或循环条件配合。\n- **入环第一节点数学证明（必考推演）**：设头到入环点距离 `a`，入环点沿环走到相遇点距离 `b`，环剩余回到入环点距离 `c`（环长 `L = b + c`）。相遇时 `slow` 走过 `a + b`，`fast` 速度两倍走过 `2(a + b)`，同时多绕环 `k` 圈：`2(a + b) = a + b + kL` → **`a = kL - b = (k - 1)L + c`**！\n- 这表明：**此时再让一个指针从链表头 `head` 出发，另一个指针留在相遇点继续往前走，两人都用每次 1 步同速前进，经过距离 `a` 后必然严丝合缝在入环点首次碰头！**\n\n**3. 无额外空间判断回文链表三步走**：快慢找中点 → 原地反转后半段链表 → 双指针比对两段（工程严谨起见结尾还应再反转还原链表）。\n\n> **追问 / 加分项**：找两个无环单链表的相交节点怎么写最优雅？让两指针 `pA` 和 `pB` 各自走完自己就切到对方头节点继续走，两人走的总路程同为 `A + B + C`，必定在交点或末尾同时变成 `nullptr` 相遇！",
+      "tags": [
+        "链表",
+        "快慢指针",
+        "Floyd判环"
+      ]
+    },
+    {
+      "id": "algo-28",
+      "cat": "algo",
+      "diff": 2,
+      "q": "二叉搜索树（BST）的合法性验证为什么不能只比父子节点？BST 的删除操作三种情况如何处理？",
+      "a": "**1. BST 合法性验证常见致命错误**：\n- 错误写法：只递归检查 `node->left->val < node->val && node->val < node->right->val`。反例：右子树左下角深处藏着一个比根节点还要小的孙子节点！\n- **正确解法二选一**：\n  - **上下界区间传递**：递归传入当前节点合法的开区间 `(lower, upper)`（初始注意用 `LLONG_MIN / LLONG_MAX` 或传入边界节点指针避免 `INT_MIN`/`INT_MAX` 边界值误判！）；左子树更新上界 `upper = node->val`，右子树更新下界 `lower = node->val`。\n  - **中序遍历严格单调递增**：BST 中序遍历一定严格递增，只需维护全局前驱 `prev` 检查 `cur->val > prev` 即可！\n\n**2. BST 删除节点 `key` 的三种形态**：\n1. **待删节点是叶子节点**：直接删掉返回 `nullptr`。\n2. **待删节点只有一个孩子**：用它唯一的非空左或右孩子顶替自己，直接把父指针接过去。\n3. **待删节点同时拥有左右两棵子树**：找它**右子树的最小节点（中序后继 Successor，一路往右子树最左下走）**（或左子树最大节点前驱）替换当前位置——若只换 `val` 则再去右子树递归删那个后继节点（后继必最多只有一个右孩子，退化成情况 1/2）；若工程节点带复杂引用要求指针不变，直接改接指针摘出后继节点替换！\n\n> **追问 / 加分项**：已知有序数组构造高度平衡 BST，每次选中间元素做根递归建左右子树；同理如果节点自带重复值或退化成全升序链，普通 BST 会退化为 O(N)，需要 AVL/红黑树左旋右旋自平衡。",
+      "tags": [
+        "BST",
+        "中序遍历",
+        "树删除"
+      ]
+    },
+    {
+      "id": "algo-29",
+      "cat": "algo",
+      "diff": 2,
+      "q": "跳表（SkipList）的随机层数与 O(log N) 复杂度原理？为什么 Redis ZSet 选跳表而不是红黑树？",
+      "a": "**1. 跳表结构与概率平衡原理**：\n- 底层是一个有序单链表（O(N) 查找太慢）。跳表在原始链表之上通过**抛硬币（或固定晋升概率 `p = 1/4` 或 `1/2`）**随机逐层抽取稀疏索引节点构成多层快捷通道，最高不超过 `MAX_LEVEL`（如 Redis 取 32）。\n- **期望性能推导**：若底层有 N 个节点，每层按 `p` 向上晋升，第 k 层期望约有 `N · p^k` 个节点；最高层期望高度 O(log N)。查找从顶层一路“向右走不到底就向下一层”，每一层横向只需跨越期望 `1/p` 个节点，因此查找、插入、删除时间复杂度期望均为 **O(log N)**，且仅需在插入/删除时维护前驱路径向量 `update[]` 改几根指针即可，无需任何复杂的树旋转与全局重染色！\n\n**2. 为什么 Redis ZSet 选跳表而不是红黑树 / B+ 树（Salvatore 原作者经典阐述）**：\n- **区间范围查询极爽（核心原因）**：ZSet 高频操作 `ZRANGEBYSCORE [min, max]` 找到左边界节点后，只需沿着最底层第 0 层单链表向后连续顺序扫过去即可，无需像红黑树那样反复回溯找中序后继；\n- **实现极其简单可读、并发可扩展性更友好**：红黑树插入/删除为了维护黑高平衡涉及左右旋、双红修正和跨大范围子树 lock；跳表局部只影响前驱指针，加细粒度锁或写无锁跳表（如 RocksDB MemTable `ConcurrentSkipList`）比无锁红黑树容易几个数量级！\n- **内存开销完全可控**：Redis 取 `p = 1/4` 时每个节点平均只有 `1 / (1 - 0.25) = 1.33` 个向前指针，反而比红黑树每个节点标配 2 根左右子指针 + 父指针 + 颜色还省内存！\n\n> **追问 / 加分项**：为什么 Redis 选跳表而 MySQL 磁盘引擎选 B+ 树？因为 Redis 是纯内存结构不怕多几跳缓存指针且需要单元素粒度极低写放大；磁盘 I/O 是毫秒级昂贵操作，B+ 树靠超大扇出把 2000 万行数据树高牢牢压在 3 层以减少磁盘页读取！",
+      "tags": [
+        "跳表",
+        "Redis ZSet",
+        "概率数据结构"
+      ]
+    },
+    {
+      "id": "algo-30",
+      "cat": "algo",
+      "diff": 2,
+      "q": "布隆过滤器（Bloom Filter）的误判率推导与特点？为什么不支持直接删除，Counting / Cuckoo Filter 如何改进？",
+      "a": "**1. 原理与核心特性**：\n- 由一个长 `m` 位的**二进制位数组**和 **`k` 个独立均匀哈希函数**组成。插入元素 x 时算出 k 个下标并把位全置 `1`；查询 y 时检查这 k 个位置是否全为 `1`：\n  - 只要有**哪怕一位是 `0`，100% 确定 y 绝对不存在**；\n  - 如果**全为 `1`，只能说明 y 可能存在**（也许刚好被其它元素置 1 的位置拼凑碰撞命中，即**假阳性 False Positive**，无假阴性！）。\n- **参数工程估值结论**（插入 `n` 个元素、期望误判率 `p`）：最优位长 `m ≈ -n·ln(p) / (ln 2)^2 ≈ 1.44 · n · log2(1/p)`（如允许 1% 误判率，每条 key 只需约 **9.6 bits**！十亿个 key 不到 1.2GB）；最优哈希个数 `k ≈ (m/n)·ln 2 ≈ 0.7 · (m/n)`（~7 个）。\n\n**2. 为什么传统布隆过滤器绝对不支持删除，以及改进变种**：\n- **不可删原因**：某位为 `1` 可能是多个不同 key 共同置上的，直接把它清回 `0` 会导致连带其它合法存在的 key 查询变成假阴性漏报！\n- **Counting Bloom Filter（计数布隆）**：把每个 1-bit 扩展成 **4-bit 小计数器**（插入 +1、删除 -1），能删元素但空间直接膨胀 4 倍且需防计数溢出。\n- **Cuckoo Filter（布谷鸟过滤器，工程现代首选）**：基于布谷鸟哈希只存极短指纹（Fingerprint）的二维桶数组，每个 key 有两个候选桶 `h1(x)` 与 `h2 = h1 ^ hash(fp)`（可仅凭存储的指纹算出备胎桶实现无原值踢出重安放）。**天然支持删除、更高缓存局部性、低误判率（<3%）下甚至比 Bloom Filter 更省空间！**\n\n> **追问 / 加分项**：Redis 防止缓存穿透常用布隆过滤器兜底拦截不存在的恶意随机 ID；在分布式或数据不断演进场景可以加定期重建双缓冲或采用时间分片旋转布隆队列。",
+      "tags": [
+        "布隆过滤器",
+        "布谷鸟过滤器",
+        "海量去重"
+      ]
+    },
+    {
+      "id": "algo-31",
+      "cat": "algo",
+      "diff": 2,
+      "q": "蓄水池抽样（Reservoir Sampling）如何在未知总长度的数据流中 O(N) 等概率抽取 k 个样本？请给出证明。",
+      "a": "**1. 适用场景与核心需求**：日志流/数据流总行数 `N` 未知或大到装不下内存，要求只**单遍流式扫描**、仅占用 **O(k)** 空间，就能让每个元素最终留在样本集合里的概率严格等于 **`k / N`**！\n\n**2. 算法步骤（极简经典）**：\n1. 前 `k` 个流元素直接无条件放进容量为 `k` 的结果数组 `pool[0..k-1]`；\n2. 当流走到第 `i` 个元素（下标从 1 开始，`i > k`）时，在 `[1, i]` 范围均匀生成一个随机整数 `r`：\n   - 若 **`r <= k`**（发生概率为 `k / i`），就让第 `i` 个新元素**替换掉 `pool[r - 1]`**；否则直接丢弃第 `i` 个元素。\n\n**3. 数学归纳法严格证明（每个元素留下概率均 = `k / N`）**：\n- 当 `N = k` 时，前 k 个全在池里，概率为 `k / k = 1`，成立。\n- 假设流到第 `n` 步时，前 `n` 个元素任一个留在池里的概率都刚好是 `k / n`；\n- 现到来第 `n + 1` 个元素：\n  - **新来的第 `n+1` 个元素入选概率**：直接即 `k / (n + 1)`；\n  - **原来已经在池中的某旧元素得以幸存的概率**：旧元素必须没被选中替换掉！第 `n+1` 轮发生替换的概率是 `k/(n+1)`，而恰好挑中特定那个旧元素槽位踢出的概率为 `(k/(n+1)) × (1/k) = 1/(n+1)`，因此幸存概率为 `1 - 1/(n+1) = n/(n+1)`。乘上前 n 步留在池里的概率 `(k / n) × (n / (n + 1)) = k / (n + 1)`！归纳得证！\n\n> **追问 / 加分项**：带权重的水库抽样（Weighted Reservoir Sampling — A-Res 算法）怎么做？给每个权值为 `w_i` 的元素算键 **`k_i = U(0, 1)^(1 / w_i)`**，维护一个最小堆保住密钥最大的 k 个元素即可；分布式分片并发抽样同样可以把每个节点局部抽完的随机密钥发回总控做堆合并！",
+      "tags": [
+        "蓄水池抽样",
+        "概率算法",
+        "数据流"
+      ]
+    },
+    {
+      "id": "algo-32",
+      "cat": "algo",
+      "diff": 2,
+      "q": "内存受限下如何处理十亿级海量数据（外排序 + 败者树、BitMap、哈希分桶分治）？",
+      "a": "**核心原则：“分而治之把大文件切小（Hash Partition）”，能用 bit 状态表示绝不用整数（BitMap），有序归并最小化磁盘 I/O（多路归并 + 败者树）。**\n\n- **1. 海量整数查找/去重/排序 → BitMap（位图）**：\n  - 例：40 亿个不重复无符号整数找某个数是否存在或找不重复/出现 1 次的数。每个数占 1 bit 只需 `2^32 / 8 ≈ 512MB` 内存（找只出现 1 次可用 **2-BitMap**：`00` 没出现，`01` 1 次，`10` 多次），直接 O(N) 扫完文件原地置位，省去对比树开销！\n- **2. 内存极小装不下大字符串文件（如 100GB URL 找交集 / TopK 热词）→ 哈希分桶切分（Hash Sharding）**：\n  - 对两个超大文件 A、B 的每一行计算同一 `hash(line) % 1000` 并各自流式落盘到 `A_0..A_999` 和 `B_0..B_999`。\n  - **决定性性质**：相同的 URL **必定落入编号相同的同一个分片 `i` 中**，绝不可能跨片！接着逐对把足够小的 `A_i` 和 `B_i` 放进内存哈希表求交集或词频 TopK，最后汇总所有分片局部 TopK 即可（注意遇超长热词单桶倾斜时，可加随机盐两阶段聚合或用 **Count-Min Sketch** 概率估计）。\n- **3. 100GB 数据全量排序 → 外部多路归并排序 + 败者树**：\n  - 阶段一：切分成内存能装下的多块（如每块 500MB），内存内快排写出 N 个有序临时小文件；\n  - 阶段二：开辟输入输出缓冲区执行 **K 路归并**，用 **败者树（Loser Tree）**（内部节点存败者下标、仅需和父节点比一次，比传统小顶堆减少一半比较次数并优化磁盘预读批次）选出当前最小输出写回最终有序文件。\n\n> **追问 / 加分项**：若连 100% 精确统计频次都太昂贵，流式统计基数（UV）用 **HyperLogLog**（仅 12KB 内存误差 <1%），统计热点频率用 **Count-Min Sketch**。",
+      "tags": [
+        "海量数据",
+        "外部排序",
+        "BitMap与分治"
+      ]
+    },
+    {
+      "id": "algo-33",
+      "cat": "algo",
+      "diff": 2,
+      "q": "A* 启发式搜索的原理是什么？估价函数需要满足什么条件（可采纳性与一致性）才能保证找到最短路径？",
+      "a": "**1. 从 Dijkstra 到 A***：\n- Dijkstra 没有方向感，像水波一样盲目向四面八方均匀扩散，搜索大量毫无希望远离终点的区域；\n- `A*`（**A-Star 算法**）在优先队列排序键里加入了到达终点的**预计剩余代价**：`f(n) = g(n) + h(n)`：\n  - `g(n)`：从起点走到当前节点 `n` 的**已知实际代价**；\n  - `h(n)`：启发函数估算从 `n` 到终点的**未来预估代价**（如网格自由走用欧氏距离、四向网格用曼哈顿距离、八向用切比雪夫/对角线距离；注意当 `h(n) ≡ 0` 时退化为 Dijkstra，当忽略 `g(n)` 时退化为不一定最优的 Greedy Best-First Search）。\n\n**2. 保证最优性的两大严格数学条件**：\n- **可采纳性（Admissibility / 乐观估计）**：对所有节点 `n`，`h(n) <= h*(n)`（估价**绝不能高估**真实到终点的最短距离！）。若高估了真实最优路径上的某个节点代价，A* 可能会提前踩进一条看似较近的次优路径直接终止返回！\n- **一致性（Consistency / 单调性）**：满足三角不等式 `h(u) <= cost(u, v) + h(v)` 且 `h(goal) = 0`。一致性强于可采纳性——一旦启发函数满足一致性，每次从优先队列弹出的节点 `f` 值单调不降，即表示其 `g(u)` 已经锁定最优，**不需要重复进队重松弛（Closed Set 一劳永逸！）**，直接与 Dijkstra 同等简洁。\n\n> **追问 / 加分项**：大规模状态空间图（如魔方/华容道/15-Puzzle，用曼哈顿距离作 `h`）如果 A* Closed Set 爆内存，可改用 `IDA*`（**迭代加深 A-Star**）：用类似 DFS 的有限空间，每次设定一个逐步递增的 `f <= bound` 剪枝阈值做深搜。",
+      "tags": [
+        "A*搜索",
+        "启发式算法",
+        "路径规划"
+      ]
+    },
+    {
+      "id": "algo-34",
+      "cat": "algo",
+      "diff": 2,
+      "q": "股票买卖系列（含冷冻期、手续费、最多 k 次交易）如何用统一的状态机 DP 模板解决？",
+      "a": "**统一思想：把任意一天的交易结束后可能处于的真实状态刻画清楚，每天仅依赖前一天的有限几个状态转移即可通吃全部 6 道题！**\n\n**1. 通用完整状态定义 `dp[i][k][0/1]`**：第 i 天、已用掉最多 k 次完整交易资格、当前手里 **0（空仓）或 1（持仓）** 的最大现金利润：\n- 空仓转移：`dp[i][k][0] = max(dp[i-1][k][0], dp[i-1][k][1] + prices[i])`（昨天就空着不动，或昨天持股今天卖出落袋）；\n- 持仓转移：`dp[i][k][1] = max(dp[i-1][k][1], dp[i-1][k-1][0] - prices[i])`（昨天就持股继续拿，或昨天空仓今天新买入，消耗一次交易计数 k！）。\n\n**2. 常见变体一行切换规则**：\n- **最多 k 次（含 k=1、k=2）**：保留第 2 维 `0..k`（若 `k >= n/2` 实质等效无限次直接降维贪心/不限次数模板省去超时风险）。初始化 `dp[0][*][1] = -prices[0]`。\n- **无限次交易（k = +∞）**：消去 `k` 维度，压缩成仅 **`hold`、`cash` 两个标量变量 O(1) 空间**！\n- **带手续费 `fee`**：买入（或卖出）转移减去 `fee` 即可。\n- **带 1 天冷冻期（Cooldown）**：把原本从昨天 `cash` 买入改成**必须从前天卖出完且冷静了一天的 `prev_cash`（或拆出第 3 个独立状态 `cool` 冷冻期）**转移：`hold = max(hold, cool_cash - p)`，卖出后进入冷冻态一天后再变回可用 `cool_cash`！\n\n> **追问 / 加分项**：同样思想完全适用于“打家劫舍 / 粉刷房子 / 自动机匹配类”所有带冷却、相邻约束、多阶段切换题（如“有冷冻状态机 + 滚动变量压缩”）。",
+      "tags": [
+        "状态机DP",
+        "股票买卖",
+        "动态规划"
+      ]
+    },
+    {
+      "id": "algo-35",
+      "cat": "algo",
+      "diff": 2,
+      "q": "矩阵快速幂如何把线性递推的时间复杂度从 O(N) 降到 O(log N)？",
+      "a": "**适用场景：状态转移是常数阶线性组合（如斐波那契 `f(n) = f(n-1) + f(n-2)`、爬楼梯、多状态计数递推），且 `N` 高达 `10^9` ~ `10^18`（O(N) 必然超时）！**\n\n**1. 核心转换步骤**：\n- 构造列向量 `V_n = [f(n), f(n-1)]^T`，找到一个与 `n` 无关的**常数转移矩阵 `M`**，使得 `V_n = M · V_{n-1}`（以斐波那契为例，`M = [[1, 1], [1, 0]]`）。\n- 根据结合律递推展开：**`V_n = M^(n-1) · V_1`**！\n- 将问题直接化归为用**快速幂（Binary Exponentiation）**计算 `M^(n-1)`：每次把指数 `n` 右移折半（奇数次乘进结果矩阵、每轮 `M = M * M` 翻倍并随时对大质数如 `10^9 + 7` 取模防溢出）。\n\n**2. 复杂度分析**：\n- 若线性递推阶数为 `k`（矩阵维度 `k × k`），单次矩阵乘法耗时 `O(k³)`，快速幂共迭代 `O(log N)` 步，总复杂度 **`O(k³ log N)`**，空间仅为常数 O(k²)！\n- 同法也可轻松解决“有向图从点 u 走**恰好 N 步**到达点 v 的路径方案数 / 最短路径（min-plus 热带半环矩阵快速幂！）”，只需拿邻接矩阵连乘 N 次即可！\n\n> **追问 / 加分项**：更一般的高阶常系数齐次线性递推还能借助 **Kitamasa 算法** 或特征多项式做到 `O(k² log N)`（甚至结合 FFT/NTT 压到 `O(k log k log N)`），不过面试掌握清晰可靠的矩阵快速幂已属高分亮点。",
+      "tags": [
+        "矩阵快速幂",
+        "数学优化",
+        "线性递推"
+      ]
+    },
+    {
+      "id": "algo-36",
+      "cat": "algo",
+      "diff": 3,
+      "q": "Tarjan 算法求有向图强连通分量（SCC）与无向图桥/割点的核心思想是什么（dfn 与 low 定义）？",
+      "a": "**核心基石：利用一次 DFS 生成搜索树，维护两个核心时间戳数组 `dfn[u]` 与 `low[u]`，只需 O(V + E) 一次遍历搞定强连通分量、割点与桥！**\n\n**1. 两个关键数组定义**：\n- **`dfn[u]`（Discovery Time）**：DFS 首次访问到节点 `u` 时的递增时间戳序号（顺便兼作 `visited` 标记）。\n- **`low[u]`（Low-Link Value）**：从 `u` 出发经过树边往下走，最多通过**一条非树边（回边）**能追溯回到的**最小 `dfn` 时间戳**。\n\n**2. 有向图强连通分量（SCC） vs 无向图桥（Bridge）/ 割点（Articulation Point）区别**：\n- **有向图求 SCC（缩点 DAG）**：维护当前正在递归搜索路径的栈 `stk` 和在栈标记 `inStack[v]`。遇未访问邻居递归并更新 `low[u] = min(low[u], low[v])`；遇**仍在栈中**的节点更新 `low[u] = min(low[u], dfn[v])`（注意有向图不能跨已出栈的横叉边乱更新！）。若回溯完发现 **`low[u] == dfn[u]`**，说明 `u` 是某个 SCC 在搜索树上的最顶根，把栈中从顶部一直弹到 `u` 就吐出一个完整强连通分量！\n- **无向图求桥 / 关键连接（Critical Connections）**：因为无向图每条边都有反向重边，注意传入 `parent` 防直接沿刚刚走过来的那条父边算成回边。对树边 `(u, v)` 递归返回后，若 **`low[v] > dfn[u]`**，说明 `v` 整棵子树没有任何回边能绕过这条边回到 `u` 或更早祖先——**边 `(u, v)` 就是不可替代的桥**！若判断割点，非根节点条件为存在孩子满足 `low[v] >= dfn[u]`，根节点要求至少有 ≥2 个独立 DFS 子树孩子。\n\n> **追问 / 加分项**：有向图 SCC 缩点成 DAG 后往往就能直接在缩点 DAG 上跑拓扑 DP 求最长链或判定全局可达性，是面试偏难图论压轴神技。",
+      "tags": [
+        "Tarjan",
+        "强连通分量",
+        "割点与桥"
+      ]
+    },
+    {
+      "id": "algo-37",
+      "cat": "algo",
+      "diff": 2,
+      "q": "贪心算法如何做正确性证明（交换论证法 Exchange Argument）？请结合区间调度/任务排队举例说明。",
+      "a": "**面试官最怕你“凭感觉直觉蒙贪心”！如何用一两句话给出严谨的数学定心丸，交换论证法（Exchange Argument）是标准武器。**\n\n**1. 交换论证法（Exchange Argument）三步证明模板**：\n1. 假设存在某个（不同于我们贪心策略生成的）**全局最优解 `OPT`**；\n2. 找出 `OPT` 和我们贪心解 `GREEDY` 第一个分歧的地方（或其中存在违背我们贪心排序法则的相邻逆序对）；\n3. 尝试**把 `OPT` 中的该选择替换（或相邻交换）成我们贪心挑出的那一个**，证明调整后的新解不仅**仍然完全合法可行**，而且**目标函数值绝对不会变差（更优或相等）**！不断重复有限次交换就把 `OPT` 无损变成 `GREEDY`，证明局部贪心一定能拼出全局最优。\n\n**2. 两个经典面试案例演绎**：\n- **最多不重叠区间（区间调度）**：为什么按**右端点 `end` 从小到大**排序最先选是对的？（按左端点或长度均反例无效！）证明：假设最优解选出的第一个区间是 `A`，贪心选出的右端点更小或相等的区间是 `B`（`B.end <= A.end`）。把 `OPT` 里的 `A` 替换成 `B` 后，因为 `B` 结束得更早，原先 `A` 后面跟着的所有不重叠合法区间**依然全都不与 `B` 重叠**，且区间总数丝毫不减！\n- **相邻两任务交换推邻项比较法则（如拼出最大数、最小等待总时间、打怪回血顺序）**：比较相邻两项 `(A放前, B放后)` 与 `(B放前, A放后)` 谁让前后都不受影响的部分得分更高，直接严格推导出 `cmp(A, B)` 排序偏序规则！\n\n> **追问 / 加分项**：写自定义贪心 `sort` 比较器时要确认自己推出来的 `cmp(A, B)` 满足**严格弱序（传递性）**，遇到像“先加后减有门槛”类题可能需要分正负收益两段各自按不同单调规则排才不会破坏传递性导致排序崩溃！",
+      "tags": [
+        "贪心算法",
+        "交换论证",
+        "正确性证明"
+      ]
+    },
+    {
+      "id": "algo-38",
+      "cat": "algo",
+      "diff": 2,
+      "q": "摊还分析（Amortized Analysis）的三种方法是什么？请以动态数组倍增扩容或双栈实现队列为例分析。",
+      "a": "**核心区分**：**平均复杂度**依赖输入数据的概率随机分布假定；**摊还复杂度**是对**最坏情况下的连续操作序列**求每步平均开销保证（绝不看运气！）。\n\n**1. 三种经典分析法（以“动态数组从容量 1 开始连续 `n` 次 `push_back` 倍增扩容”为例）**：\n- **聚合分析（Aggregate Method）**：硬核加总全部 `n` 次操作真实总花费再除以 `n`。常规 O(1) 插入共 `n` 步耗时 `n`；触发扩容只在 `i = 1, 2, 4, ..., 2^k` 时搬迁复制旧元素，总复制成本为 `1 + 2 + 4 + ... < 2n`。合计总成本 `< 3n`，单步均摊 **O(1)**！\n- **核算法 / 记账法（Accounting Method）**：给便宜的常规操作**多收点“虚拟手续费（Credits）”存入银行账本**用于补贴昂贵的未来突发操作（要求存款永远不能为负！）。规定每次 `push_back` 收 **3 块钱**：1 块付当前放入成本，剩 **2 块钱存进刚插入的新半区元素身上**。下次触发容量 `M` 翻倍到 `2M` 时，刚刚新塞进来的 `M/2` 个老兄身上每人刚好攒着 2 块钱（合计 `M` 块），完美足够支付老数组中全部 `M` 个老成员的搬迁费用！\n- **势能法（Potential Method）**：定义与数据结构当前状态有关的势能函数 **`Φ(D)`**（如 `Φ = 2·size - capacity`，恒 ≥ 0），定义摊还代价 `c_hat = c_actual + Φ(D_i) - Φ(D_{i-1})`。常规插入 `size + 1` 使 `Φ` 涨 2，摊还 `1 + 2 = 3`；扩容时 `capacity` 瞬间翻倍让 `Φ` 暴跌把积攒势能全部释放抵消掉真实搬迁成本！\n\n**2. 双栈实现队列（MyQueue）均摊分析**：\n- 每个元素最多进输入栈 1 次、倒腾搬移进输出栈 1 次、从输出栈弹出 1 次——总计 3 次栈操作，因此无论 `peek`/`pop` 哪次突然引发全体大搬家，整个长操作序列均摊每个操作严格 **O(1)**！\n\n> **追问 / 加分项**：若既做动态倍增扩容又做缩容，**千万不能在 `size < capacity/2` 时立刻缩半**！否则刚好处于临界点交替执行 `push`、`pop`、`push`、`pop` 会导致每次都触发 O(N) 震荡（Thrashing）退化为 O(N²)！正确做法是留出缓冲迟滞带——降到 **`capacity / 4`** 时才缩容回 `capacity / 2`。",
+      "tags": [
+        "摊还分析",
+        "势能法",
+        "复杂度分析"
+      ]
+    },
+    {
+      "id": "algo-39",
+      "cat": "algo",
+      "diff": 2,
+      "q": "概率与随机算法：如何用 rand7() 构造严格等概率的 rand10()？Fisher-Yates 洗牌算法为什么能保证完全均匀？",
+      "a": "**1. 拒绝采样（Rejection Sampling）与进制扩充**：\n- **错解警示**：千万不能写 `(rand7() + rand7()) % 10 + 1` 或简单相加！独立随机数相加是三角形/正态钟形分布（中间和概率高、两端低），取模后各数字严重不均匀！\n- **标准解法**：利用 `(randX() - 1) * Y + randY()` 可以严格均匀构造 `[1, X·Y]` 连续区间的**进制扩充公式**！调用两次 `rand7()` 构造 `[1, 49]` 等概率分布：`num = (rand7() - 1) * 7 + rand7()`。\n- **拒绝采样优化利用率**：直接取 `1..40`（丢弃 `41..49` 并重抽，接受率高达 `40/49 ≈ 81.6%`！）返回 `(num - 1) % 10 + 1`；还可进阶把浪费掉的 `41..49`（相当于 `[1, 9]` 均匀分布）再接一次 `rand7()` 拼成 `[1, 63]` 截取 `1..60`，把被丢弃的 `[1, 3]` 再拼……把期望调用次数进一步压低！\n\n**2. Fisher-Yates（Knuth-Durstenfeld）原地洗牌算法及证明**：\n- **写法（必对版本）**：从后往前枚举 `i = n - 1` 到 `1`（或从前往后 `[i..n-1]`）：随机选下标 `j ∈ [0, i]`（注意**必须允许选到自己 `i == j`!**），交换 `nums[i]` 与 `nums[j]`。\n- **常见错误写法的陷阱**：如果每次都盲目在全范围 `[0, n-1]` 随机抽 `j` 交换 `n` 次，总共产生 `n^n` 条路径分支，而总共有 `n!` 种排列——因为对于 `n >= 3`，`n^n` 根本无法被 `n!` 整除，必定有一部分排列出现概率偏高！\n- **正确性证明**：最后一个位置 `n-1` 选中任意原元素的概率为 `1/n`；倒数第二位必须在首轮没被抽走（`(n-1)/n`）且第二轮在剩余 `n-1` 个里抽中（`1/(n-1)`），相乘刚好仍为 **`1/n`**！全过程产生恰好 `n × (n-1) × ... × 1 = n!` 条等概路径与全排列严格一一对应！\n\n> **追问 / 加分项**：带权重随机选择（LeetCode 528 按权重随机选择）怎么做？构造权重的**前缀和数组** `pre`，生成 `[1, totalSum]` 均匀随机数后用二分 `lower_bound` 定位首个 `>= target` 的下标，单次 O(log N)（想要更极致的 O(1) 抽样可用 **Alias Method 别名方法**，常用于大规模词表 Negative Sampling）。",
+      "tags": [
+        "拒绝采样",
+        "洗牌算法",
+        "随机算法"
+      ]
+    },
+    {
+      "id": "algo-40",
+      "cat": "algo",
+      "diff": 2,
+      "q": "递归分治算法的时间复杂度如何用主定理（Master Theorem）快速估算？请对比典型算法推导。",
+      "a": "**核心场景：形如 `T(N) = a · T(N / b) + f(N)`（将规模 N 拆成 `a` 个大小为 `N/b` 的子问题，合并额外开销 `f(N)`，要求 `a >= 1, b > 1`）的一键定阶公式！**\n\n**主定理三条直观理解（本质看“递归叶子暴涨数 `N^(log_b a)`”与“顶层合并开销 `f(N)`”谁统治全局！）**：\n- 先算临界幂次：**`d = log_b(a)`**（递归树最底层总共有 `N^d` 片叶子）。\n1. **叶子主导型**：若合并函数明显小于叶子量级，即 `f(N) = O(N^(d - ε))`（多项式级小），则总体被树叶数支配 → **`T(N) = Θ(N^d)`**。\n   - **例子**：二分查找在 `b=2, a=1` 下 `d=0` 属于下面第 2 条；而 **Strassen 矩阵乘法** `T(N) = 7T(N/2) + O(N²)`，因为 `log_2(7) ≈ 2.81 > 2`，最终直接算出 `Θ(N^2.81)`（成功压破常规 `N^3`！）；**Karatsuba 大数乘法**把 4 次分治乘缩成 3 次 `T(N) = 3T(N/2) + O(N)`，得 `Θ(N^1.585)`。\n2. **势均力敌型（最常见）**：若合并耗时恰好等于 `N^d`（或相差多对数因子 `(log N)^k`），则每层树工作量完全一样，全部 `log N` 层相加直接乘一次 `log N` → **`T(N) = Θ(N^d · log^(k+1) N)`**。\n   - **例子**：**归并排序 / 平均快排** `T(N) = 2T(N/2) + O(N)`：`N^(log_2 2) = N^1` 与 `f(N)=N` 同阶，直接得出 `Θ(N log N)`；**二分查找** `T(N) = T(N/2) + O(1)`：`N^0 = 1` 与 `O(1)` 同阶，直接得出 `Θ(log N)`！\n3. **树根主导型**：若合并开销远超下面分支 `f(N) = Ω(N^(d + ε))`（且满足正则条件 `a·f(N/b) <= c·f(N)`），总复杂度直接由第一层合并开销霸榜 → **`T(N) = Θ(f(N))`**。\n   - **例子**：**快速选择（QuickSelect 找第 K 大期望情况）** `T(N) = T(N/2) + O(N)`：`d = log_2(1) = 0`，`N^0 = 1 << N`，因此虽然每步都切一半却只需要看第一层线性扫描 **`Θ(N)`**！\n\n> **追问 / 加分项**：带减治形式（如暴力回溯 `T(N) = 2T(N-1) + O(1)`）不能用主定理（因为不是除以 `b`），直接看递归深度 N 层共 2^N 个节点得出指数级 O(2^N)；或线性减常数的 `T(N) = T(N-1) + N` 等差数列求和得 O(N²)。",
+      "tags": [
+        "主定理",
+        "分治算法",
+        "时间复杂度"
+      ]
+    },
+    {
+      "id": "code-13",
+      "cat": "code",
+      "diff": 3,
+      "q": "手写 C++：简易 SharedPtr<T> 智能指针（支持拷贝/移动构造、拷贝/移动赋值、自定义或默认释放与引用计数）。",
+      "a": "**核心要点**：堆上分配独立 `std::atomic<size_t>` 引用计数控制块；拷贝递增引用，移动偷指针置空原对象且不改动计数；赋值必须正确释放旧控制块并防自赋值（Copy-and-Swap 最稳健）。\n\n```cpp\n#include <atomic>\n#include <utility>\n\ntemplate <typename T>\nclass SharedPtr {\npublic:\n    constexpr SharedPtr() noexcept = default;\n    explicit SharedPtr(T* ptr)\n        : ptr_(ptr), cnt_(ptr ? new std::atomic<size_t>(1) : nullptr) {}\n\n    ~SharedPtr() { release(); }\n\n    SharedPtr(const SharedPtr& other) noexcept\n        : ptr_(other.ptr_), cnt_(other.cnt_) {\n        if (cnt_) cnt_->fetch_add(1, std::memory_order_relaxed);\n    }\n\n    SharedPtr(SharedPtr&& other) noexcept\n        : ptr_(std::exchange(other.ptr_, nullptr)),\n          cnt_(std::exchange(other.cnt_, nullptr)) {}\n\n    // Copy-and-Swap：同时优雅覆盖拷贝赋值与移动赋值，且天然强异常安全/防自赋值\n    SharedPtr& operator=(SharedPtr rhs) noexcept {\n        swap(rhs);\n        return *this;\n    }\n\n    void swap(SharedPtr& other) noexcept {\n        std::swap(ptr_, other.ptr_);\n        std::swap(cnt_, other.cnt_);\n    }\n\n    void reset(T* ptr = nullptr) { SharedPtr(ptr).swap(*this); }\n    T* get() const noexcept { return ptr_; }\n    T& operator*() const noexcept { return *ptr_; }\n    T* operator->() const noexcept { return ptr_; }\n    explicit operator bool() const noexcept { return ptr_ != nullptr; }\n    size_t use_count() const noexcept {\n        return cnt_ ? cnt_->load(std::memory_order_acquire) : 0;\n    }\n\nprivate:\n    void release() noexcept {\n        if (cnt_ && cnt_->fetch_sub(1, std::memory_order_acq_rel) == 1) {\n            delete ptr_;\n            delete cnt_;\n        }\n        ptr_ = nullptr;\n        cnt_ = nullptr;\n    }\n    T* ptr_ = nullptr;\n    std::atomic<size_t>* cnt_ = nullptr;\n};\n```\n\n**复杂度与关键坑点**：构造/拷贝/移动/析构除最后归零析构外均 O(1)；为什么递减必须用 `std::memory_order_acq_rel`？必须保证前面所有线程对 `*ptr_` 的写入在最后那个析构线程执行 `delete ptr_` 之前全部可见，否则构成 Data Race！\n\n> **追问 / 加分项**：如果按标准支持基类指针接收派生类对象（多态销毁而不强制基类虚析构）或自定义删除器，可把控制块设计成带虚函数 `dispose()` 的类型擦除基类 `ControlBlockBase`。",
+      "tags": [
+        "C++手写",
+        "智能指针",
+        "并发内存序"
+      ]
+    },
+    {
+      "id": "code-14",
+      "cat": "code",
+      "diff": 3,
+      "q": "手写 C++：线程安全的有界阻塞队列 BoundedBlockingQueue<T>（支持安全优雅停机 close）。",
+      "a": "**核心要点**：单互斥锁搭配两个 `std::condition_variable`（`not_full_` 和 `not_empty_`）实现精确唤醒；带谓词 `while` 防虚假唤醒；显式增加 `closed_` 状态避免消费者永久死等。\n\n```cpp\n#include <condition_variable>\n#include <deque>\n#include <mutex>\n#include <optional>\n#include <stdexcept>\n\ntemplate <typename T>\nclass BoundedBlockingQueue {\npublic:\n    explicit BoundedBlockingQueue(size_t capacity) : cap_(capacity) {\n        if (cap_ == 0) throw std::invalid_argument(\"capacity must be > 0\");\n    }\n\n    bool push(T item) {\n        std::unique_lock<std::mutex> lk(mu_);\n        not_full_.wait(lk, [&] { return closed_ || q_.size() < cap_; });\n        if (closed_) return false;\n        q_.push_back(std::move(item));\n        lk.unlock(); // 先解锁再 notify，避免惊群后立刻阻塞在锁上\n        not_empty_.notify_one();\n        return true;\n    }\n\n    std::optional<T> pop() {\n        std::unique_lock<std::mutex> lk(mu_);\n        not_empty_.wait(lk, [&] { return closed_ || !q_.empty(); });\n        if (q_.empty()) return std::nullopt; // 已关闭且排空\n        T val = std::move(q_.front());\n        q_.pop_front();\n        lk.unlock();\n        not_full_.notify_one();\n        return val;\n    }\n\n    void close() {\n        {\n            std::lock_guard<std::mutex> lk(mu_);\n            closed_ = true;\n        }\n        not_full_.notify_all();\n        not_empty_.notify_all();\n    }\n\nprivate:\n    size_t cap_;\n    std::mutex mu_;\n    std::condition_variable not_full_;\n    std::condition_variable not_empty_;\n    std::deque<T> q_;\n    bool closed_ = false;\n};\n```\n\n**复杂度与关键坑点**：单次入/出队 O(1)；`close()` 时用 `notify_all()` 确保全部沉睡的生产者与消费者全部退出而不吊死在退出析构阶段，并且允许已入队剩余任务优雅消费排空后再返回 `nullopt`。\n\n> **追问 / 加分项**：若需要多核极低延迟 SPSC 单生产单消费队列，怎么优化？用定长环形缓冲区（Ring Buffer）+ 分离读写指针加 `alignas(64)` 防伪共享 + `acquire/release` 原子下标实现彻底无锁！",
+      "tags": [
+        "C++手写",
+        "阻塞队列",
+        "并发同步"
+      ]
+    },
+    {
+      "id": "code-15",
+      "cat": "code",
+      "diff": 2,
+      "q": "手写 C++：遵循五法则（Rule of Five）与 Copy-and-Swap 的简易 MyString 类。",
+      "a": "**核心要点**：确保所有对象（包括空串与默认构造）内部 `data_` 始终以 `'\\0'` 结尾的有效动态缓冲区维护不变式（也可改用空字符串共享静态 `\"\"` 省一次小分配）；统一用按值传递的 `operator=` 兼管拷贝赋值与移动赋值！\n\n```cpp\n#include <algorithm>\n#include <cstring>\n#include <utility>\n\nclass MyString {\npublic:\n    MyString(const char* s = \"\") {\n        size_ = s ? std::strlen(s) : 0;\n        data_ = new char[size_ + 1];\n        if (size_ > 0) std::memcpy(data_, s, size_);\n        data_[size_] = '\\0';\n    }\n\n    ~MyString() { delete[] data_; }\n\n    MyString(const MyString& other) : size_(other.size_) {\n        data_ = new char[size_ + 1];\n        std::memcpy(data_, other.data_, size_ + 1);\n    }\n\n    MyString(MyString&& other) noexcept\n        : data_(std::exchange(other.data_, nullptr)),\n          size_(std::exchange(other.size_, 0)) {\n        // 让被移动源对象维持可安全读取 c_str()/size() 或直接安全析构的状态\n        other.data_ = new char[1]{ '\\0' };\n    }\n\n    // 按值接收 rhs（自动调拷贝或移动构造），强异常安全 + 防自赋值\n    MyString& operator=(MyString rhs) noexcept {\n        swap(rhs);\n        return *this;\n    }\n\n    void swap(MyString& other) noexcept {\n        std::swap(data_, other.data_);\n        std::swap(size_, other.size_);\n    }\n\n    const char* c_str() const noexcept { return data_; }\n    size_t size() const noexcept { return size_; }\n\nprivate:\n    char* data_ = nullptr;\n    size_t size_ = 0;\n};\n```\n\n**复杂度与关键坑点**：为什么真实写移动构造若要彻底保持 `noexcept` 且支持 `c_str()` 返回非空，不该在移动构造里调用可能抛 `bad_alloc` 的 `new char[1]`？可以维护一个静态常量 `static inline char empty_buf[1] = {'\\0'};` 并在析构检查 `if (data_ != empty_buf) delete[] data_;`，做到真正的零分配绝不抛异常 `noexcept` 移动！\n\n> **追问 / 加分项**：若面试官问怎么再加 SSO（短字符串优化），简述 `union { char local[16]; struct { char* ptr; size_t cap; }; }` 加上尺寸标志位区分本地内联与堆存储即可。",
+      "tags": [
+        "C++手写",
+        "五法则",
+        "String"
+      ]
+    },
+    {
+      "id": "code-16",
+      "cat": "code",
+      "diff": 2,
+      "q": "手写 C++：基于 std::atomic_flag 与 acquire/release 内存序的自旋锁 SpinLock（支持 TTAS 缓存优化）。",
+      "a": "**核心要点**：`std::atomic_flag` 是 C++ 标准保证 **100% 无锁（Lock-Free）**的原子布尔原语；工程高频竞争场景使用 **TTAS（Test-and-Test-and-Set）** + 自旋让步，避免直接死循环 `exchange` 疯狂触发全核 MESI 缓存失效风暴！\n\n```cpp\n#include <atomic>\n#include <thread>\n\nclass SpinLock {\npublic:\n    void lock() noexcept {\n        for (;;) {\n            // 先用只读 acquire 探测锁是否占用，命中共享 Cache 行而不发写失效总线流量\n            if (!flag_.test_and_set(std::memory_order_acquire)) {\n                return;\n            }\n            // C++20 提供的只读 test()，低功耗等待释放信号\n            while (flag_.test(std::memory_order_relaxed)) {\n                std::this_thread::yield(); // 实际极短临界区可换 x86 _mm_pause()\n            }\n        }\n    }\n\n    bool try_lock() noexcept {\n        return !flag_.test_and_set(std::memory_order_acquire);\n    }\n\n    void unlock() noexcept {\n        flag_.clear(std::memory_order_release);\n    }\n\nprivate:\n    std::atomic_flag flag_ = ATOMIC_FLAG_INIT;\n};\n```\n\n**复杂度与关键坑点**：\n- 实现了标准 BasicLockable（`lock`/`unlock`）与 Lockable（`try_lock`）接口，可直接无缝交给 `std::lock_guard<SpinLock>` 与 `std::unique_lock<SpinLock>` 使用！\n- **自旋锁适用铁律**：仅适合临界区极短（几十纳秒级别，无 I/O 无系统调用）且多核数充分场景；单核或线程过饱和时持有锁的线程一旦被 OS 切走，其它空转自旋线程会白白耗光整颗 CPU 时间片（甚至引发优先级反转死锁），此时普通自适应 `std::mutex` 更安全高效！\n\n> **追问 / 加分项**：多核激烈争抢下 TTAS 依然在放锁一瞬间全员同时发 `test_and_set` 踩踏（Thundering Herd）；追求严格公平性与扩展性的内核锁常用 **MCS Lock** 或 **Ticket SpinLock** 让各核只在自己本地私有变量上自旋。",
+      "tags": [
+        "C++手写",
+        "自旋锁",
+        "TTAS",
+        "atomic"
+      ]
+    },
+    {
+      "id": "code-17",
+      "cat": "code",
+      "diff": 3,
+      "q": "手写 Python（PyTorch）：Scaled Dot-Product Attention 与 Multi-Head Attention（MHA）前向计算。",
+      "a": "**核心要点**：明确各步张量维度流转 `[B, L, D] -> [B, H, L, d_k]`（`transpose(1, 2)` 一定要跟在 `view` 分头之后！）；注意除以 `sqrt(d_k)` 防点积方差膨胀、用极小值 `-1e9`（或 `torch.finfo(scores.dtype).min`）执行因果/Padding Mask，并做 `softmax(..., dim=-1)`。\n\n```python\nimport math\nimport torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\nclass MultiHeadAttention(nn.Module):\n    def __init__(self, d_model: int, num_heads: int, dropout: float = 0.0):\n        super().__init__()\n        assert d_model % num_heads == 0, \"d_model must be divisible by num_heads\"\n        self.d_model = d_model\n        self.num_heads = num_heads\n        self.head_dim = d_model // num_heads\n        self.q_proj = nn.Linear(d_model, d_model, bias=False)\n        self.k_proj = nn.Linear(d_model, d_model, bias=False)\n        self.v_proj = nn.Linear(d_model, d_model, bias=False)\n        self.o_proj = nn.Linear(d_model, d_model, bias=False)\n        self.attn_drop = nn.Dropout(dropout)\n\n    def forward(self, x: torch.Tensor, attn_mask: torch.Tensor | None = None):\n        # x: [B, L, D]\n        bsz, seq_len, _ = x.shape\n        q = self.q_proj(x).view(bsz, seq_len, self.num_heads, self.head_dim).transpose(1, 2)\n        k = self.k_proj(x).view(bsz, seq_len, self.num_heads, self.head_dim).transpose(1, 2)\n        v = self.v_proj(x).view(bsz, seq_len, self.num_heads, self.head_dim).transpose(1, 2)\n        # q, k, v: [B, H, L, head_dim]\n\n        scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(self.head_dim)\n        if attn_mask is not None:\n            # attn_mask == True (或 0) 表示遮盖位置；需用 dtype 最小值避免 FP16 溢出\n            scores = scores.masked_fill(attn_mask == 0, torch.finfo(scores.dtype).min)\n\n        # 转 float32 做 softmax 保证混合精度数值稳定，再转回输入精度\n        probs = F.softmax(scores, dim=-1, dtype=torch.float32).to(q.dtype)\n        probs = self.attn_drop(probs)\n\n        out = torch.matmul(probs, v)  # [B, H, L, head_dim]\n        out = out.transpose(1, 2).contiguous().view(bsz, seq_len, self.d_model)\n        return self.o_proj(out)\n```\n\n**复杂度与关键坑点**：\n- 时间 O(B · H · L² · head_dim)，标准显存 O(B · H · L²)；实际工程在 PyTorch 2+ 可直接调用 `F.scaled_dot_product_attention` 自动分发 FlashAttention-2。\n- **高频细节坑**：`transpose(1, 2)` 后面调用 `.view(...)` 前**必须加 `.contiguous()`**（否则非连续张量触发 RuntimeError）；且 `masked_fill` 在 FP16 下若填 `-1e9` 直接溢出报错（FP16 极限仅 `-65504`），应使用 `torch.finfo(scores.dtype).min` 或 `float(\"-inf\")`！\n\n> **追问 / 加分项**：改成 **GQA（Grouped-Query Attention）**只需改动三行：把 `k_proj`/`v_proj` 输出维改小成 `num_kv_heads * head_dim`，计算前使用 `k.repeat_interleave(num_heads // num_kv_heads, dim=1)`（或仅广播不拷贝）即可对齐！",
+      "tags": [
+        "Python手写",
+        "Multi-Head Attention",
+        "PyTorch"
+      ]
+    },
+    {
+      "id": "code-18",
+      "cat": "code",
+      "diff": 2,
+      "q": "手写 Python（NumPy）：数值稳定的 Softmax 与 Cross-Entropy Loss 前向及反向梯度计算。",
+      "a": "**核心要点**：减去行最大值防指数 `exp` 上溢（Log-Sum-Exp 平移不变）；先做 `log_softmax = shifted - log(sum(exp(shifted)))` 再交叉熵取值防止先算小数 `log(0)` 报 `-inf`；求导极其简洁：`dL/dlogits = (probs - one_hot(y)) / N`。\n\n```python\nimport numpy as np\n\ndef softmax_cross_entropy(logits: np.ndarray, targets: np.ndarray):\n    \"\"\"\n    logits: shape [N, C], 未归一化的模型输出\n    targets: shape [N], 真实类别整数索引 0..C-1\n    返回: (标量平均 loss, 关于 logits 的梯度 grad shape [N, C])\n    \"\"\"\n    n = logits.shape[0]\n    # 1. 数值稳定平移（keepdims=True 保持二维以便广播）\n    shifted = logits - np.max(logits, axis=-1, keepdims=True)\n    exp_vals = np.exp(shifted)\n    sum_exp = np.sum(exp_vals, axis=-1, keepdims=True)\n    probs = exp_vals / sum_exp\n\n    # 2. 用 log_softmax 公式算 loss，精度高且绝不会对 0 取 log\n    log_probs = shifted - np.log(sum_exp)\n    loss = -np.mean(log_probs[np.arange(n), targets])\n\n    # 3. 反向梯度: (p_i - y_i) / N\n    grad = probs.copy()\n    grad[np.arange(n), targets] -= 1.0\n    grad /= n\n    return float(loss), grad\n```\n\n**复杂度与关键坑点**：时间与空间均 O(N · C)；注意 **One-Hot 减 1 与对 Batch N 求平均**两件事一个不能少！如果题目带 `ignore_index = -100`（如 LLM 只算 Assistant 回复部分 Loss），先过滤出 `valid = (targets != -100)`，忽略位置的 `grad` 严格置 `0.0`，分母改成 `max(valid.sum(), 1)`。\n\n> **追问 / 加分项**：带 **Label Smoothing `ε`** 时怎么算梯度？把减 `1.0` 拆成目标位减去 `1 - ε`，同时全部位置统一均匀减去 `ε / C` 即可！",
+      "tags": [
+        "Python手写",
+        "Softmax",
+        "反向传播"
+      ]
+    },
+    {
+      "id": "code-19",
+      "cat": "code",
+      "diff": 2,
+      "q": "手写 Python（PyTorch）：LoRA（Low-Rank Adaptation）线性层实现（含参数初始化与推理零开销权重合并）。",
+      "a": "**核心要点**：LoRA 冻结预训练大矩阵 `W_0`，旁路挂低秩分解 `ΔW = B @ A`（`rank r << min(in, out)`）。**关键初始化技巧**：`A` 高斯/Kaiming 初始化、**`B` 必须全零初始化**——保证训练第 0 步时 `ΔW = B @ A == 0`，完美保持原模型预训练输出毫无震荡破坏；最后用缩放因子 `alpha / r` 解耦秩 `r` 超参变动对学习率的影响！\n\n```python\nimport math\nimport torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\nclass LoRALinear(nn.Module):\n    def __init__(self, in_features: int, out_features: int, r: int = 8, lora_alpha: int = 16, dropout: float = 0.0):\n        super().__init__()\n        assert r > 0\n        self.scaling = lora_alpha / r\n        self.merged = False\n\n        # 冻结基座线性层权重\n        self.base = nn.Linear(in_features, out_features, bias=True)\n        self.base.weight.requires_grad_(False)\n        if self.base.bias is not None:\n            self.base.bias.requires_grad_(False)\n\n        # nn.Linear weight 形状为 [out, in]，故 lora_A 为 [r, in], lora_B 为 [out, r]\n        self.lora_A = nn.Parameter(torch.empty(r, in_features))\n        self.lora_B = nn.Parameter(torch.zeros(out_features, r))\n        nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))\n        self.drop = nn.Dropout(dropout) if dropout > 0 else nn.Identity()\n\n    def forward(self, x: torch.Tensor) -> torch.Tensor:\n        if self.merged:\n            return self.base(x)\n        base_out = self.base(x)\n        # 先经过 A 降维 [..., r]，再过 B 升维 [..., out]，避免显式乘出巨大的 [out, in] 矩阵！\n        lora_out = F.linear(F.linear(self.drop(x), self.lora_A), self.lora_B)\n        return base_out + lora_out * self.scaling\n\n    @torch.no_grad()\n    def merge_weights(self):\n        if not self.merged:\n            self.base.weight += (self.lora_B @ self.lora_A) * self.scaling\n            self.merged = True\n```\n\n**复杂度与关键坑点**：\n- 前向训练切忌先把 `(B @ A)` 乘出来再与 `x` 相乘（那样既多吃 O(d²) 显存算力比全量层还慢），必须用结合律 **`(x @ A^T) @ B^T`** 先压成秩 `r`！\n- 推理上线部署前调用 `merge_weights()` 直接加回原权重，**端到端推理延迟 0 增加**（多租户切换不同 LoRA 适配器则不 merge、以 batched SGMV 算子动态分派）。\n\n> **追问 / 加分项**：为什么 `A` 和 `B` 不全部初始化为 0？因为若全为 0，`∂L/∂A` 依赖于 `B`、`∂L/∂B` 依赖于 `A`，两个梯度全都恒为 0 彻底学不动（对称死锁）！而一侧随机一侧零，只需有梯度的那一侧先迈步即可启动训练。",
+      "tags": [
+        "Python手写",
+        "LoRA",
+        "微调"
+      ]
+    },
+    {
+      "id": "code-20",
+      "cat": "code",
+      "diff": 3,
+      "q": "手写 Python（PyTorch）：旋转位置编码 RoPE（Rotary Positional Embedding）核心实现。",
+      "a": "**核心要点**：预计算每对维度的逆频率 `theta_i = base^(-2i/d)` 与位置 `m` 相乘得到角矩阵 `m · theta_i`；实际 LLaMA/HuggingFace 工程实现大多把前半维 `x1` 与后半维 `x2` 拼成旋转配对（`rotate_half` 写法等效两两配对，内存访问连续效率更高），只需向量化公式 `q * cos + rotate_half(q) * sin` 即可**零复数计算**直接支持任意高精度与混合精度加速！\n\n```python\nimport torch\n\ndef precompute_rope_freqs(head_dim: int, max_seq_len: int, base: float = 10000.0, device=None):\n    assert head_dim % 2 == 0\n    # inv_freq: [head_dim // 2]\n    half = head_dim // 2\n    inv_freq = 1.0 / (base ** (torch.arange(0, head_dim, 2, device=device, dtype=torch.float32) / head_dim))\n    pos = torch.arange(max_seq_len, device=device, dtype=torch.float32)\n    freqs = torch.outer(pos, inv_freq)  # [max_seq_len, half]\n    emb = torch.cat([freqs, freqs], dim=-1)  # [max_seq_len, head_dim]\n    return emb.cos(), emb.sin()\n\ndef rotate_half(x: torch.Tensor) -> torch.Tensor:\n    # 把后半段取负翻到前面：[-x2, x1]，对应复数虚部乘 i 的旋转展开\n    x1, x2 = x.chunk(2, dim=-1)\n    return torch.cat((-x2, x1), dim=-1)\n\ndef apply_rope(q: torch.Tensor, k: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor):\n    # q, k: [B, H, L, head_dim]；cos, sin 切片至 [1, 1, L, head_dim]\n    seq_len = q.shape[-2]\n    cos_s = cos[:seq_len].unsqueeze(0).unsqueeze(0).to(q.dtype)\n    sin_s = sin[:seq_len].unsqueeze(0).unsqueeze(0).to(q.dtype)\n    q_rot = q * cos_s + rotate_half(q) * sin_s\n    k_rot = k * cos_s + rotate_half(k) * sin_s\n    return q_rot, k_rot\n```\n\n**复杂度与关键坑点**：\n- 时间 O(B · H · L · head_dim)，只做逐元素乘加，无参数学习；频率计算与 `cos`/`sin` **务必先在 `torch.float32` 精度完成**再降回 FP16/BF16（BF16 在上万位置做大角度三角函数会严重丢步长精度！）。\n- 在增量 Decode 阶段传入了 `position_ids` 偏移量 `past_len` 时，需按 **`cos[position_ids]`** 取真实当前位置，绝不能每次重从 `0` 开始索引！\n\n> **追问 / 加分项**：注意面试时区分两种 RoPE 配对方式——原论文与 GPT-NeoX/LLaMA（前一半配后一半 vs 相邻偶数奇数位 `[0,1], [2,3]` 配对）各自在数学上自洽，转换权重时绝对不能搞混配对顺序！",
+      "tags": [
+        "Python手写",
+        "RoPE",
+        "Transformer"
+      ]
+    },
+    {
+      "id": "code-21",
+      "cat": "code",
+      "diff": 2,
+      "q": "手写 C++：单调栈经典题——柱状图中最大的矩形（Largest Rectangle in Histogram）。",
+      "a": "**核心要点**：以每根柱子 `i` 作为矩形“最矮木板”高向左右尽量延伸，边界正是左右两侧首个**严格更矮**的柱子！维护栈内高度**单调不降（严格或非严格递增下标）**，并在头部与尾部各添高度 `0` 哨兵柱子，统一一次扫完无需循环外额外清栈。\n\n```cpp\n#include <algorithm>\n#include <stack>\n#include <vector>\n\nint largestRectangleArea(std::vector<int>& heights) {\n    // 首尾各补 0：头哨兵免去栈判空，尾哨兵强制弹出结算所有剩余柱子\n    std::vector<int> h; \n    h.reserve(heights.size() + 2);\n    h.push_back(0);\n    h.insert(h.end(), heights.begin(), heights.end());\n    h.push_back(0);\n\n    std::stack<int> stk;\n    stk.push(0);\n    int ans = 0;\n\n    for (int i = 1; i < static_cast<int>(h.size()); ++i) {\n        while (h[i] < h[stk.top()]) {\n            int mid = stk.top();\n            stk.pop();\n            int left_bound = stk.top(); // 弹完后新栈顶就是左侧第一个严格矮于 mid 的柱子\n            int width = i - left_bound - 1;\n            ans = std::max(ans, h[mid] * width);\n        }\n        stk.push(i);\n    }\n    return ans;\n}\n```\n\n**复杂度与关键坑点**：每个下标入栈 1 次、出栈 1 次，时间复杂度 **O(N)**，空间 **O(N)**。若遇相邻等高柱子（`h[i] == h[stk.top()]`），后入的等高柱子会向右结算完整宽度，因此不用先弹出旧等高柱子也能算出全局正确最大面积（若追求栈更短也可在相等时替换或弹出）。\n\n> **追问 / 加分项**：LeetCode 85「最大矩形（全 1 二维矩阵）」如何化归为此题？逐行向上统计每列连续 1 的高度数组 `row_heights`，每一行直接喂给一次 `largestRectangleArea` 即可 O(M · N) 秒杀！",
+      "tags": [
+        "C++手写",
+        "单调栈",
+        "高频算法"
+      ]
+    },
+    {
+      "id": "code-22",
+      "cat": "code",
+      "diff": 2,
+      "q": "手写 C++：堆优化 Dijkstra 单源最短路径算法（含惰性删除检查与不可达处理）。",
+      "a": "**核心要点**：小根堆里压入 `(距离, 节点)`；由于标准 `std::priority_queue` 不支持直接 decrease-key，往堆中压入更优新距离并保留旧冗余条目，弹出堆顶时如果发现 **`d > dist[u]`**（已过时垃圾状态）直接 `continue` 惰性跳过，严防超时退化！\n\n```cpp\n#include <limits>\n#include <queue>\n#include <utility>\n#include <vector>\n\nstruct Edge {\n    int to;\n    long long w;\n};\n\nstd::vector<long long> dijkstra(int n, int src, const std::vector<std::vector<Edge>>& adj) {\n    constexpr long long INF = std::numeric_limits<long long>::max() / 4;\n    std::vector<long long> dist(n, INF);\n    using Node = std::pair<long long, int>; // {dist, u}\n    std::priority_queue<Node, std::vector<Node>, std::greater<Node>> pq;\n\n    dist[src] = 0;\n    pq.emplace(0, src);\n\n    while (!pq.empty()) {\n        auto [d, u] = pq.top();\n        pq.pop();\n        // 核心：同一节点可能曾以较差路径多次入堆，只处理真正最优的那次\n        if (d > dist[u]) continue;\n\n        for (const auto& e : adj[u]) {\n            if (dist[u] + e.w < dist[e.to]) {\n                dist[e.to] = dist[u] + e.w;\n                pq.emplace(dist[e.to], e.to);\n            }\n        }\n    }\n    return dist;\n}\n```\n\n**复杂度与关键坑点**：\n- 时间 **O((V + E) log E)**（每条成功松弛的边最多推一次入堆，总体不超过 E），空间 **O(V + E)**；边权累加极容易爆 32 位 `int`，习惯统一使用 **`long long`** 且 `INF` 取最大值的 1/4 防止加法溢出一并踩坑。\n- 严禁图中有**负权边**：一旦出现负权边，先前弹出的点未来还可能再被更小负边缩短导致错误。\n\n> **追问 / 加分项**：如果边长权值限制在小范围非负整数（最大边权 C ≤ 几千），可用 **Dial's Algorithm（分桶队列替代堆）**做到线性 O(V + E + MaxDist)；若求特定单一终点 `dst`，第一次从堆顶弹出 `u == dst` 即可立刻 `return d` 提前终止！",
+      "tags": [
+        "C++手写",
+        "Dijkstra",
+        "图论"
+      ]
+    },
+    {
+      "id": "code-23",
+      "cat": "code",
+      "diff": 2,
+      "q": "手写 C++：带路径压缩与按秩/大小合并的并查集（Union-Find）。",
+      "a": "**核心要点**：`find` 时采用**路径压缩**把沿途经过节点直接挂到根节点（迭代隔代减半压缩可防止超深递归爆栈）；`unite` 采用**按连通块大小（或树高秩）合并**，把小树挂到大树下面，同时实时维护独立连通分量计数器 `components`。\n\n```cpp\n#include <numeric>\n#include <utility>\n#include <vector>\n\nclass UnionFind {\npublic:\n    explicit UnionFind(int n) : parent_(n), sz_(n, 1), count_(n) {\n        std::iota(parent_.begin(), parent_.end(), 0);\n    }\n\n    int find(int x) {\n        while (parent_[x] != x) {\n            parent_[x] = parent_[parent_[x]]; // 路径减半（迭代零递归栈溢出风险）\n            x = parent_[x];\n        }\n        return x;\n    }\n\n    bool unite(int a, int b) {\n        int ra = find(a), rb = find(b);\n        if (ra == rb) return false; // 已在同一集合（无向图判环信号）\n        if (sz_[ra] < sz_[rb]) std::swap(ra, rb);\n        parent_[rb] = ra;\n        sz_[ra] += sz_[rb];\n        --count_;\n        return true;\n    }\n\n    bool connected(int a, int b) { return find(a) == find(b); }\n    int size(int x) { return sz_[find(x)]; }\n    int components() const noexcept { return count_; }\n\nprivate:\n    std::vector<int> parent_;\n    std::vector<int> sz_;\n    int count_;\n};\n```\n\n**复杂度与关键坑点**：同时启用路径压缩与按大小/秩合并后，单次操作均摊复杂度为阿克曼反函数 **O(α(N))**（可视作工程常数 O(1)）；同时支持判环、统计连通分量个数及查所在块节点总数。\n\n> **追问 / 加分项**：带权并查集（如“除法求值”或食物链关系）怎么做？再维护一个 `weight_[x]` 记录节点 `x` 相对 `parent_[x]` 的权比或模偏移，做完整递归路径压缩时务必在**先保存原 `old_p = parent_[x]` 再递归完 `find(old_p)` 回溯之后**累加 `weight_[x] *= weight_[old_p]`！",
+      "tags": [
+        "C++手写",
+        "并查集",
+        "图论"
+      ]
+    },
+    {
+      "id": "code-24",
+      "cat": "code",
+      "diff": 2,
+      "q": "手写 C++：K 个一组翻转链表（Reverse Nodes in k-Group，要求 O(1) 额外空间）。",
+      "a": "**核心要点**：用栈上 `dummy` 哨兵连接每组边界；先往前试探走够 k 步拿到组尾 `tail`，不足 k 个直接安全 `break` 保留原序；用标准三指针原地头插/反转组内 `[head..tail]` 后精准缝合上下组指针 `prev_group` 与 `next_group`！\n\n```cpp\nstruct ListNode {\n    int val;\n    ListNode* next;\n    explicit ListNode(int x = 0, ListNode* n = nullptr) : val(x), next(n) {}\n};\n\nListNode* reverseKGroup(ListNode* head, int k) {\n    if (!head || k <= 1) return head;\n    ListNode dummy(0, head);\n    ListNode* group_prev = &dummy;\n\n    for (;;) {\n        ListNode* kth = group_prev;\n        for (int i = 0; i < k && kth; ++i) {\n            kth = kth->next;\n        }\n        if (!kth) break; // 剩余不足 k 个节点，保持原样结束\n\n        ListNode* group_next = kth->next;\n        ListNode* group_head = group_prev->next;\n\n        // 原地反转区间 [group_head .. kth]：首节点翻转后直接连上 group_next\n        ListNode* prev = group_next;\n        ListNode* cur = group_head;\n        while (cur != group_next) {\n            ListNode* nxt = cur->next;\n            cur->next = prev;\n            prev = cur;\n            cur = nxt;\n        }\n\n        // 缝合前驱：翻转后的新头是 kth，原头 group_head 成为本组新尾\n        group_prev->next = kth;\n        group_prev = group_head;\n    }\n    return dummy.next;\n}\n```\n\n**复杂度与关键坑点**：每个节点常数次访问，时间 **O(N)**，完全迭代无需递归栈实现真正 **O(1)** 空间；妙在初始化 `prev = group_next`，顺带一次性把组内反转与新尾接往下一组统一起来写，少好几个指针赋值！\n\n> **追问 / 加分项**：若变体问“不足 k 组也反转”或“从尾部反向算起 k 个一组”，前者只需把 `if (!kth) break` 改成到末尾为止的反转；后者先整链反转、按规则翻转后再整链反转回来即可。",
+      "tags": [
+        "C++手写",
+        "链表",
+        "指针操作"
+      ]
+    },
+    {
+      "id": "code-25",
+      "cat": "code",
+      "diff": 2,
+      "q": "手写 Python：滑动窗口经典难题——最小覆盖子串（Minimum Window Substring）。",
+      "a": "**核心要点**：用 `need` 计数所需字符频次、`window` 记录当前窗口计数，**切忌每次都在窗口内全遍历对比两张哈希表**（那样退化成 O(|S|·|Σ|)）！维护唯一进度计数器 **`valid`** 记录“已经满足需求数量达标的**不同字符种类数**”，每次扩大或缩小只 O(1) 比对发生变化的单个字符！\n\n```python\nfrom collections import Counter\n\ndef min_window(s: str, t: str) -> str:\n    if not s or not t or len(s) < len(t):\n        return \"\"\n\n    need = Counter(t)\n    window = {}\n    valid = 0\n    required = len(need)\n\n    best_start, best_len = 0, float(\"inf\")\n    left = 0\n\n    for right, ch in enumerate(s):\n        if ch in need:\n            window[ch] = window.get(ch, 0) + 1\n            if window[ch] == need[ch]:\n                valid += 1\n\n        # 一旦当前窗口完整覆盖 t，尝试尽量左移收缩寻找最短解\n        while valid == required:\n            cur_len = right - left + 1\n            if cur_len < best_len:\n                best_start, best_len = left, cur_len\n\n            d = s[left]\n            left += 1\n            if d in need:\n                if window[d] == need[d]:\n                    valid -= 1\n                window[d] -= 1\n\n    return \"\" if best_len == float(\"inf\") else s[best_start : best_start + best_len]\n```\n\n**复杂度与关键坑点**：左右指针各严格单向扫过 `s` 一遍，时间 **O(|S| + |T|)**，空间 O(|Σ|)（ASCII 下可换成定长 128 数组省哈希常量）；核心易错点是 **`valid += 1` / `valid -= 1` 只在严格相等 `==` 临界跨过的一瞬间触发一次**（多出要求次数时不重复累加！）。\n\n> **追问 / 加分项**：这套滑动窗口“增进—校验达标—收缩更新最值”标准四步模板稍作微调，可秒解：找到字符串中所有字母异位词、字符串的排列、无重复字符的最长子串。",
+      "tags": [
+        "Python手写",
+        "滑动窗口",
+        "字符串"
+      ]
+    },
+    {
+      "id": "code-26",
+      "cat": "code",
+      "diff": 2,
+      "q": "手写 Python：O(N log N) 最长递增子序列（LIS）与字典树（Trie）完整模板。",
+      "a": "**核心要点**：LIS 采用贪心 `tails` 数组配合内置二分 `bisect_left`（严格递增用 `bisect_left`，非严格不降子序列改用 `bisect_right`！）；Trie 节点采用 `dict` 子映射免去固定 26 字符限制，简洁可读。\n\n```python\nfrom bisect import bisect_left\n\ndef length_of_lis(nums: list[int]) -> int:\n    tails: list[int] = []\n    for x in nums:\n        idx = bisect_left(tails, x)  # 若允许相等改为 bisect_right\n        if idx == len(tails):\n            tails.append(x)\n        else:\n            tails[idx] = x\n    return len(tails)\n\nclass TrieNode:\n    __slots__ = (\"children\", \"is_end\")\n    def __init__(self):\n        self.children: dict[str, \"TrieNode\"] = {}\n        self.is_end: bool = False\n\nclass Trie:\n    def __init__(self):\n        self.root = TrieNode()\n\n    def insert(self, word: str) -> None:\n        node = self.root\n        for ch in word:\n            if ch not in node.children:\n                node.children[ch] = TrieNode()\n            node = node.children[ch]\n        node.is_end = True\n\n    def _find_node(self, s: str) -> TrieNode | None:\n        node = self.root\n        for ch in s:\n            node = node.children.get(ch)\n            if node is None:\n                return None\n        return node\n\n    def search(self, word: str) -> bool:\n        node = self._find_node(word)\n        return node is not None and node.is_end\n\n    def starts_with(self, prefix: str) -> bool:\n        return self._find_node(prefix) is not None\n```\n\n**复杂度与关键坑点**：LIS 时间 **O(N log N)**、空间 O(N)；Trie 插入与查询时间均为 **O(L)**（L 为字符串长），加上 `__slots__` 能显著压缩 Python 大量节点对象的内存占用（省掉每实例 `__dict__`）。\n\n> **追问 / 加分项**：如果高频前缀自动补全要按热词排序返回 Top 3 建议，可在每个 TrieNode 上额外维护或预缓存最多 3 条热词引用，查询时无需全子树 DFS！",
+      "tags": [
+        "Python手写",
+        "LIS",
+        "Trie"
+      ]
     }
   ]
 }

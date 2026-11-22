@@ -185,8 +185,13 @@ export function render() {
 
   // 雷达
   const cats = catMastery();
-  const shortName = (n) => n.length > 6 ? n.slice(0, 5) + '…' : n;
-  radarChart($('#dash-radar'), cats.map((c) => shortName(c.name)), cats.map((c) => c.pct));
+  const CAT_SHORT = {
+    net: '网络', os: 'OS', db: '数据库', algo: '算法', code: '手写代码',
+    fe: '前端', be: '后端', java: 'Java', go: 'Go/Py', cpp: 'C++',
+    ai: 'AI/LLM', sys: '系统设计', behavior: '行为面', project: '项目复盘',
+  };
+  const shortName = (c) => CAT_SHORT[c.key] || (c.name.length > 5 ? c.name.slice(0, 4) + '…' : c.name);
+  radarChart($('#dash-radar'), cats.map(shortName), cats.map((c) => c.pct));
   $('#dash-radar-note').textContent = cats.length
     ? `覆盖 ${cats.length} 个分类；数值 = 该分类中已掌握题目的占比。`
     : '题库加载中…';

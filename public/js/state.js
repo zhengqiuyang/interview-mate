@@ -113,7 +113,7 @@ export const BUILTIN_CATS = [
   { key: 'net', name: '计算机网络' }, { key: 'os', name: '操作系统' }, { key: 'db', name: '数据库 & 缓存' },
   { key: 'algo', name: '算法与数据结构' }, { key: 'code', name: '手写代码' }, { key: 'fe', name: '前端' },
   { key: 'be', name: '后端 & 分布式' }, { key: 'java', name: 'Java 专项' }, { key: 'go', name: 'Go / Python 专项' },
-  { key: 'ai', name: 'AI / LLM 工程' }, { key: 'sys', name: '系统设计' },
+  { key: 'cpp', name: 'C++ 专项' }, { key: 'ai', name: 'AI / LLM 工程' }, { key: 'sys', name: '系统设计' },
   { key: 'behavior', name: '行为面试' }, { key: 'project', name: '项目复盘' },
 ];
 

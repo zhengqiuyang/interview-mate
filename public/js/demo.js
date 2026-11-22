@@ -387,14 +387,15 @@ export function seedDemoData(stateObj = null) {
     'net-1', 'net-2', 'net-4', 'net-5', 'net-6', 'net-9',
     'os-1', 'os-2', 'os-4',
     'db-1', 'db-2', 'db-3', 'db-4', 'db-7', 'db-11',
-    'algo-1', 'algo-2', 'algo-3', 'algo-4',
-    'code-1', 'code-2', 'code-4',
+    'algo-1', 'algo-2', 'algo-3', 'algo-4', 'algo-15', 'algo-16', 'algo-20', 'algo-23', 'algo-25',
+    'code-1', 'code-2', 'code-4', 'code-13', 'code-17', 'code-21',
     'fe-1', 'fe-2', 'fe-5',
     'be-1', 'be-2', 'be-3',
     'java-1', 'java-3', 'java-8',
     'sys-1', 'sys-2',
     'go-1', 'go-2',
-    'ai-1', 'ai-2', 'ai-3',
+    'cpp-1', 'cpp-2', 'cpp-3', 'cpp-5', 'cpp-9', 'cpp-14', 'cpp-16', 'cpp-22',
+    'ai-1', 'ai-2', 'ai-3', 'ai-11', 'ai-12', 'ai-18', 'ai-19', 'ai-26', 'ai-34',
     'beh-1', 'beh-2',
     'proj-1', 'proj-2',
   ];
@@ -414,10 +415,12 @@ export function seedDemoData(stateObj = null) {
   srs['be-4'] = { box: 1, due: now - 5400000, reps: 1, lapses: 0, last: now - 2 * DAY };
   srs['java-2'] = { box: 2, due: now - 900000, reps: 2, lapses: 0, last: now - 3 * DAY };
   srs['sys-3'] = { box: 1, due: now - 600000, reps: 1, lapses: 0, last: now - DAY };
+  srs['cpp-28'] = { box: 1, due: now - 1200000, reps: 1, lapses: 0, last: now - DAY };
   // 未来 1-5 天待复习分布
   srs['net-7'] = { box: 1, due: now + DAY, reps: 1, lapses: 0, last: now };
   srs['os-5'] = { box: 2, due: now + DAY, reps: 2, lapses: 0, last: now - DAY };
   srs['db-6'] = { box: 2, due: now + 2 * DAY, reps: 2, lapses: 0, last: now - DAY };
+  srs['ai-29'] = { box: 2, due: now + 2 * DAY, reps: 2, lapses: 0, last: now - DAY };
   srs['algo-5'] = { box: 2, due: now + 3 * DAY, reps: 2, lapses: 0, last: now - DAY };
   srs['fe-3'] = { box: 2, due: now + 4 * DAY, reps: 2, lapses: 0, last: now - 2 * DAY };
   srs['java-4'] = { box: 3, due: now + 5 * DAY, reps: 3, lapses: 0, last: now - 2 * DAY };

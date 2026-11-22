@@ -7,8 +7,9 @@ import { markActivity } from '../srs.js';
 import { awardXP } from '../gamify.js';
 
 const ROLE_NAMES = {
-  fe: '前端工程师', java: '后端（Java）', go: '后端（Go）', algo: '算法工程师',
-  test: '测试工程师', pm: '产品经理', general: '通用软件工程师',
+  fe: '前端工程师', java: '后端（Java）', go: '后端（Go）', cpp: 'C++ 研发工程师',
+  ai: 'AI / LLM 工程师', algo: '算法工程师', test: '测试工程师', pm: '产品经理',
+  general: '通用软件工程师',
 };
 const TYPE_NAMES = {
   basics: '技术基础面', project: '项目深挖面', system: '系统设计面',
