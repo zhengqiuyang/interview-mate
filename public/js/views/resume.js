@@ -81,6 +81,8 @@ function currentResume() {
 /* ---------- 简历库 ---------- */
 
 function renderLibrary() {
+  const cnt = $('#rs-count');
+  if (cnt) cnt.textContent = String(S.resumes.length);
   const box = $('#rs-cards');
   if (!S.resumes.length) {
     box.innerHTML = '<p class="hint" style="margin:4px 0">还没有简历——上传 PDF/Word，或从空白开始写。</p>';

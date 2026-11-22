@@ -184,14 +184,18 @@ function answerFor(mode, body) {
   if (mode === 'mock') {
     const msgs = (body && body.messages) || [];
     const asked = msgs.filter((m) => m.role === 'user').length - 1;
-    return pickMockLine(asked);
+    const hasResume = Boolean(body && body.mockConfig && body.mockConfig.resumeSummary);
+    return pickMockLine(asked, hasResume);
   }
   return ANSWERS[mode] || '这是演示模式的示例回答。真实内容由你配置的模型生成。';
 }
 
-function pickMockLine(n) {
+function pickMockLine(n, hasResume = false) {
+  const first = hasResume
+    ? '看到你简历里提到了高并发订单链路重构和慢查询优化——在这套方案里引入消息队列做异步解耦后，如果下游消费失败，你怎么保证最终一致？举一个你亲手处理过的例子。'
+    : '好的。你提到用消息队列做异步解耦——如果下游消费失败，你怎么保证最终一致？举一个你亲手处理过的例子。';
   const lines = [
-    '好的。你提到用消息队列做异步解耦——如果下游消费失败，你怎么保证最终一致？举一个你亲手处理过的例子。',
+    first,
     '不错。那同一条消息被重复投递时，你的去重键怎么设计？为什么选这个键而不是业务主键？',
     '换个角度：这套方案峰值 QPS 大概多少，瓶颈先出现在哪一层？你怎么定位的？',
     '最后一个问题：如果让你重做一次，你会改哪一处设计？为什么？',
@@ -324,6 +328,10 @@ async function handleApi(pathname, init, rawUrl) {
     return jsonResponse({ status: 200, text: '（演示模式：这里不会真的发起外部请求）' });
   }
 
+  if (pathname === '/api/bank/fetch-md') {
+    return jsonResponse({ error: '演示模式不支持远程拉取外部链接，可直接粘贴 Markdown 正文或上传本地 .md 文件导入' }, 400);
+  }
+
   if (pathname === '/api/files/upload') {
     return jsonResponse({ error: '演示模式不支持上传文件，请本地运行 node server.js 体验完整功能' }, 400);
   }
@@ -355,6 +363,253 @@ export function installDemoFetch() {
   return true;
 }
 
+function dayKeyOffset(offsetDays) {
+  const d = new Date(Date.now() + offsetDays * 86400000);
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+/** 在空存储的演示模式中注入拟真的 7 天备考样例档案，避免首屏全 0。 */
+export function seedDemoData(stateObj = null) {
+  if (typeof localStorage === 'undefined') return false;
+  if (
+    localStorage.getItem('im_demo_seeded')
+    || localStorage.getItem('im_srs')
+    || localStorage.getItem('im_sessions')
+  ) {
+    return false;
+  }
+  const now = Date.now();
+  const DAY = 86400000;
+
+  const srs = {};
+  const masteredIds = [
+    'net-1', 'net-2', 'net-4', 'net-5', 'net-6', 'net-9',
+    'os-1', 'os-2', 'os-4',
+    'db-1', 'db-2', 'db-3', 'db-4', 'db-7', 'db-11',
+    'algo-1', 'algo-2', 'algo-3', 'algo-4',
+    'code-1', 'code-2', 'code-4',
+    'fe-1', 'fe-2', 'fe-5',
+    'be-1', 'be-2', 'be-3',
+    'java-1', 'java-3', 'java-8',
+    'sys-1', 'sys-2',
+    'go-1', 'go-2',
+    'ai-1', 'ai-2', 'ai-3',
+    'beh-1', 'beh-2',
+    'proj-1', 'proj-2',
+  ];
+  masteredIds.forEach((id, i) => {
+    srs[id] = {
+      box: i % 3 === 0 ? 4 : 3,
+      due: now + (6 + (i % 9)) * DAY,
+      reps: i % 3 === 0 ? 4 : 3,
+      lapses: 0,
+      last: now - (i % 5 + 1) * DAY,
+    };
+  });
+  // 到期与错题
+  srs['net-3'] = { box: 0, due: now - 3600000, reps: 3, lapses: 2, last: now - DAY };
+  srs['db-5'] = { box: 0, due: now - 7200000, reps: 4, lapses: 2, last: now - DAY };
+  srs['os-3'] = { box: 1, due: now - 1800000, reps: 2, lapses: 1, last: now - 2 * DAY };
+  srs['be-4'] = { box: 1, due: now - 5400000, reps: 1, lapses: 0, last: now - 2 * DAY };
+  srs['java-2'] = { box: 2, due: now - 900000, reps: 2, lapses: 0, last: now - 3 * DAY };
+  srs['sys-3'] = { box: 1, due: now - 600000, reps: 1, lapses: 0, last: now - DAY };
+  // 未来 1-5 天待复习分布
+  srs['net-7'] = { box: 1, due: now + DAY, reps: 1, lapses: 0, last: now };
+  srs['os-5'] = { box: 2, due: now + DAY, reps: 2, lapses: 0, last: now - DAY };
+  srs['db-6'] = { box: 2, due: now + 2 * DAY, reps: 2, lapses: 0, last: now - DAY };
+  srs['algo-5'] = { box: 2, due: now + 3 * DAY, reps: 2, lapses: 0, last: now - DAY };
+  srs['fe-3'] = { box: 2, due: now + 4 * DAY, reps: 2, lapses: 0, last: now - 2 * DAY };
+  srs['java-4'] = { box: 3, due: now + 5 * DAY, reps: 3, lapses: 0, last: now - 2 * DAY };
+
+  const activity = {
+    [dayKeyOffset(-17)]: 2,
+    [dayKeyOffset(-16)]: 4,
+    [dayKeyOffset(-14)]: 3,
+    [dayKeyOffset(-13)]: 6,
+    [dayKeyOffset(-11)]: 5,
+    [dayKeyOffset(-10)]: 2,
+    [dayKeyOffset(-8)]: 7,
+    [dayKeyOffset(-5)]: 3,
+    [dayKeyOffset(-4)]: 6,
+    [dayKeyOffset(-3)]: 4,
+    [dayKeyOffset(-2)]: 8,
+    [dayKeyOffset(-1)]: 11,
+    [dayKeyOffset(0)]: 5,
+  };
+
+  const sessions = [
+    {
+      id: 'mock-demo-3',
+      kind: 'mock',
+      date: now - DAY,
+      title: '后端（Java） · 项目深挖面',
+      score: 84,
+      elapsed: 940,
+      reportMd: '# 面试评估报告\n\n**总体评分：84/100**\n\n## 分项评分\n- 技术深度：8.5/10\n- 项目经验：9/10\n- 表达与结构：8/10\n- 岗位匹配度：8.5/10\n\n## 亮点\n- 能用 P99 从 800ms 降至 120ms 的真实指标支撑改造效果；\n- Redis + Lua 预扣库存与对账兜底方案思路清晰。',
+      messages: [],
+    },
+    {
+      id: 'mock-demo-2',
+      kind: 'mock',
+      date: now - 4 * DAY,
+      title: '后端（Java） · 综合模拟',
+      score: 76,
+      elapsed: 820,
+      reportMd: '# 面试评估报告\n\n**总体评分：76/100**\n\n## 分项评分\n- 技术深度：7.5/10\n- 项目经验：8/10\n- 表达与结构：7/10\n- 岗位匹配度：8/10',
+      messages: [],
+    },
+    {
+      id: 'mock-demo-1',
+      kind: 'mock',
+      date: now - 8 * DAY,
+      title: '通用软件工程师 · 技术基础面',
+      score: 68,
+      elapsed: 760,
+      reportMd: '# 面试评估报告\n\n**总体评分：68/100**\n\n## 分项评分\n- 技术深度：7/10\n- 表达与结构：6.5/10\n- 问题理解：7/10\n- 岗位匹配度：7/10',
+      messages: [],
+    },
+  ];
+
+  const resumes = [
+    {
+      id: 'rs-demo-1',
+      name: '张三 · 高级后端开发简历',
+      source: 'sample',
+      parsed: null,
+      updated: now - 2 * DAY,
+      content: [
+        '张三 | 后端开发工程师 · 4 年经验',
+        '138-0000-0000 | demo@example.com | github.com/demo',
+        '',
+        '工作经历',
+        'XX 科技有限公司 · 后端开发工程师（2022.07 - 至今）',
+        '- 负责订单与交易核心链路微服务研发，日常峰值 3500 QPS',
+        '- 主导 MySQL 慢查询治理与复合索引重构，核心接口 P99 从 800ms 降至 120ms',
+        '- 引入 RabbitMQ 异步削峰与幂等去重表，大促期间支付超时补偿零漏单',
+        '',
+        '项目经历',
+        '高并发秒杀库存扣减重构（技术负责人）',
+        '- 设计 Redis + Lua 原子预扣库存 + 异步落库与定时对账兜底，超卖率为 0',
+        '',
+        '专业技能',
+        'Java / Spring Boot / Go / MySQL / Redis / RabbitMQ / Kafka / Docker',
+      ].join('\n'),
+    },
+  ];
+
+  const apps = [
+    {
+      id: 'app-demo-1', company: '云雀科技', position: '高级后端工程师（交易链路）',
+      channel: '内推', salary: '38-55K·16薪', date: now - 6 * DAY,
+      interviewDate: dayKeyOffset(3), resumeId: 'rs-demo-1', jdUrl: '',
+      note: '一面重点追问订单幂等与补偿对账，二面在三天后', status: 'interview2',
+      history: [
+        { status: 'applied', date: now - 6 * DAY, note: '' },
+        { status: 'interview1', date: now - 3 * DAY, note: '通过' },
+        { status: 'interview2', date: now - DAY, note: '约二面' },
+      ],
+    },
+    {
+      id: 'app-demo-2', company: '星尘智能', position: 'AI 应用工程师（Agent / RAG）',
+      channel: 'Boss直聘', salary: '40-60K', date: now - 4 * DAY,
+      interviewDate: '', resumeId: 'rs-demo-1', jdUrl: '',
+      note: '已约技术一面，重点准备 RAG 检索与 Tool Calling', status: 'interview1',
+      history: [
+        { status: 'applied', date: now - 4 * DAY, note: '' },
+        { status: 'interview1', date: now - 2 * DAY, note: '' },
+      ],
+    },
+    {
+      id: 'app-demo-3', company: '远山数据', position: '后端开发工程师（Go/Java）',
+      channel: '官网', salary: '30-45K', date: now - 2 * DAY,
+      interviewDate: '', resumeId: 'rs-demo-1', jdUrl: '',
+      note: '官网投递等待筛选', status: 'applied',
+      history: [{ status: 'applied', date: now - 2 * DAY, note: '' }],
+    },
+    {
+      id: 'app-demo-4', company: '极光云', position: '基础架构研发工程师',
+      channel: '内推', salary: '42-58K', date: now - 14 * DAY,
+      interviewDate: '', resumeId: 'rs-demo-1', jdUrl: '',
+      note: '三面通过已拿口头 Offer', status: 'offer',
+      history: [
+        { status: 'applied', date: now - 14 * DAY, note: '' },
+        { status: 'offer', date: now - 2 * DAY, note: '意向' },
+      ],
+    },
+  ];
+
+  const knowledge = [
+    {
+      id: 'kn-demo-1',
+      title: 'MySQL 慢查询与索引失效排查清单',
+      tags: ['MySQL', '索引', '性能调优'],
+      updated: now - DAY,
+      content: '## 排查三步走\n- 开启慢日志定位 `rows_examined` 异常 SQL\n- 用 `EXPLAIN` 看 `type`（至少 `range`）、`key` 与 `Extra`（避免 `Using filesort`）\n\n```sql\nEXPLAIN SELECT order_id, status FROM orders\nWHERE user_id = 1024 AND created_at >= \'2026-11-01\'\nORDER BY created_at DESC LIMIT 20;\n```',
+    },
+    {
+      id: 'kn-demo-2',
+      title: 'Redis 分布式锁防踩坑笔记',
+      tags: ['Redis', '分布式', '高并发'],
+      updated: now - 3 * DAY,
+      content: '- 加锁必须原子 `SET key token NX PX 30000`\n- 解锁必须用 Lua 脚本校验 `token` 再删除，避免误删他人锁\n- 长任务引入 Watchdog 自动续期，关键写库加版本号/ fencing token',
+    },
+  ];
+
+  const profile = {
+    cards: [
+      { id: 'pc-d1', type: '项目', content: '订单中心微服务改造：核心接口 P99 从 800ms 降至 120ms，Redis+Lua 预扣库存', source: '简历诊断', date: now - 2 * DAY },
+      { id: 'pc-d2', type: '薄弱', content: '系统设计容量估算缺乏具体 QPS / 带宽与存储推演过程', source: '模拟面试', date: now - 4 * DAY },
+      { id: 'pc-d3', type: '失分', content: '被追问乐观锁退化方案时缺少高冲突率下改悲观锁/分段的定量对比', source: '模拟面试', date: now - 4 * DAY },
+      { id: 'pc-d4', type: '亮点', content: '消息幂等去重键设计与定时对账兜底方案实战经验扎实', source: '模拟面试', date: now - DAY },
+    ],
+  };
+
+  const gamify = {
+    xp: 360,
+    unlocked: ['first_mock', 'score_80', 'streak_3', 'mastered_10'],
+  };
+  const targetDate = dayKeyOffset(14);
+  const tokens = {
+    log: [
+      { t: now - 5 * DAY, m: 'mock', mo: 'glm-4-flash', p: 1850, c: 620, e: false },
+      { t: now - 3 * DAY, m: 'resume', mo: 'glm-4-flash', p: 2400, c: 910, e: false },
+      { t: now - DAY, m: 'agent', mo: 'glm-4-flash', p: 3100, c: 1240, e: false },
+      { t: now - 3600000, m: 'brief', mo: DEMO_MODEL, p: 420, c: 180, e: true },
+    ],
+  };
+
+  const entries = {
+    im_srs: srs,
+    im_activity: activity,
+    im_sessions: sessions,
+    im_resumes: resumes,
+    im_apps: apps,
+    im_knowledge: knowledge,
+    im_profile: profile,
+    im_gamify: gamify,
+    im_target_date: targetDate,
+    im_tokens: tokens,
+    im_onboarded: true,
+    im_demo_seeded: '1',
+  };
+  for (const [k, v] of Object.entries(entries)) {
+    try { localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v)); } catch (_) { /* ignore */ }
+  }
+  if (stateObj) {
+    stateObj.srs = srs;
+    stateObj.activity = activity;
+    stateObj.sessions = sessions;
+    stateObj.resumes = resumes;
+    stateObj.apps = apps;
+    stateObj.knowledge = knowledge;
+    stateObj.profile = profile;
+    stateObj.gamify = gamify;
+    stateObj.targetDate = targetDate;
+  }
+  return true;
+}
+
 /** 顶部演示横幅（仅演示模式） */
 export function showBanner() {
   if (!isDemoMode() || typeof document === 'undefined') return;
@@ -366,8 +621,18 @@ export function showBanner() {
     bar.className = 'demo-bar';
     bar.innerHTML = '<b>演示模式</b><span>数据只存在这台设备的浏览器里，AI 回答是本地示例；完整功能请本地运行 <code>node server.js</code></span>'
       + '<a class="btn small ghost" href="https://github.com/zhengqiuyang/interview-mate" target="_blank" rel="noopener">看仓库 ↗</a>'
+      + '<button class="btn small ghost" id="demo-reset">重置示例</button>'
       + '<button class="btn small ghost" id="demo-exit">退出演示</button>';
     document.body.prepend(bar);
+    const reset = document.getElementById('demo-reset');
+    if (reset) {
+      reset.addEventListener('click', () => {
+        for (const k of Object.keys(localStorage)) {
+          if (k.startsWith('im_')) localStorage.removeItem(k);
+        }
+        location.reload();
+      });
+    }
     const exit = document.getElementById('demo-exit');
     if (exit) {
       exit.addEventListener('click', () => {

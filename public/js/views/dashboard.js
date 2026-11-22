@@ -292,7 +292,7 @@ function renderForecast() {
     if (c.box >= 4 || !c.due) continue;
     if (c.due <= now) { overdue += 1; buckets[0] += 1; continue; }
     const diff = Math.floor((c.due - now) / DAY);
-    if (diff < 7) buckets[diff + 1] += 1;
+    if (diff >= 0 && diff < 6) buckets[diff + 1] += 1;
   }
   const max = Math.max(...buckets, 1);
   const labels = ['今天', '+1', '+2', '+3', '+4', '+5', '+6'];

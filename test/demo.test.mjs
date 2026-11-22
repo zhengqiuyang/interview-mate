@@ -4,6 +4,12 @@
  * Node 18 无法按模块加载 .js 里的 ESM 语法（detect-module 需要 ≥20），整个套件在 <20 跳过。 */
 import { test, describe, before } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const realBank = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'questions.json'), 'utf8'));
 
 const [NODE_MAJOR] = process.versions.node.split('.').map(Number);
 const SKIP = NODE_MAJOR < 20
@@ -76,9 +82,31 @@ describe('demo（演示模式适配层）', { skip: SKIP }, () => {
 
   test('/api/questions → 与 data/questions.json 同源的完整题库', async () => {
     const j = await (await apiFetch('/api/questions')).json();
-    assert.equal(j.questions.length, 90);
-    assert.equal(j.categories.length, 11);
+    assert.equal(j.questions.length, realBank.questions.length);
+    assert.equal(j.categories.length, realBank.categories.length);
     assert.ok(j.questions.every((q) => q.id && q.q && q.a));
+  });
+
+  test('seedDemoData → 首次空库注入拟真样例档案并同步状态，二次调用幂等', async () => {
+    const map = new Map();
+    globalThis.localStorage = {
+      getItem: (k) => (map.has(k) ? map.get(k) : null),
+      setItem: (k, v) => { map.set(k, String(v)); },
+      removeItem: (k) => { map.delete(k); },
+    };
+    try {
+      const stateStub = {};
+      assert.equal(demo.seedDemoData(stateStub), true);
+      assert.ok(Object.keys(stateStub.srs).length >= 30);
+      assert.ok(stateStub.sessions.length >= 3);
+      assert.ok(stateStub.apps.length >= 3);
+      assert.ok(stateStub.resumes.length >= 1);
+      assert.ok(stateStub.profile.cards.length >= 3);
+      assert.equal(map.get('im_demo_seeded'), '1');
+      assert.equal(demo.seedDemoData(stateStub), false);
+    } finally {
+      delete globalThis.localStorage;
+    }
   });
 
   test('/api/chat（mock）→ SSE 分片可拼回完整文本', async () => {

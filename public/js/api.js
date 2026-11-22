@@ -3,7 +3,12 @@ import { S } from './state.js';
 import { showProgress, hideProgress } from './core.js';
 import { recordTokens, estimateTokens } from './tokens.js';
 
-export const hasKey = () => Boolean(S.settings.apiKey) || S.serverKey;
+const LOCAL_URL_RE = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?(\/|$)/i;
+
+export const isLocalModel = () =>
+  S.settings.provider === 'ollama' || LOCAL_URL_RE.test(String(S.settings.baseURL || '').trim());
+
+export const hasKey = () => Boolean(S.settings.apiKey) || S.serverKey || isLocalModel();
 
 /**
  * 调用 /api/chat 并以回调逐段返回文本。

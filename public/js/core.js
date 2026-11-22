@@ -86,13 +86,53 @@ export function md(src) {
   const lines = String(src || '').split(/\r?\n/);
   const out = [];
   let list = null;
+  let inCode = false;
+  let codeLang = '';
+  let codeLines = [];
+  let quoteLines = [];
   const closeList = () => { if (list) { out.push(`</${list}>`); list = null; } };
+  const closeQuote = () => {
+    if (quoteLines.length) {
+      out.push(`<blockquote>${quoteLines.map((l) => `<p>${inline(l)}</p>`).join('')}</blockquote>`);
+      quoteLines = [];
+    }
+  };
   const inline = (t) =>
     esc(t)
       .replace(/`([^`]+)`/g, '<code>$1</code>')
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   for (const raw of lines) {
     const line = raw.trimEnd();
+    const trimmed = line.trim();
+    if (inCode) {
+      if (trimmed.startsWith('```')) {
+        out.push(
+          `<div class="code-block"><div class="code-head"><span>${esc(codeLang || 'code')}</span>`
+          + '<button type="button" class="code-copy" title="复制代码">复制</button></div>'
+          + `<pre><code>${esc(codeLines.join('\n'))}</code></pre></div>`
+        );
+        inCode = false;
+        codeLang = '';
+        codeLines = [];
+      } else {
+        codeLines.push(raw);
+      }
+      continue;
+    }
+    if (trimmed.startsWith('```')) {
+      closeList();
+      closeQuote();
+      inCode = true;
+      codeLang = trimmed.slice(3).trim().slice(0, 24);
+      codeLines = [];
+      continue;
+    }
+    if (/^>\s?/.test(line)) {
+      closeList();
+      quoteLines.push(line.replace(/^>\s?/, ''));
+      continue;
+    }
+    closeQuote();
     if (/^#{1,4}\s+/.test(line)) {
       closeList();
       const level = line.match(/^#+/)[0].length;
@@ -103,13 +143,21 @@ export function md(src) {
     } else if (/^\d+[.、)]\s+/.test(line)) {
       if (list !== 'ol') { closeList(); out.push('<ol>'); list = 'ol'; }
       out.push(`<li>${inline(line.replace(/^\d+[.、)]\s+/, ''))}</li>`);
-    } else if (!line.trim()) {
+    } else if (!trimmed) {
       closeList();
     } else {
       closeList();
       out.push(`<p>${inline(line)}</p>`);
     }
   }
+  if (inCode) {
+    out.push(
+      `<div class="code-block"><div class="code-head"><span>${esc(codeLang || 'code')}</span>`
+      + '<button type="button" class="code-copy" title="复制代码">复制</button></div>'
+      + `<pre><code>${esc(codeLines.join('\n'))}</code></pre></div>`
+    );
+  }
+  closeQuote();
   closeList();
   return out.join('');
 }
@@ -518,8 +566,22 @@ export function initMicroInteractions() {
     setTimeout(() => r.remove(), 650);
   }, { passive: true });
 
-  // AI 消息一键复制
+  // AI 消息 & 代码块一键复制
   document.addEventListener('click', async (e) => {
+    const codeBtn = e.target.closest('.code-copy');
+    if (codeBtn) {
+      const code = codeBtn.closest('.code-block')?.querySelector('pre code');
+      if (!code) return;
+      try {
+        await navigator.clipboard.writeText(code.innerText ?? code.textContent ?? '');
+        codeBtn.textContent = '✓ 已复制';
+        toast('代码已复制', 'ok');
+        setTimeout(() => { codeBtn.textContent = '复制'; }, 1500);
+      } catch (_) {
+        toast('复制失败', 'err');
+      }
+      return;
+    }
     const btn = e.target.closest('.msg-copy');
     if (!btn) return;
     const bubble = btn.closest('.msg')?.querySelector('.bubble');

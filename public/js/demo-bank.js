@@ -1,7 +1,7 @@
 /* 自动生成，请勿手改。来源 data/questions.json；重新生成：node scripts/build-demo.mjs */
 export default {
-  "updated": "2026-09-21",
-  "source": "参考 CS-Notes / JavaGuide / tech-interview-handbook 等开源项目的知识体系，结合高频面试题整理",
+  "updated": "2026-11-22",
+  "source": "参考 CS-Notes / JavaGuide / tech-interview-handbook / system-design-primer 等开源项目知识体系，结合后端、Go/Python 与 AI/LLM 工程高频考点原创整理",
   "categories": [
     {
       "key": "net",
@@ -34,6 +34,14 @@ export default {
     {
       "key": "java",
       "name": "Java 专项"
+    },
+    {
+      "key": "go",
+      "name": "Go / Python 专项"
+    },
+    {
+      "key": "ai",
+      "name": "AI / LLM 工程"
     },
     {
       "key": "sys",
@@ -1000,6 +1008,784 @@ export default {
       ],
       "q": "设计一个排行榜（实时更新 TopN）。",
       "a": "- 首选 Redis ZSET：ZINCRBY 加分、ZREVRANGE 取 TopN、ZRANK 查自己名次，全部 O(logN)。\n- 分数相同按时间先后的技巧：score = 实际分 * 2^20 + (MAX - timestamp) 拼位编码。\n- 规模问题：单 key 过大 → 按维度分片（分榜）+ 总榜定时聚合；读多 → 本地缓存 TopN + 短 TTL，名次页个性化查询走 ZRANK。\n- 冷数据归档到 DB；防刷：频控 + 分数变更流水审计。\n- 答题结构：数据结构选型 → 相同分处理 → 规模化 → 防作弊。"
+    },
+    {
+      "id": "net-13",
+      "cat": "net",
+      "diff": 2,
+      "tags": [
+        "DNS",
+        "网络"
+      ],
+      "q": "DNS 解析的完整流程是怎样的？递归查询和迭代查询有什么区别？",
+      "a": "- 查找顺序：浏览器 DNS 缓存 → 系统 hosts 与本地缓存 → 路由器缓存 → ISP 本地 DNS（LDNS）。\n- 递归 vs 迭代：客户端向 LDNS 发起**递归查询**（你直接给我最终结果）；LDNS 向根域名服务器 → 顶级域（.com）→ 权威域名服务器逐级发起**迭代查询**（你告诉我下一步找谁）。\n- 协议选择：普通查询用 UDP 53（报文短、省握手）；响应超 512 字节或主从区域传送用 TCP 53。\n- 加分项：TTL 缓存权衡、DNS 劫持与 DoH/DoT、基于 DNS 的全局负载均衡（GSLB）。"
+    },
+    {
+      "id": "net-14",
+      "cat": "net",
+      "diff": 2,
+      "tags": [
+        "HTTP",
+        "缓存"
+      ],
+      "q": "HTTP 强缓存和协商缓存的原理是什么？各自使用哪些响应头？",
+      "a": "- **强缓存**（不发请求，状态码 200 from cache）：`Cache-Control: max-age=3600`（优先级高，相对时间）和 `Expires`（绝对时间，依赖客户端时钟）。\n- **协商缓存**（发请求问服务端，未改返回 304）：\n  - `Last-Modified` / `If-Modified-Since`：秒级精度，内容不变但改了时间会误失效。\n  - `ETag` / `If-None-Match`：内容摘要指纹，精度更高，优先级高于 Last-Modified。\n- 工程实践：HTML 用 `no-cache` 走协商，带 hash 的 JS/CSS/图片配 `max-age=31536000, immutable`。\n- 追问：F5 刷新、Ctrl+F5 强刷、地址栏回车在缓存策略上的差异。"
+    },
+    {
+      "id": "net-15",
+      "cat": "net",
+      "diff": 2,
+      "tags": [
+        "HTTPS",
+        "TLS"
+      ],
+      "q": "浏览器是如何校验证书合法性的？什么是 SNI（Server Name Indication）？",
+      "a": "- 证书校验四步：① 检查域名是否匹配 SAN/CN；② 检查是否在有效期内；③ 沿签名链向上验证到操作系统/浏览器内置的受信任根 CA；④ 通过 CRL 或 OCSP Stapling 确认未被吊销。\n- **SNI**：TLS 握手在 HTTP 请求之前，单台服务器可能托管多个 HTTPS 域名。客户端在 ClientHello 扩展字段里明文带上目标域名，服务端才能选出对应的证书返回。\n- 加分项：为什么中间人伪造不了受信任证书、ECH（Encrypted Client Hello）如何加密 SNI。"
+    },
+    {
+      "id": "net-16",
+      "cat": "net",
+      "diff": 2,
+      "tags": [
+        "TCP",
+        "粘包"
+      ],
+      "q": "什么是 TCP 粘包和拆包？应用层应该如何处理？TCP KeepAlive 和 HTTP Keep-Alive 有什么区别？",
+      "a": "- **粘包/拆包**：TCP 是无边界的字节流，内核发送缓冲和 Nagle/MSS 拆分会让应用层一次 recv 读到半条或多条消息。\n- 常见解法：固定长度、特殊分隔符（如 `\r\n`）、**长度前缀 + 消息体**（如 LengthFieldBasedFrameDecoder / Protobuf 编码，生产首选）。\n- **两个 Keep-Alive**：\n  - HTTP Keep-Alive 是应用层**连接复用**（同一条 TCP 连续发多个 HTTP 请求）。\n  - TCP KeepAlive 是传输层**保活探针**（长时间空闲发探测包检测死连接，默认 2 小时才触发，业务心跳一般自己在应用层做）。"
+    },
+    {
+      "id": "os-8",
+      "cat": "os",
+      "diff": 3,
+      "tags": [
+        "零拷贝",
+        "IO",
+        "高频"
+      ],
+      "q": "什么是零拷贝（Zero-Copy）？mmap 和 sendfile 分别减少了哪些拷贝与上下文切换？",
+      "a": "- 传统 `read + write` 发文件：4 次上下文切换 + 4 次拷贝（磁盘 → 内核 PageCache → 用户空间 → Socket 缓冲区 → 网卡）。\n- **mmap + write**：用户态与内核态共享 PageCache 映射，省掉内核→用户那 1 次 CPU 拷贝（仍是 4 次切换、3 次拷贝）。\n- **sendfile**（Kafka/Nginx 静态文件使用）：数据不进用户态，直接由内核缓冲区传给网卡协议栈（2 次切换、2 次 DMA 拷贝 + 极少描述符传递；支持 SG-DMA 时仅 2 次 DMA）。\n- 适用边界：若应用层需要修改内容（如 Gzip 压缩、加密），仍需读入用户态。"
+    },
+    {
+      "id": "os-9",
+      "cat": "os",
+      "diff": 2,
+      "tags": [
+        "并发",
+        "CAS"
+      ],
+      "q": "乐观锁、悲观锁和 CAS 的原理是什么？什么是 ABA 问题及如何解决？",
+      "a": "- **悲观锁**：假设必然冲突，操作前先阻塞加锁（mutex / `SELECT ... FOR UPDATE`）。\n- **乐观锁**：假设很少冲突，先改再校验（版本号 `version` 或 CAS）。\n- **CAS**（Compare-And-Swap）：CPU 原子指令 `cmpxchg`，比较内存当前值是否等于预期旧值，是则写入新值，否则重试。\n- **ABA 问题**：值从 A 变 B 又变回 A，CAS 误以为没变过（链表节点重用场景可能破坏结构）。解法：**版本号/戳记**（如 `AtomicStampedReference` / SQL `version = version + 1`）。\n- 加分项：高并发写冲突严重时 CAS 自旋会打满 CPU，此时应切回悲观锁或分段锁（LongAdder）。"
+    },
+    {
+      "id": "os-10",
+      "cat": "os",
+      "diff": 2,
+      "tags": [
+        "Linux",
+        "排查"
+      ],
+      "q": "Linux 服务器 CPU 100% 或 Load Average 飙高时，你的排查命令与思路是什么？",
+      "a": "- 先分清瓶颈类型：`top` 看 `%Cpu(s)` 是 `us`（用户态业务代码）、`sy`（内核态上下文切换/系统调用）还是 `wa`（磁盘 IO 等待）。\n- `Load Average` 反映**可运行态（R）+ 不可中断睡眠（D）**的平均队列数，IO 阻塞也会拉高 Load 但 CPU 利用率不一定高。\n- 定位工具链：`top -Hp <pid>` 找高 CPU 线程 → 业务栈追踪（Java 用 `jstack` / `arthas`，Go 用 `pprof`，通用用 `perf top` / `strace`）；磁盘/网络用 `iostat -xz`、`vmstat 1`、`ss -s`。\n- 实战加分：先保现场或快速摘流恢复，再抓火焰图与堆快照分析根因。"
+    },
+    {
+      "id": "os-11",
+      "cat": "os",
+      "diff": 2,
+      "tags": [
+        "COW",
+        "内存"
+      ],
+      "q": "什么是写时复制（Copy-On-Write）？fork() 和 Redis RDB bgsave 是如何利用它的？",
+      "a": "- **原理**：`fork()` 创建子进程时并不立即复制父进程全部物理内存，而是让父子进程页表指向同一组只读物理页；只有当某一方尝试**写入**某页时，触发缺页异常，内核才真正复制该 4KB 物理页并改为可写。\n- **价值**：让 `fork()` 瞬间完成（只需拷贝页表），且未修改的内存实现物理共享。\n- **Redis 坑点**：`bgsave` / `BGREWRITEAOF` 依赖 `fork()` 生成一致性快照；如果父进程此时有大量写入导致大面积 COW，内存可能膨胀接近 2 倍，大页（THP）还会放大单个拷贝粒度（4KB → 2MB）引起延迟毛刺。"
+    },
+    {
+      "id": "os-12",
+      "cat": "os",
+      "diff": 1,
+      "tags": [
+        "内存",
+        "基础"
+      ],
+      "q": "什么是内存对齐？为什么要做内存对齐？大端和小端字节序有什么区别？",
+      "a": "- **内存对齐**：结构体/对象成员的起始地址按自身宽度（或对齐模数）的整数倍存放，编译器在成员间插入 padding。\n- **原因**：CPU 按块/字长读内存，对齐后单次总线事务即可取完，避免跨缓存行拆分两次读取与原子指令失效。\n- **大小端**：多字节整数在内存的排列顺序——**大端**高位字节放低地址（符合人类阅读习惯，网络字节序用大端）；**小端**低位字节放低地址（x86/ARM 常见，方便类型强转与计算）。\n- 加分项：排布 Go/C 结构体字段顺序（大字段放前、小字段挨一起）可显著减小对象内存占用。"
+    },
+    {
+      "id": "db-13",
+      "cat": "db",
+      "diff": 2,
+      "tags": [
+        "Redis",
+        "持久化"
+      ],
+      "q": "Redis 的 RDB 和 AOF 持久化有什么区别？Redis 4.0+ 混合持久化是怎么做的？",
+      "a": "- **RDB（快照）**：定时把内存全量数据二进制紧凑落盘。优点：恢复极快、文件小、适合冷备；缺点：两次快照间可能丢数分钟数据，大实例 `fork()` 会卡顿。\n- **AOF（写日志）**：记录每条写命令，支持 `always / everysec（默认，最多丢 1 秒）/ no` 刷盘策略，通过重写（rewrite）压缩体积。缺点：体积较大、恢复慢。\n- **混合持久化**：AOF 重写时先将当前内存以 **RDB 二进制格式**写入 AOF 开头，后续增量写命令再追加到末尾，兼顾快速重启恢复与秒级数据安全。"
+    },
+    {
+      "id": "db-14",
+      "cat": "db",
+      "diff": 3,
+      "tags": [
+        "Redis",
+        "数据结构"
+      ],
+      "q": "Redis 的 ZSet（跳表）和 String（SDS）底层数据结构是怎样设计的？为什么 ZSet 不用红黑树？",
+      "a": "- **SDS**：带 `len`、`alloc`、`flags` 的动态字符串——O(1) 获取长度、预分配与惰性释放减少内存重分配、二进制安全（不以 `\u0000` 结尾）。\n- **ZSet 底层**：小集合用 `listpack`（Redis 7 替代 ziplist，解决连锁更新）；大集合用 **dict（O(1) 查成员分值）+ skiplist 跳表（O(logN) 按分值范围查询）**。\n- **不用红黑树的原因**：范围查找 `ZRANGE` 在跳表里只需定位起点后沿最底层指针顺移，逻辑简单；平衡树旋转调整涉及多个节点指针且范围迭代代码更复杂；内存占用可通过调整层晋升概率 `p=0.25` 灵活权衡。"
+    },
+    {
+      "id": "db-15",
+      "cat": "db",
+      "diff": 3,
+      "tags": [
+        "MySQL",
+        "锁",
+        "高频"
+      ],
+      "q": "MySQL InnoDB 的行锁、间隙锁（Gap Lock）和临键锁（Next-Key Lock）是怎么配合解决幻读的？",
+      "a": "- **记录锁（Record Lock）**：锁住索引记录本身。\n- **间隙锁（Gap Lock）**：锁住索引记录之间的开区间 `(a, b)`，防止其他事务插入新行（只在 RR 隔离级别生效，且兼容：两个事务可同时持同一间隙锁）。\n- **临键锁（Next-Key Lock）**：记录锁 + 间隙锁的左开右闭区间 `(a, b]`，是 InnoDB 在 RR 下当前读（`SELECT ... FOR UPDATE` / `UPDATE`）的默认加锁单位。\n- **加锁退化**：等值查询命中唯一索引时退化为记录锁；没走索引会升级为表锁。\n- 答题要点：分清「快照读靠 MVCC，当前读靠 Next-Key Lock」一起堵住幻读。"
+    },
+    {
+      "id": "db-16",
+      "cat": "db",
+      "diff": 2,
+      "tags": [
+        "缓存",
+        "一致性"
+      ],
+      "q": "缓存（Redis）和数据库（MySQL）如何保证双写一致性？为什么推荐 Cache-Aside 先更库再删缓存？",
+      "a": "- **Cache-Aside（旁路缓存）**：读先查缓存再回源 DB；写**先更新 DB，再删除缓存**（而非更新缓存：避免并发覆盖错乱和冷数据无效计算）。\n- 为什么不是「先删缓存再更 DB」：并发下读请求极易把旧值回写进缓存（先删缓存 → 读旧库 → 写旧缓存 → 写新库），窗口大；先更 DB 后删缓存在常规场景极少出脏数据（仅极端读先发生、写更新后删缓存再被旧读回填的极窄窗口）。\n- **强一点的一致性兜底**：① 给缓存设合理 TTL；② 删缓存失败或需要最终一致时，用 **Canal 订阅 binlog 异步删除重试**（或延迟双删）。"
+    },
+    {
+      "id": "db-17",
+      "cat": "db",
+      "diff": 2,
+      "tags": [
+        "Redis",
+        "分布式"
+      ],
+      "q": "Redis Cluster 的哈希槽分片原理是什么？和一致性哈希相比有什么区别？",
+      "a": "- **一致性哈希**：把节点和 key 映射到 `0 ~ 2^32-1` 哈希环，节点增减只影响顺时针相邻段的数据；通过**虚拟节点**解决节点少时的数据倾斜。\n- **Redis Cluster**：固定划分 **16384 个槽位（slot）**，用 `CRC16(key) & 16383` 决定槽位，再把槽均匀指派给各个主节点；支持 `{hash_tag}` 把多 key 强制落到同一槽以支持 MGET/事务。\n- 对比：Redis Cluster 把「槽到节点」的映射表存在每个节点头里（16384 bit 仅 2KB 心跳传播），扩缩容时以槽为单位精准迁移，控制面确定、不依赖随机哈希环。"
+    },
+    {
+      "id": "db-18",
+      "cat": "db",
+      "diff": 3,
+      "tags": [
+        "MySQL",
+        "分库分表"
+      ],
+      "q": "什么时候需要分库分表？拆分后如何解决分页、跨库 Join 和主键生成问题？",
+      "a": "- **先做前序优化再拆分**：索引调优 → 读写分离/缓存 → 冷热归档（单表千万级、写入/连接成瓶颈时才分表，单库磁盘/CPU 瓶颈时分库）。\n- **水平分片痛点与解法**：\n  - 全局主键：雪花算法 / 号段模式（Leaf），不用单表自增。\n  - 跨库 Join：字段冗余（把用户名/商品名冗到订单表）、多次单表查询在应用层组装、异构到 ES 做宽表查询。\n  - 跨库分页：禁用跳页只用**游标分页（`id > last_id`）**，或归并改写（每片查前 `offset+limit` 内存排序，深分页代价极高）。"
+    },
+    {
+      "id": "algo-11",
+      "cat": "algo",
+      "diff": 2,
+      "tags": [
+        "树",
+        "数据结构"
+      ],
+      "q": "红黑树、AVL 树和 B+ 树的核心区别是什么？各自适合什么场景？",
+      "a": "- **AVL 树**：严格高度平衡（左右子树高度差 <= 1），查询极快，但插入删除需频繁旋转；适合读极多、写极少的内存查找。\n- **红黑树**：近似平衡（最长路径 <= 2 倍最短路径，黑高相等），插入最多 2 次、删除最多 3 次旋转，写入和查询折中优秀；适合内存动态集合（Java `TreeMap` / `HashMap` 桶、Linux epoll/CFS）。\n- **B+ 树**：多路矮胖平衡树，非叶节点只存索引 key，数据全在叶子且叶子用双向链表相连；单页能装上千个指针，大幅减少磁盘 IO 与支持高效范围扫描（MySQL InnoDB）。"
+    },
+    {
+      "id": "algo-12",
+      "cat": "algo",
+      "diff": 2,
+      "tags": [
+        "图",
+        "并查集"
+      ],
+      "q": "并查集（Union-Find）和拓扑排序分别解决什么问题？核心优化有哪些？",
+      "a": "- **并查集**：维护动态连通性（判断两点是否同组、合并集合、计算连通分量数、Kruskal 最小生成树判环）。核心优化：**路径压缩**（find 时直接挂到根）+ **按秩/按大小合并**，均摊近乎 O(1)（反阿克曼函数 α(n)）。\n- **拓扑排序**：对有向无环图（DAG）排出满足所有依赖先后的线性序列（课程表/构建任务编排/判环）。常用 **Kahn 算法**（入度表 + BFS 队列，出队总数 < 节点数说明有环）。"
+    },
+    {
+      "id": "algo-13",
+      "cat": "algo",
+      "diff": 2,
+      "tags": [
+        "堆",
+        "TopK"
+      ],
+      "q": "海量数据求 TopK 有哪些思路？堆排和快速选择（QuickSelect）怎么取舍？",
+      "a": "- **小顶堆（求最大 K 个）**：维护大小为 K 的小顶堆，新元素大于堆顶则替换并下沉；时间 **O(N logK)**、空间 **O(K)**，适合**流式数据 / 内存装不下全量数据**的场景。\n- **QuickSelect（快速选择）**：借快排 partition 思想，每次只递归一侧，平均时间 **O(N)**、最坏 O(N^2)；适合**全量数据已在内存**、一次性求第 K 大/前 K 大的场景（注意随机化 pivot）。\n- **超大数据（10 亿行日志）**：先 Hash 分片到多个小文件，每片统计词频 + 求本地 TopK，最后多路归并汇总。"
+    },
+    {
+      "id": "algo-14",
+      "cat": "algo",
+      "diff": 2,
+      "tags": [
+        "回溯",
+        "搜索"
+      ],
+      "q": "回溯算法的模板与常见剪枝技巧有哪些？排列、组合、子集问题如何去重？",
+      "a": "- **核心模板**：选择路径 → 递归决策树 → 撤销选择（恢复现场）。\n- **去重关键**：先对数组**排序**，在**同一树层**跳过重复元素：`if (i > start && nums[i] === nums[i - 1]) continue;`（排列问题则配合 `used[i - 1] === false` 表示同层前一个刚被撤销过）。\n- **剪枝手段**：① 排序后若当前和已超 target 直接 `break`；② 剩余元素全选都不够凑齐目标时提前返回；③ 带备忘录转成记忆化搜索避免重复子问题。"
+    },
+    {
+      "id": "code-7",
+      "cat": "code",
+      "diff": 2,
+      "tags": [
+        "手写代码",
+        "Promise",
+        "前端"
+      ],
+      "q": "手写：Promise.all 与带最大并发数限制的任务调度器。",
+      "a": "核心要点：维护结果数组按原索引存入（不能用 push）、计数器归零时 resolve、任意 reject 立即短路；并发调度用队列 + 活跃数控制。\n\n```js\nfunction promiseAll(tasks) {\n  return new Promise((resolve, reject) => {\n    const list = Array.from(tasks);\n    if (!list.length) return resolve([]);\n    const res = new Array(list.length);\n    let done = 0;\n    list.forEach((p, i) => {\n      Promise.resolve(p).then((val) => {\n        res[i] = val;\n        if (++done === list.length) resolve(res);\n      }, reject);\n    });\n  });\n}\n\nasync function runWithLimit(fns, limit = 3) {\n  const res = new Array(fns.length);\n  let next = 0;\n  async function worker() {\n    while (next < fns.length) {\n      const i = next++;\n      res[i] = await fns[i]();\n    }\n  }\n  await Promise.all(Array.from({ length: Math.min(limit, fns.length) }, worker));\n  return res;\n}\n```"
+    },
+    {
+      "id": "code-8",
+      "cat": "code",
+      "diff": 2,
+      "tags": [
+        "手写代码",
+        "JavaScript"
+      ],
+      "q": "手写：深拷贝（支持数组、对象、Date/RegExp 与循环引用）。",
+      "a": "关键点：用 `WeakMap` 记录已拷贝过的原对象引用，先放入表再递归子属性，防止循环引用死循环；注意特殊内建类型处理。\n\n```js\nfunction deepClone(val, seen = new WeakMap()) {\n  if (val === null || typeof val !== 'object') return val;\n  if (val instanceof Date) return new Date(val.getTime());\n  if (val instanceof RegExp) return new RegExp(val.source, val.flags);\n  if (seen.has(val)) return seen.get(val);\n\n  const out = Array.isArray(val) ? [] : Object.create(Object.getPrototypeOf(val));\n  seen.set(val, out);\n  for (const key of Reflect.ownKeys(val)) {\n    out[key] = deepClone(val[key], seen);\n  }\n  return out;\n}\n```"
+    },
+    {
+      "id": "code-9",
+      "cat": "code",
+      "diff": 2,
+      "tags": [
+        "手写代码",
+        "排序"
+      ],
+      "q": "手写：归并排序（并说明为什么它是稳定排序及链表排序首选）。",
+      "a": "归并排序分治拆半后合并两个有序序列，时间稳定 `O(N logN)`、空间 `O(N)`（链表归并只需 `O(1)` 指针调整 + `O(logN)` 递归栈，不依赖随机访问）。\n\n```js\nfunction mergeSort(nums) {\n  if (nums.length <= 1) return nums;\n  const mid = nums.length >> 1;\n  const left = mergeSort(nums.slice(0, mid));\n  const right = mergeSort(nums.slice(mid));\n  const out = [];\n  let i = 0, j = 0;\n  while (i < left.length && j < right.length) {\n    // 用 <= 保证相等元素左侧优先，维持稳定性\n    out.push(left[i] <= right[j] ? left[i++] : right[j++]);\n  }\n  return out.concat(left.slice(i), right.slice(j));\n}\n```"
+    },
+    {
+      "id": "code-10",
+      "cat": "code",
+      "diff": 2,
+      "tags": [
+        "手写代码",
+        "区间"
+      ],
+      "q": "手写：合并区间（Merge Intervals）。",
+      "a": "按左端点升序排列后线性扫描：当前区间起点 <= 结果最后一个区间终点时合并更新右边界，否则新开一段。时间 `O(N logN)`。\n\n```js\nfunction mergeIntervals(intervals) {\n  if (!intervals.length) return [];\n  const sorted = [...intervals].sort((a, b) => a[0] - b[0]);\n  const res = [[...sorted[0]]];\n  for (let i = 1; i < sorted.length; i++) {\n    const [s, e] = sorted[i];\n    const last = res[res.length - 1];\n    if (s <= last[1]) last[1] = Math.max(last[1], e);\n    else res.push([s, e]);\n  }\n  return res;\n}\n```"
+    },
+    {
+      "id": "code-11",
+      "cat": "code",
+      "diff": 2,
+      "tags": [
+        "手写代码",
+        "二叉树"
+      ],
+      "q": "手写：二叉树的层序遍历与最近公共祖先（LCA）。",
+      "a": "层序用队列按 `size` 分层收集；LCA 利用后序遍历：若当前节点命中 p/q 或左右子树分别命中一侧，则当前节点即为最近公共祖先。\n\n```js\nfunction levelOrder(root) {\n  if (!root) return [];\n  const res = [], q = [root];\n  while (q.length) {\n    const n = q.length, row = [];\n    for (let i = 0; i < n; i++) {\n      const node = q.shift();\n      row.push(node.val);\n      if (node.left) q.push(node.left);\n      if (node.right) q.push(node.right);\n    }\n    res.push(row);\n  }\n  return res;\n}\n\nfunction lowestCommonAncestor(root, p, q) {\n  if (!root || root === p || root === q) return root;\n  const left = lowestCommonAncestor(root.left, p, q);\n  const right = lowestCommonAncestor(root.right, p, q);\n  if (left && right) return root;\n  return left || right;\n}\n```"
+    },
+    {
+      "id": "code-12",
+      "cat": "code",
+      "diff": 1,
+      "tags": [
+        "手写代码",
+        "设计模式"
+      ],
+      "q": "手写：事件总线（EventEmitter，支持 on/off/once/emit）。",
+      "a": "注意两点：`emit` 时复制监听器切片防止回调里 `off` 导致跳过；`once` 包一层 wrapper 并保留原函数引用以便提前 `off`。\n\n```js\nclass EventEmitter {\n  constructor() { this.map = new Map(); }\n  on(ev, fn) {\n    if (!this.map.has(ev)) this.map.set(ev, new Set());\n    this.map.get(ev).add(fn);\n    return () => this.off(ev, fn);\n  }\n  off(ev, fn) { this.map.get(ev)?.delete(fn); }\n  once(ev, fn) {\n    const wrap = (...args) => { this.off(ev, wrap); fn(...args); };\n    this.on(ev, wrap);\n  }\n  emit(ev, ...args) {\n    for (const fn of [...(this.map.get(ev) || [])]) fn(...args);\n  }\n}\n```"
+    },
+    {
+      "id": "fe-14",
+      "cat": "fe",
+      "diff": 3,
+      "tags": [
+        "React",
+        "Fiber"
+      ],
+      "q": "React Fiber 架构解决什么问题？它的双缓存与时间切片原理是什么？",
+      "a": "- **痛点**：React 15 Stack Reconciler 递归不可中断，大组件树更新长期占用主线程导致掉帧卡顿。\n- **Fiber 本质**：把虚拟 DOM 节点变成可中断/可恢复的**链表结构任务单元**（child / sibling / return），在 `MessageChannel` 模拟的空闲片内分步执行 Render 阶段（可被打断、按优先级插队）；Commit 阶段仍一次性同步改真实 DOM。\n- **双缓存**：同时维护 `current`（当前屏）和 `workInProgress`（后台构建），完成后通过 `root.current = finishedWork` 指针切换。\n- 加分项：区分 React 18 `useTransition` 并发优先级调度（Lane 模型）与同步更新。"
+    },
+    {
+      "id": "fe-15",
+      "cat": "fe",
+      "diff": 2,
+      "tags": [
+        "React",
+        "Hooks"
+      ],
+      "q": "React Hooks 为什么不能写在条件判断里？什么是 Hooks 闭包陷阱？",
+      "a": "- **顺序依赖**：函数组件每次渲染会把 Hook 状态串成单向链表存在 Fiber.memoizedState 上，靠**调用顺序下标**取值；写在 `if` 里会让下次渲染链条错位。\n- **闭包陷阱**：`useEffect(..., [])` 或定时器捕获了首次渲染时的旧 `state` 变量，后续即使 `state` 更新，旧闭包读到的仍是旧值。\n- **解法**：补全依赖数组；改用函数式更新 `setCount(c => c + 1)`；或用 `useRef` 保存可变最新值。"
+    },
+    {
+      "id": "fe-16",
+      "cat": "fe",
+      "diff": 2,
+      "tags": [
+        "Vue",
+        "响应式"
+      ],
+      "q": "Vue 3 的 Proxy 响应式相比 Vue 2 的 Object.defineProperty 有哪些根本改进？",
+      "a": "- **拦截粒度**：`defineProperty` 只能劫持已存在的单个属性，无法监听对象新增/删除属性（需 `$set`）与数组下标/length 变动（需重写 7 个数组方法）；`Proxy` 代理整个对象，天然拦截新增、删除、`in`、数组下标等 13 种操作。\n- **性能**：Vue 2 初始化就递归遍历深层对象；Vue 3 懒代理——只有访问到嵌套子对象时才递归包装。\n- **注意事项**：`Proxy` 代理不了基本类型（所以有 `ref` 包一层 `.value`），直接解构 `reactive` 会丢失响应性（需 `toRefs`）。"
+    },
+    {
+      "id": "fe-17",
+      "cat": "fe",
+      "diff": 2,
+      "tags": [
+        "工程化",
+        "Vite"
+      ],
+      "q": "Vite 开发时为什么比 Webpack 快？Tree Shaking 的原理和失效原因是什么？",
+      "a": "- **Vite 快的原因**：① 开发期不打包 bundle，直接利用浏览器原生 **ESM** 按需请求模块；② 用 **esbuild**（Go 编写）做依赖预构建（CJS 转 ESM + 合并小文件），比 JS 工具快 10-100 倍；生产构建仍用 Rollup 保优化产物。\n- **Tree Shaking 原理**：基于 ESM **静态词法结构**（import/export 不可动态条件加载），构建依赖图标记无副作用且未被引用的导出并在压缩期删除。\n- **失效常见原因**：使用 CommonJS `require`、Babel 把 ESM 编译成了 CJS、模块存在顶层副作用且未在 `package.json` 标 `\"sideEffects\": false`。"
+    },
+    {
+      "id": "fe-18",
+      "cat": "fe",
+      "diff": 2,
+      "tags": [
+        "浏览器",
+        "PWA"
+      ],
+      "q": "浏览器跨标签页通信有哪些方式？Service Worker 的生命周期和典型缓存策略是什么？",
+      "a": "- **跨标签通信**：`BroadcastChannel`（现代同源首选）、`localStorage` + `storage` 事件（本页不触发）、`SharedWorker`、Service Worker `postMessage`、`window.opener`。\n- **Service Worker 生命周期**：注册 → Install（预缓存核心资源）→ Waiting（等旧页签全部关闭，或 `skipWaiting()` 立即接管）→ Activate（清理旧缓存）→ Fetch 拦截。\n- **缓存策略**：Cache-First（哈希静态资源）、Network-First（HTML/接口，离线兜底）、Stale-While-Revalidate（先返回缓存同时后台更新）。"
+    },
+    {
+      "id": "be-7",
+      "cat": "be",
+      "diff": 3,
+      "tags": [
+        "分布式事务",
+        "高频"
+      ],
+      "q": "分布式事务有哪些常见方案（2PC、TCC、本地消息表、Saga）？工程中如何选型？",
+      "a": "- **2PC（强一致）**：协调者两阶段准备+提交；同步阻塞、协调者单点、吞吐低，少用于互联网高并发。\n- **TCC（Try-Confirm-Cancel）**：业务层拆三阶段，资源预留+确认/释放；性能高无长锁，但业务侵入极强，需处理**空回滚、防悬挂、幂等**。\n- **本地消息表 / 事务消息（最终一致，最常用）**：业务操作与消息表在同一本地数据库事务提交，后台任务/MQ 投递到下游幂等消费。\n- **Saga**：长流程拆成子事务 + 逆向补偿动作链，适合跨境/履约等长链路。\n- 选型口诀：能不分布式尽量合库，核心账务看 TCC，绝大多数异步联动用**本地事务 + MQ 最终一致**。"
+    },
+    {
+      "id": "be-8",
+      "cat": "be",
+      "diff": 2,
+      "tags": [
+        "微服务",
+        "高可用"
+      ],
+      "q": "微服务的熔断、降级和隔离有什么区别？熔断器三种状态是怎么流转的？",
+      "a": "- **隔离**：防止某下游故障拖垮整个进程线程池/连接池（如信号量隔离、线程池隔离）。\n- **熔断**：下游错误率/慢调用比例达阈值时直接快速失败，不再发真实请求给脆弱下游。\n- **降级**：有损保核心——熔断触发或大促过载时，返回兜底默认值/缓存，关闭非核心功能（如推荐/积分）。\n- **熔断器状态机**：`Closed（正常放行）` → 错误率超阈值 → `Open（直接失败，等待冷却时间）` → 冷却期结束 → `Half-Open（放行少量探测请求）` → 成功转 Closed，失败回到 Open。"
+    },
+    {
+      "id": "be-9",
+      "cat": "be",
+      "diff": 3,
+      "tags": [
+        "Kafka",
+        "消息队列"
+      ],
+      "q": "Kafka 为什么能实现百万级吞吐？如何保证消息不丢失和局部顺序消费？",
+      "a": "- **高吞吐核心**：磁盘**顺序追加写**、操作系统 PageCache 利用、**零拷贝 `sendfile`**、批量压缩传输、Partition 水平并行。\n- **不丢消息三端齐配**：\n  - 生产端：`acks=all`（所有 ISR 副本落盘确认）+ 重试。\n  - Broker：`replication.factor >= 3` 且 `min.insync.replicas >= 2`。\n  - 消费端：关闭自动提交，**业务处理完再手动提交 offset**。\n- **顺序消费**：同业务 key 发往同一 Partition（保证分区内有序）；消费端单线程或按 key hash 到内存队列串行处理（并发会打乱顺序）。"
+    },
+    {
+      "id": "be-10",
+      "cat": "be",
+      "diff": 2,
+      "tags": [
+        "RPC",
+        "架构"
+      ],
+      "q": "一个完整的 RPC 框架由哪些核心组件构成？gRPC（HTTP/2 + Protobuf）强在哪里？",
+      "a": "- **核心链路**：服务注册与发现（ZK/Nacos/Etcd）→ 负载均衡与路由 → 动态代理封装 → 序列化/反序列化 → 自定义协议编解码（魔数/版本/长度防粘包）→ 网络传输（Netty/NIO 连接池）。\n- **gRPC 优势**：① **Protobuf** 二进制编码，体积比 JSON 小 3-10 倍、编解码极快且强契约；② 基于 **HTTP/2** 支持多路复用、头部压缩与双向流式通信；③ 跨语言自动生成桩代码，生态标准。"
+    },
+    {
+      "id": "be-11",
+      "cat": "be",
+      "diff": 2,
+      "tags": [
+        "可观测性",
+        "架构"
+      ],
+      "q": "微服务可观测性三支柱是什么？分布式链路追踪（TraceId）是怎么跨服务透传的？",
+      "a": "- **三支柱**：Metrics（指标，Prometheus 看宏观趋势与告警）、Logging（日志，ELK/Loki 看现场细节）、Tracing（链路追踪，Jaeger/SkyWalking 看跨服务调用耗时拓扑）。\n- **透传原理**：入口网关生成全局唯一 `TraceId` 和当前 `SpanId`，通过标准头（如 W3C `traceparent`）随 HTTP/RPC Header、MQ 消息头一路透传；进程内异步线程靠 Context/MDC 传递，避免跨线程丢 TraceId。"
+    },
+    {
+      "id": "be-12",
+      "cat": "be",
+      "diff": 2,
+      "tags": [
+        "Docker",
+        "K8s"
+      ],
+      "q": "Docker 容器的隔离与资源限制靠什么实现？K8s 的 livenessProbe 与 readinessProbe 有何区别？",
+      "a": "- **Docker 底层**：**Namespace** 做资源视图隔离（PID/NET/MNT/UTS/IPC/USER）；**Cgroups** 做 CPU、内存、IO 配额限制；**UnionFS（Overlay2）** 实现镜像分层写时复制。\n- **K8s 两种探针**：\n  - `readinessProbe`（就绪）：决定 Pod 是否可以接收流量——失败时从 Service Endpoints 摘除，**不重启容器**。\n  - `livenessProbe`（存活）：决定容器是否卡死——失败时 **重启容器**。\n  - 坑点：依赖下游 DB 抖动别写进 liveness，否则会导致整组 Pod 雪崩重启！"
+    },
+    {
+      "id": "java-9",
+      "cat": "java",
+      "diff": 3,
+      "tags": [
+        "并发",
+        "AQS"
+      ],
+      "q": "讲讲 AQS（AbstractQueuedSynchronizer）的核心原理，ReentrantLock 是怎么基于它实现的？",
+      "a": "- **核心结构**：`volatile int state`（同步状态） + CLH 变体**双向等待队列**（封装线程节点，CAS 抢锁与 `LockSupport.park/unpark` 挂起唤醒）。\n- **ReentrantLock 实现**：`state=0` 表示空闲；抢锁即 CAS 把 state 从 0 改 1 并记下独占线程；重入时 `state++`，释放时 `state--` 归零才唤醒后继节点。\n- **公平 vs 非公平**：非公平锁 `lock()` 先直接 CAS 插队抢一次，失败才进队尾（减少线程唤醒切换，吞吐高）；公平锁直接看队列前面有没有人等待。"
+    },
+    {
+      "id": "java-10",
+      "cat": "java",
+      "diff": 2,
+      "tags": [
+        "并发",
+        "ThreadLocal"
+      ],
+      "q": "ThreadLocal 的实现原理是什么？为什么会导致内存泄漏，应该怎么规范使用？",
+      "a": "- **原理**：不是全局大 Map，而是每个 `Thread` 对象内部持有一个 `ThreadLocalMap`，key 是 `ThreadLocal` 实例，value 是线程独享变量。\n- **内存泄漏根因**：`Entry` 继承了 `WeakReference<ThreadLocal>`——当外部强引用断开、GC 回收了 key（变成 `null`），但只要线程还活着（如**线程池复用核心线程**），`Thread → ThreadLocalMap → Entry → value` 这条强引用链就不断，导致 value 永远无法回收。\n- **规范用法**：务必在 `try ... finally` 中调用 `threadLocal.remove()`；声明为 `private static final`。"
+    },
+    {
+      "id": "java-11",
+      "cat": "java",
+      "diff": 3,
+      "tags": [
+        "Spring",
+        "高频"
+      ],
+      "q": "Spring 如何用三级缓存解决单例 Bean 的循环依赖？为什么构造器注入解决不了？",
+      "a": "- **三级缓存**：\n  - 一级 `singletonObjects`：成品 Bean。\n  - 二级 `earlySingletonObjects`：早期半成品（已实例化未属性注入）。\n  - 三级 `singletonFactories`：存 `ObjectFactory` lambda（延迟决定是否生成 AOP 代理）。\n- **流转**：A 实例化后先放三级缓存 → 注入 B → B 实例化后找 A → 触发三级缓存工厂（若有 AOP 提前创建代理）并升入二级缓存 → B 成品 → A 注入 B 成品并升一级。\n- **为什么只有二级不够**：按 Spring 生命周期 AOP 代理本在初始化后创建，有循环依赖时必须提前拿到代理对象；三级缓存把代理创建推迟到真正发生循环引用时。\n- **构造器注入无解**：实例化都没完成根本进不了缓存（可用 `@Lazy` 打破）。"
+    },
+    {
+      "id": "java-12",
+      "cat": "java",
+      "diff": 2,
+      "tags": [
+        "Spring Boot"
+      ],
+      "q": "Spring Boot 自动装配（AutoConfiguration）的原理是什么？",
+      "a": "- 入口注解 `@SpringBootApplication` 组合了 `@EnableAutoConfiguration`，其核心是 `@Import(AutoConfigurationImportSelector.class)`。\n- **加载机制**：扫描所有 jar 包中 `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`（Boot 2.x 是 `spring.factories`）列出的配置类。\n- **按需生效**：每个自动配置类带一系列 `@Conditional*` 条件注解（如 `@ConditionalOnClass` 存在某类、`@ConditionalOnMissingBean` 容器尚未定义、`@ConditionalOnProperty`），条件全满足才把默认 Bean 注入 IoC 容器。"
+    },
+    {
+      "id": "java-13",
+      "cat": "java",
+      "diff": 3,
+      "tags": [
+        "JVM",
+        "线上排查"
+      ],
+      "q": "线上 Java 服务频繁 Full GC 或 OOM 时，你的完整排查定位流程是什么？",
+      "a": "- **保现场 & 恢复**：开启 `-XX:+HeapDumpOnOutOfMemoryError`，先 `jmap -dump:live,format=b,file=heap.hprof <pid>`（注意会触发 STW，高并发下先摘掉该实例流量或让容器下线再 dump）。\n- **看 GC 趋势**：`jstat -gcutil <pid> 1000` 观察 Eden/Old 占比与 FGC 耗时；GC 日志看是否晋升过快或大对象直接进老年代。\n- **分析堆快照**：用 **MAT / JProfiler** 看 Dominator Tree（支配树）与 GC Roots 引用链，定位哪个集合/缓存/ThreadLocal/未关资源在持续涨。\n- **非堆 OOM**：检查 Metaspace（动态类生成如 CGLIB/Groovy）、DirectBuffer（Netty 堆外内存）和线程数过多（`ulimit` / `pthread_create` 失败）。"
+    },
+    {
+      "id": "go-1",
+      "cat": "go",
+      "diff": 3,
+      "tags": [
+        "Go",
+        "GMP",
+        "高频"
+      ],
+      "q": "讲讲 Go 调度器 GMP 模型：G、M、P 分别代表什么？工作窃取与抢占调度是怎么工作的？",
+      "a": "- **三角色**：`G`（Goroutine，初始栈 2KB）、`M`（OS 内核线程）、`P`（逻辑处理器，维护本地队列 LRQ 并提供执行上下文，数量默认 `GOMAXPROCS`）。\n- **调度亮点**：M 必须绑定 P 才能运行 G，避免全局队列锁竞争；当 P 本地队列空时，先去全局队列捞，再从其他 P 偷一半 G（**Work Stealing**）。\n- **阻塞处理（Hand Off）**：G 进入系统调用阻塞 M 时，M 解绑 P 把 P 交给空闲 M 继续跑其他 G。\n- **抢占调度**：Go 1.14 起基于操作系统信号（`SIGURG`）实现异步抢占，防止死循环/密集计算 goroutine 长期霸占 P 饿死其它协程。"
+    },
+    {
+      "id": "go-2",
+      "cat": "go",
+      "diff": 2,
+      "tags": [
+        "Go",
+        "Channel"
+      ],
+      "q": "Go Channel 的底层结构是怎样的？往已关闭、未初始化或满的 Channel 读写分别会怎样？",
+      "a": "- **底层 `hchan`**：环形队列缓冲区（`buf`）+ 收发等待队列（`recvq/sendq`，双向链表存 `sudog`）+ 一把互斥锁 `mutex`。\n- **状态行为速查表**：\n  - **nil channel**：读、写均**永久阻塞**，close 会 **panic**。\n  - **closed channel**：读立即返回**零值**（`v, ok := <-ch` 时 `ok=false`）；写或再 close 会 **panic**。\n  - **有缓冲/无缓冲正常**：满时写阻塞、空时读阻塞；当有接收者在 `recvq` 等待时，发送者直接把数据拷贝进对方栈，省一次进出环形缓冲区。\n- 口诀：由**发送方**关闭 channel，不要由接收方关闭。"
+    },
+    {
+      "id": "go-3",
+      "cat": "go",
+      "diff": 2,
+      "tags": [
+        "Go",
+        "Slice",
+        "内存"
+      ],
+      "q": "Go Slice 的底层结构与扩容机制是什么？什么是内存逃逸，常见逃逸场景有哪些？",
+      "a": "- **Slice 结构体（24B）**：`array` 底层数组指针 + `len` + `cap`。传参值拷贝的是这个 24B 头，共享同一底层数组（未触发扩容时子切片改元素会影响原切片，可用 `s[a:b:b]` 限 cap）。\n- **扩容机制（Go 1.18+）**：原 `cap < 256` 翻倍；`>= 256` 按 `newcap += (newcap + 3*256) / 4` 平滑增长（约 1.25 倍过渡），并按元素对齐规则向上取整。\n- **逃逸分析**：编译期决定变量分配在栈还是堆。常见逃逸到堆的场景：① 返回局部指针；② 被闭包捕获；③ 赋值给 `interface{}` / `any` 动态类型；④ 切片/map 大小编译期未知或过大。"
+    },
+    {
+      "id": "go-4",
+      "cat": "go",
+      "diff": 2,
+      "tags": [
+        "Go",
+        "Context"
+      ],
+      "q": "Go Context 的作用是什么？WithCancel / WithTimeout 是如何向下级传播取消信号的？",
+      "a": "- **三大用途**：级联取消（Cancel）、超时/截止时间控制（Deadline/Timeout）、请求级元数据传递（`WithValue`，只放 TraceId/UserId 等只读元信息）。\n- **取消传播原理**：`cancelCtx` 内部维护 `done` channel 和子 context map；父节点 `cancel()` 时关闭自己的 `done` channel，并遍历通知所有子 cancelCtx 递归取消，所有监听 `<-ctx.Done()` 的 goroutine 立即收到关闭信号退出。\n- 规范：Context 放函数第一个参数，不存进结构体；用 `WithTimeout` 记得 `defer cancel()` 防定时器泄漏。"
+    },
+    {
+      "id": "go-5",
+      "cat": "go",
+      "diff": 3,
+      "tags": [
+        "Go",
+        "GC"
+      ],
+      "q": "Go 垃圾回收的三色标记法是怎么工作的？为什么需要混合写屏障？",
+      "a": "- **三色标记**：白（未访问，结束时回收）、灰（已访问但子引用未扫完）、黑（自身和子引用均已扫描，存活）。\n- **并发标记隐患**：业务协程在标记期间改指针，若同时满足「黑引用了白」且「灰断开了对该白的引用」，活对象会被误删。\n- **混合写屏障（Go 1.8+）**：栈上对象不启屏障，标记开始直接全部扫成黑；堆上写操作把被覆盖的旧引用与新赋值的引用都标灰，保证标记全程无需第二次 STW 重扫栈，把 STW 压到亚毫秒级。"
+    },
+    {
+      "id": "go-6",
+      "cat": "go",
+      "diff": 2,
+      "tags": [
+        "Python",
+        "GIL"
+      ],
+      "q": "Python 的 GIL（全局解释器锁）是什么？它对多线程和多进程编程有什么影响？",
+      "a": "- **本质**：CPython 解释器层的一把全局互斥锁，保证同一时刻**只有一个线程在执行 Python 字节码**（保护引用计数等内部结构免于竞争）。\n- **影响**：\n  - **CPU 密集型**：多线程无法利用多核（甚至因锁争抢切换比单线程更慢），应改用 `multiprocessing` 多进程、C/Rust 扩展（NumPy/PyTorch 计算释放 GIL）或 Python 3.13+ 实验性 free-threaded 模式。\n  - **IO 密集型**：遇到网络/磁盘 IO 时会自动释放 GIL，因此多线程或 `asyncio` 依然高效。"
+    },
+    {
+      "id": "go-7",
+      "cat": "go",
+      "diff": 2,
+      "tags": [
+        "Python",
+        "异步"
+      ],
+      "q": "Python 的迭代器、生成器（yield）和 asyncio 协程底层有什么联系？",
+      "a": "- **迭代器**：实现 `__iter__` 和 `__next__` 按需吐值，省内存。\n- **生成器**：用 `yield` 语法糖写的特殊迭代器，能在执行到一半时**保存局部栈帧与指令位置并挂起**，下次 `next()` / `send()` 恢复。\n- **asyncio 协程**：演化自生成器的状态机挂起机制——遇到 `await`（必须等待可等待对象 Future/Task）时交出控制权给单线程事件循环（Event Loop），IO 就绪后再由事件循环唤醒继续执行。"
+    },
+    {
+      "id": "go-8",
+      "cat": "go",
+      "diff": 2,
+      "tags": [
+        "Python",
+        "内存"
+      ],
+      "q": "Python 的垃圾回收机制是怎样的？深拷贝、浅拷贝和直接赋值有什么区别？",
+      "a": "- **Python GC 三层结合**：① **引用计数为主**（归零立刻释放，实时性高）；② **标记-清除**解决容器间的循环引用；③ **分代回收**（0/1/2 三代，越老对象扫描越少）。小整数和短字符串有驻留池优化。\n- **拷贝区分**：\n  - `b = a`：只贴新标签，指向同一对象。\n  - `copy.copy`（浅拷贝）：新建外层容器，但内部嵌套可变元素仍共享同一引用。\n  - `copy.deepcopy`（深拷贝）：递归复制所有嵌套对象，彻底隔离。"
+    },
+    {
+      "id": "go-9",
+      "cat": "go",
+      "diff": 1,
+      "tags": [
+        "Python",
+        "语法"
+      ],
+      "q": "Python 装饰器的原理是什么？编写带参数的装饰器为什么要用 functools.wraps？",
+      "a": "- **原理**：利用 Python 函数是一等对象与闭包特性，`@dec` 语法糖等价于 `fn = dec(fn)`，在原函数调用前后插入切面逻辑（鉴权、缓存、计时、重试）。\n- **带参装饰器**：三层嵌套——最外层收装饰器参数 → 中间层收目标函数 `fn` → 最内层 `wrapper(*args, **kwargs)` 收调用参数。\n- **`@functools.wraps(fn)`**：把原函数的 `__name__`、`__doc__`、`__annotations__` 等元信息拷贝到 `wrapper` 上，防止框架路由/日志/文档工具识别错乱。"
+    },
+    {
+      "id": "go-10",
+      "cat": "go",
+      "diff": 2,
+      "tags": [
+        "Python",
+        "设计"
+      ],
+      "q": "为什么 Python 默认可变参数（如 `def f(x=[]):`）是经典大坑？元类（metaclass）和 `__slots__` 有什么用？",
+      "a": "- **可变默认参数坑**：函数默认参数在 **`def` 定义时** 只求值一次并存在函数对象的 `__defaults__` 里，每次不传参调用都会共享同一个列表！正确写法：`def f(x=None): x = [] if x is None else x`。\n- **`__slots__`**：禁止实例动态生成 `__dict__` 字典，改用固定槽位存属性，大量小对象时可节省 40% 以上内存并加速属性访问。\n- **元类 `metaclass`**：创建「类」的类（`type` 是默认元类），用于在类定义阶段自动校验接口规范、注册插件或生成 ORM 字段映射。"
+    },
+    {
+      "id": "ai-1",
+      "cat": "ai",
+      "diff": 3,
+      "tags": [
+        "Transformer",
+        "LLM",
+        "高频"
+      ],
+      "q": "Transformer 中 Self-Attention 的计算公式是什么？为什么要除以 √d_k？为什么用 Multi-Head？",
+      "a": "- **计算公式**：`Attention(Q, K, V) = softmax((Q · K^T) / √d_k) · V`。\n- **为什么要除以 √d_k**：当维度 `d_k` 较大时，点积方差会放大到 `d_k`，导致 softmax 输入出现极大/极小值，落入**梯度接近 0 的饱和区**，训练难以收敛；缩放后把方差拉回 1。\n- **Multi-Head（多头）**：把特征投影到多个低维子空间分别做注意力再拼接，让模型同时捕捉不同位置的语法依赖、长距离指代和语义关系，类似 CNN 的多卷积核。"
+    },
+    {
+      "id": "ai-2",
+      "cat": "ai",
+      "diff": 2,
+      "tags": [
+        "RAG",
+        "工程",
+        "高频"
+      ],
+      "q": "RAG（检索增强生成）系统的完整链路是什么？线上效果不好时如何系统性优化？",
+      "a": "- **标准链路**：文档解析 → 切块（Chunking）→ 向量化（Embedding）入库 → 用户问题改写/路由 → **混合检索** → **重排（Rerank）** → 拼接上下文提示词生成。\n- **分阶段调优清单**：\n  - **切块期**：按语义/标题结构切分 + 保留上下文重叠（overlap）与父子文档索引（小块检索、大块给 LLM）。\n  - **检索期**：**向量语义检索 + BM25 全文检索**双路召回（解决专有名词、型号、代码精准匹配问题），加 Query 改写/HyDE。\n  - **精排期**：引入 Cross-Encoder **Rerank** 模型重排 TopK，并要求输出**引用溯源**降低幻觉。"
+    },
+    {
+      "id": "ai-3",
+      "cat": "ai",
+      "diff": 2,
+      "tags": [
+        "Agent",
+        "ToolCalling"
+      ],
+      "q": "AI Agent 的 ReAct 与 Function Calling 机制有什么区别？工程落地有哪些常见问题？",
+      "a": "- **ReAct（Reasoning + Acting）**：靠提示词引导模型按 `Thought → Action → Observation` 循环推理并决定下一步；兼容性强，任何文本模型都能跑。\n- **Function Calling / Tools API**：模型在训练期专门对齐过的结构化工具调用协议，通过 JSON Schema 约束入参格式，由平台侧保证更高的参数格式合规率。\n- **工程痛点与对策**：① 死循环调用 → 设置最大步数（如 `max_steps`）与工具去重；② 工具异常导致上下文污染 → 返回精简可读错误；③ 权限失控 → 在工具执行边界加**确定性白名单与人工确认门禁**（写操作前拦截）。"
+    },
+    {
+      "id": "ai-4",
+      "cat": "ai",
+      "diff": 2,
+      "tags": [
+        "安全",
+        "PromptInjection"
+      ],
+      "q": "什么是 Prompt Injection（提示词注入）？在 Agent 读外部网页/文档时该如何防御？",
+      "a": "- **攻击本质**：模型分不清「系统指令」和「不可信外部数据」。直接注入（用户输入覆盖系统设定）和**间接注入**（网页/PDF/邮件里藏着恶意指令，Agent 读入后被劫持去调发邮件/删文件/外传密钥工具）。\n- **确定性防御层次**（不能只靠让 LLM 自己判断安全）：\n  - **读侧清洗与隔离**：用明确边界包裹不可信内容，剥离隐藏字符/零宽字符/高危指令模式。\n  - **写/外发侧确定性门禁**：高危工具执行前硬校验（allowlist 出站域名、敏感字段脱敏、强制人工二次确认），零 LLM 参与信任校验路径。"
+    },
+    {
+      "id": "ai-5",
+      "cat": "ai",
+      "diff": 2,
+      "tags": [
+        "微调",
+        "RAG",
+        "选型"
+      ],
+      "q": "业务落地时什么时候选 Prompt、什么时候选 RAG、什么时候做微调（SFT / LoRA）？",
+      "a": "- **优先顺序：Prompt → RAG → 微调**（先低成本验证，不要一上来就炼丹）。\n- **Prompt Engineering**：解决通用能力激发、输出结构/格式规范、少样本（Few-Shot）示范。\n- **RAG**：需要**动态更新、实时知识、企业私有文档、可溯源引用**的场景——微调记不住最新事实，也很难精确防幻觉。\n- **微调（LoRA / QLoRA）**：改变模型**行为风格、领域术语对齐、特定 JSON/工具输出稳定度、或小模型蒸馏降本**；LoRA 只训练低秩旁路矩阵，显存消耗远低于全参微调。"
+    },
+    {
+      "id": "ai-6",
+      "cat": "ai",
+      "diff": 3,
+      "tags": [
+        "推理优化",
+        "KVCache"
+      ],
+      "q": "LLM 推理的 Prefill 和 Decode 阶段有什么区别？KV Cache 和 PagedAttention 解决什么问题？",
+      "a": "- **两阶段差异**：\n  - **Prefill（首字延迟 TTFT）**：并行处理全部输入 prompt，属于**计算密集型**。\n  - **Decode（吐字速度 TPOT）**：自回归每次只生成 1 个 token，每步都要搬运模型权重和历史 KV，属于**显存带宽密集型**。\n- **KV Cache**：把历史 token 的 Key/Value 矩阵缓存下来，Decode 新 token 时不必重算前面全部上下文（以显存换计算）。\n- **PagedAttention（vLLM）**：模仿操作系统**虚拟内存分页**把 KV Cache 切块按需分配，消除连续预留带来的显存碎片，大幅提升并发吞吐（Continuous Batching）。"
+    },
+    {
+      "id": "ai-7",
+      "cat": "ai",
+      "diff": 2,
+      "tags": [
+        "LLM",
+        "评测",
+        "幻觉"
+      ],
+      "q": "大模型为什么会产生幻觉？线上如何评测和缓解 RAG / Agent 的幻觉？",
+      "a": "- **幻觉来源**：预训练目标本质是预测下一个高概率 token（而非真伪校验）、训练语料冲突过时、长上下文注意力衰减（「Lost in the Middle」）、以及被要求必须作答时的过度迎合。\n- **缓解策略**：允许模型说「不知道」、降 `temperature`、要求先引用原文片段再做结论（Groundedness）、用规则/代码校验关键计算与结构（如 SQL/JSON 校验）。\n- **评测指标**：RAG 常用 **RAGAS 框架**（Faithfulness 忠实度、Answer Relevance 相关性、Context Recall 召回率）；工程里建**黄金评测集**跑回归，避免改一条提示词拆东墙补西墙。"
+    },
+    {
+      "id": "ai-8",
+      "cat": "ai",
+      "diff": 2,
+      "tags": [
+        "向量数据库",
+        "HNSW"
+      ],
+      "q": "向量检索中余弦相似度、点积和欧氏距离怎么选？HNSW 索引的核心思想是什么？",
+      "a": "- **度量选择**：\n  - **余弦相似度**：只看方向夹角，忽略向量模长，文本语义最常用；向量归一化后余弦等价于**点积**（计算最快）。\n  - **欧氏距离（L2）**：同时敏感于方向和绝对长度。\n- **HNSW（分层可导航小世界图）**：把高维向量建成多层邻近图——顶层是稀疏「高速公路」（大跨度跳着靠近目标），底层是稠密图（精细贪心搜索最近邻），实现亚毫秒级近似最近邻（ANN）检索，代价是内存占用相对较高。"
+    },
+    {
+      "id": "ai-9",
+      "cat": "ai",
+      "diff": 2,
+      "tags": [
+        "Agent",
+        "MCP"
+      ],
+      "q": "什么是 MCP（Model Context Protocol）？它和传统的 Function Calling 有什么关系？",
+      "a": "- **定位**：MCP 是 Anthropic 提出的开放协议，类似 AI 应用与外部工具/数据源之间的「USB-C 接口标准」。\n- **解决的痛点**：过去每接一个外部工具（GitHub/数据库/Slack），每个 Agent 框架都要单独写适配代码（M×N 复杂度）；MCP 把 Host/Client 与 Server 解耦，Tool/Resource/Prompt 都走统一 JSON-RPC 发现与调用。\n- **与 Function Calling 关系**：不冲突、是上下层配合——MCP 解决**工具如何被标准化暴露、发现与执行**；Function Calling 解决**模型在推理时如何输出工具调用意图**。"
+    },
+    {
+      "id": "ai-10",
+      "cat": "ai",
+      "diff": 2,
+      "tags": [
+        "Agent",
+        "记忆"
+      ],
+      "q": "长对话和 Agent 系统中如何管理上下文窗口（Context Engineering）？",
+      "a": "- **问题**：上下文越长不仅烧钱、首字延迟高，还会触发「中间遗忘」与指令遵从率下降。\n- **工程策略**：\n  - **分层记忆**：工作记忆（近期几轮原文）+ 摘要压缩记忆（把早先对话摘要成结构化事实）+ 长期画像/向量记忆（按需检索）。\n  - **工具输出裁剪**：大段网页/日志/SQL 结果先截断或只返回统计摘要（如保留错误行），防止单次工具返回塞爆上下文。\n  - **Compaction Guard**：压缩历史后显式校验关键约束与目标未丢失。"
+    },
+    {
+      "id": "sys-7",
+      "cat": "sys",
+      "diff": 3,
+      "tags": [
+        "系统设计",
+        "限流"
+      ],
+      "q": "设计一个高性能分布式限流系统（支持单机与集群、突发流量与多维度规则）。",
+      "a": "- **明确需求**：按用户/IP/接口维度限流，延迟 < 1ms，可用性优先（限流组件挂了应放行降级而非阻断全站）。\n- **核心架构**：\n  - **网关单机拦截**：本地漏桶/令牌桶最快，不走网络。\n  - **分布式精确配额**：Redis + **Lua 脚本**实现原子滑动窗口/令牌桶；为避免每次 RPC 打 Redis，采用**本地预批配额（Batch Pull）**——网关一次向 Redis 申请 100 个令牌放内存消耗。\n- **边界细节**：时钟同步用 Redis 服务器时间（`TIME`）；热点 key 拆分分片；支持热更新规则与影子模式（只告警不拦截先验证阈值）。"
+    },
+    {
+      "id": "sys-8",
+      "cat": "sys",
+      "diff": 3,
+      "tags": [
+        "系统设计",
+        "定时任务"
+      ],
+      "q": "设计一个支持百万级延迟任务的调度系统（如订单 30 分钟未支付自动取消）。",
+      "a": "- **扫表方案局限**：全表扫描压力大、精度低、锁竞争重；只适合万级以下。\n- **常见高并发方案**：\n  - **时间轮（HashedWheelTimer）**：内存 O(1) 推进，适合单机超高频心跳/超时；持久化需外置日志。\n  - **Redis ZSet**：`score` 存到期时间戳，Worker 轮询 `ZRANGEBYSCORE` + Lua 原子删（防多实例重复消费）；大数据量按任务 ID Hash 分片多组 ZSet。\n  - **RocketMQ / Kafka 延迟队列**：按梯度时间轮主题投递，自带高可用持久化，业务只需消费到期消息 + 幂等检查订单当前状态。\n- 加分项：状态机兜底——触发关闭前先二次校验支付网关状态，避免回调刚到就误关单。"
+    },
+    {
+      "id": "sys-9",
+      "cat": "sys",
+      "diff": 3,
+      "tags": [
+        "系统设计",
+        "Feed流"
+      ],
+      "q": "设计一个高并发社交信息流（Feed 流，类似微博/朋友圈的关注时间线）。",
+      "a": "- **核心矛盾**：大 V 粉丝千万（写放大） vs 普通用户实时刷屏（读放大）。\n- **三种模式**：\n  - **读扩散（Pull）**：发帖只写自己发件箱；刷主页时拉取所有关注人的最新帖子归并排序。写极快，但关注上千人时读延迟爆炸。\n  - **写扩散（Push）**：发帖时异步扇出写入每个活跃粉丝的 Redis 收件箱（Timeline）；刷主页 O(1) 直读，但千万粉丝大 V 发帖会打垮队列。\n  - **推拉结合（工程标配）**：普通用户走写扩散（推给在线/活跃粉丝，冷粉丝不推）；大 V 只写自己发件箱，粉丝刷屏时拉大 V + 自己的 Push 收件箱在内存归并排序。"
+    },
+    {
+      "id": "sys-10",
+      "cat": "sys",
+      "diff": 3,
+      "tags": [
+        "系统设计",
+        "协同编辑"
+      ],
+      "q": "设计一个支持多人同时编辑的在线文档系统，核心冲突怎么解决？",
+      "a": "- **架构核心**：WebSocket 长连接 + 操作日志（OpLog）增量同步 + 定期文档快照（Snapshot）。\n- **并发冲突两大算法**：\n  - **OT（Operational Transformation）**：依赖中心服务器定序并对并发操作做位置偏移变换；Google Docs 路线，工程成熟但变换矩阵随富文本操作数平方膨胀。\n  - **CRDT（无冲突复制数据类型）**：把每个字符赋予全局偏序 ID（如 Yjs/Automerge），任何节点按任意顺序合并操作在数学上必然收玫到一致状态；天然支持离线编辑与 P2P，但元数据体积更大需 GC 压缩。\n- 加分项：权限控制、只读游标位置广播、历史版本时间线回放。"
+    },
+    {
+      "id": "beh-7",
+      "cat": "behavior",
+      "diff": 2,
+      "tags": [
+        "行为面试",
+        "复盘"
+      ],
+      "q": "讲一次线上故障或生产事故：你是怎么发现、止血和事后复盘（Postmortem）的？",
+      "a": "- **考察点**：抗压冷静度、止血优先意识、对事不对人的归因能力与工程防呆思维。\n- **推荐回答结构**：\n  1. **现象与发现**：监控/告警如何第一时间感知影响面（量化受损接口/用户比例）。\n  2. **止血动作**（核心加分）：先**回滚/切流/降级/限流**恢复业务，而不是在线上盲目改代码排查。\n  3. **根因与整改**：5-Why 挖到流程与系统级原因，落地至少一条**自动化护栏**（如上线检查、金丝雀发布、熔断超时），而不是「下次小心点」。"
+    },
+    {
+      "id": "beh-8",
+      "cat": "behavior",
+      "diff": 2,
+      "tags": [
+        "行为面试",
+        "协作"
+      ],
+      "q": "当你推动一个跨团队的技术方案或架构改造遇到阻力时，你会怎么处理？",
+      "a": "- **避免踩坑**：不要讲成「我找老板压下去」或「对方不懂技术」。\n- **高分 STAR 骨架**：\n  - **对齐目标而非方案**：先理解对方顾虑（排期紧、风险高、收益不是他们的 KPI）。\n  - **拿数据说话 + 降低尝试成本**：做一个最小可行试点（POC/灰度 5% 流量）用数据证明效果；主动承担初期适配/迁移脚手架工作，把他人改造成本降到最低。\n  - **制度化共赢**：方案落地后把功劳与收益算进双方协同成果里。"
+    },
+    {
+      "id": "beh-9",
+      "cat": "behavior",
+      "diff": 1,
+      "tags": [
+        "行为面试",
+        "AI时代"
+      ],
+      "q": "你平时如何使用 AI 编程助手（Copilot / Claude / Agent）？你认为工程师的核心竞争力在哪里？",
+      "a": "- **展示真实工程观**（切忌「全靠 AI 写」或「完全排斥 AI」）：\n  - **日常用法**：用于脚手架搭建、单测边界枚举、旧代码梳理和文档补全；自己严格把控架构边界、接口契约与安全审查（AI 写的代码必须经测试与 Review 兜底）。\n  - **核心竞争力**：问题拆解与业务抽象能力、系统权衡（性能/成本/可维护性）、对线上复杂故障与隐蔽并发 Bug 的定位定责能力，以及让确定性工程护栏接管 AI 不确定性。"
+    },
+    {
+      "id": "proj-5",
+      "cat": "project",
+      "diff": 2,
+      "tags": [
+        "项目复盘",
+        "性能优化"
+      ],
+      "q": "讲一个你做过的「性能优化」项目：你是怎么定位瓶颈、选型并量化成果的？",
+      "a": "- **黄金叙事公式：基线 → 剖析 → 方案对比 → 压测验证 → 线上收益**：\n  - **不能只说「变快了」**：给出优化前后的 `QPS / P95 / P99 / CPU / 慢查询占比` 精确指标。\n  - **强调定位证据**：用了什么工具（火焰图、慢 SQL 日志、`EXPLAIN`、Chrome Performance）证明瓶颈真在那里，排除猜测。\n  - **体现权衡**：为什么选方案 A 而不选方案 B（如本地缓存 vs Redis 带来的一致性代价与内存开销）。"
+    },
+    {
+      "id": "proj-6",
+      "cat": "project",
+      "diff": 2,
+      "tags": [
+        "项目复盘",
+        "重构"
+      ],
+      "q": "当业务需求不断堆叠、代码腐化严重时，你是如何主导技术债治理与平稳重构的？",
+      "a": "- **踩坑警告**：最忌讳「停下业务闭关重写半年」——往往烂尾或上线出大事故。\n- **高分回答路线**：\n  - **先建安全网**：在核心路径补集成测试/回归基线、加流量录制回放或影子比对（Shadow Diff）。\n  - **绞杀者模式（Strangler Fig）渐进替换**：按模块边界切流灰度，新旧双跑验证一致后再下线旧逻辑。\n  - **业务绑定**：把重构拆进日常需求迭代里，用 Bug 率下降、需求交付提速量化说服产品与管理层给研发排期。"
     }
   ]
 };

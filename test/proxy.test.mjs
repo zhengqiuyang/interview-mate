@@ -219,3 +219,31 @@ test('场景5：超时环境变量非法（NaN）→ 回退默认值，不会立
     s.child.kill();
   }
 });
+
+test('场景6：本地 Ollama 端点无 apiKey 可正常代理；远端无 apiKey 返回 400', async () => {
+  let seenAuth = '';
+  const sse = 'data: {"choices":[{"delta":{"content":"local ok"}}]}\n\ndata: [DONE]\n\n';
+  const mock = await startMock((req, res) => {
+    seenAuth = req.headers.authorization || '';
+    req.on('data', () => {});
+    req.on('end', () => {
+      res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+      res.end(sse);
+    });
+  });
+
+  const localRes = await chatChat({
+    baseURL: `http://127.0.0.1:${mock.address().port}/v1`,
+    messages: [{ role: 'user', content: 'hi' }],
+  });
+  assert.equal(localRes.status, 200);
+  assert.equal(localRes.body, sse);
+  assert.equal(seenAuth, 'Bearer ollama');
+
+  const remoteRes = await chatChat({
+    baseURL: 'https://api.openai.com/v1',
+    messages: [{ role: 'user', content: 'hi' }],
+  });
+  assert.equal(remoteRes.status, 400);
+  assert.match(remoteRes.body, /API Key/);
+});

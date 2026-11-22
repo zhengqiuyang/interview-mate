@@ -8,7 +8,7 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg">
-  <link rel="stylesheet" href="css/style.css?v=0.20.0">
+  <link rel="stylesheet" href="css/style.css?v=0.21.0">
 </head>
 <body>
   <div class="app">
@@ -45,7 +45,7 @@
         </div>
       </div>
       <div class="sidebar-foot">
-        <span class="foot-ver">v0.20.0 · 本地零依赖 · 数据自持</span>
+        <span class="foot-ver">v0.21.0 · 本地零依赖 · 数据自持</span>
         <span class="foot-links">
           题库参考 <a href="https://github.com/Snailclimb/JavaGuide" target="_blank" rel="noopener">JavaGuide</a> ·
           <a href="https://github.com/CyC2018/CS-Notes" target="_blank" rel="noopener">CS-Notes</a> ·
@@ -246,6 +246,19 @@
             <select id="mock-lang">
               <option value="zh">中文</option>
               <option value="en">English</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>关联简历（项目深挖强烈推荐）</span>
+            <select id="mock-resume">
+              <option value="">不关联简历</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>注入长期画像</span>
+            <select id="mock-use-profile">
+              <option value="1" selected>自动注入历次薄弱点与项目画像</option>
+              <option value="0">不注入（纯净面试）</option>
             </select>
           </label>
           <label class="field wide">
@@ -541,9 +554,10 @@
 
         <div class="card settings-card">
           <h3><span class="ico" data-icon="package"></span>自定义题库</h3>
-          <p class="hint">用 JSON 导入你自己的题目（面经、公司真题、八股均可），导入后出现在题库「自定义」分类中。</p>
+          <p class="hint">导入 JSON 题目，或直接解析开源面经仓库的 Markdown 文档（支持本地文件与 GitHub 链接），导入后进入「自定义」分类与间隔重复复习。</p>
           <div class="actions">
-            <button class="btn primary" id="btn-import-questions"><span class="ico" data-icon="plus"></span>导入题目</button>
+            <button class="btn primary" id="btn-import-questions"><span class="ico" data-icon="plus"></span>导入 JSON 题目</button>
+            <button class="btn" id="btn-import-md"><span class="ico" data-icon="book"></span>从 Markdown / GitHub 导入</button>
             <button class="btn ghost" id="btn-export-custom"><span class="ico" data-icon="download"></span>导出自定义题</button>
           </div>
           <div id="custom-list"></div>
@@ -560,7 +574,7 @@
 
         <div class="card settings-card about">
           <h3><span class="ico" data-icon="info"></span>关于</h3>
-          <p>InterviewMate v0.20.0 · 零依赖本地运行 · 数据不出本机（除 LLM 请求本身）</p>
+          <p>InterviewMate v0.21.0 · 零依赖本地运行 · 数据不出本机（除 LLM 请求本身）</p>
           <div class="actions">
             <button class="btn ghost" id="btn-onboarding">🚀 重看新手引导</button>
           </div>
@@ -585,6 +599,6 @@
   <div id="toast-root"></div>
   <div id="fatal-error" class="banner warn hidden" style="position:fixed;left:50%;transform:translateX(-50%);bottom:24px;z-index:200"></div>
 
-  <script type="module" src="js/app.js?v=0.20.0"></script>
+  <script type="module" src="js/app.js?v=0.21.0"></script>
 </body>
 </html>

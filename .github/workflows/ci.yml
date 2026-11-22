@@ -50,6 +50,7 @@ jobs:
               './public/js/app.js', './public/js/router.js', './public/js/state.js',
               './public/js/core.js', './public/js/api.js', './public/js/srs.js',
               './public/js/gamify.js', './public/js/profile.js', './public/js/tokens.js',
+              './public/js/md-import.js', './public/js/demo.js',
               ...['dashboard','mock','bank','review','jobs','knowledge','resume','history','settings','agent','flashcards','apps']
                 .map(v => './public/js/views/' + v + '.js'),
             ];

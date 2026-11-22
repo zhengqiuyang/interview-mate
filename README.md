@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/zhengqiuyang/interview-mate/actions/workflows/ci.yml/badge.svg?style=flat-square)](https://github.com/zhengqiuyang/interview-mate/actions/workflows/ci.yml)
 [![Live Demo](https://img.shields.io/badge/demo-在线试用-2563EB?style=flat-square)](https://zhengqiuyang.github.io/interview-mate/?demo=1)
-![version](https://img.shields.io/badge/version-0.20.0-0C0E13?style=flat-square)
+![version](https://img.shields.io/badge/version-0.21.0-0C0E13?style=flat-square)
 ![license](https://img.shields.io/badge/license-MIT-0D7A52?style=flat-square)
 ![deps](https://img.shields.io/badge/dependencies-0-0D7A52?style=flat-square)
 ![node](https://img.shields.io/badge/node-%3E%3D18-339933?style=flat-square)
@@ -76,8 +76,8 @@ node server.js
 | 模块 | 核心能力 | 离线可用（免 API Key） |
 | --- | --- | --- |
 | 📊 **数据看板** | 8 宫格核心指标、每日 AI 简报 + 每日挑战双焦点、分类能力雷达图、得分趋势线、26 周练习年历、7 天复习预测、成就墙、长期画像 | ✅（简报含本地兜底） |
-| 🎙️ **模拟面试** | 单场 / 四轮闯关；**语音整场面试**（TTS 播报 + 语音识别 + 同步录音 + 语速/填充词复盘）；量化评分环与可分享成绩单海报 | ❌（需 LLM） |
-| 📚 **题库练习** | **90+ 内置高频题、11 大分类**（网络/OS/数据库/算法/手写代码/前端/后端分布式/Java/系统设计/行为面试/项目复盘），收藏、笔记、相关题推荐、AI 追问 | ✅（AI 追问需 LLM） |
+| 🎙️ **模拟面试** | 单场 / 四轮闯关；**支持关联简历与长期画像针对性追问**；**语音整场面试**（TTS 播报 + 语音识别 + 同步录音 + 语速/填充词复盘）；量化评分环与可分享成绩单海报 | ❌（需 LLM） |
+| 📚 **题库练习** | **160+ 内置高频题、13 大分类**（网络/OS/数据库/算法/手写代码/前端/后端分布式/Java/Go·Python/AI·LLM 工程/系统设计/行为面试/项目复盘），支持围栏代码块高亮与一键复制、收藏、笔记、**Markdown/GitHub 开源题库导入** | ✅（AI 追问需 LLM） |
 | 🔁 **复习中心 & 闪卡** | Leitner 5 级记忆盒子（10 分钟 / 1 / 3 / 7 / 21 天），3D 翻转闪卡、**Cloze 填空模式**、**60s 限时口述**、错题本一键回炉、Anki TSV 双向互通 | ✅ |
 | 📡 **岗位雷达** | 订阅公开源（RemoteOK / HN Who is hiring / 自定义 JSON / RSS）定时自动抓取、关键词过滤与去重；**绑定简历后自动计算本地匹配分排序**；AI 岗位情报 | 抓取/匹配 ✅ · AI 情报 ❌ |
 | 📮 **投递看板** | 九列状态看板 + 列表双视图（已投 → 约面 → 一/二/三/HR 面 → Offer/挂/搁置），从岗位雷达一键导入，面试倒计时横幅提醒与转化率统计 | ✅ |
@@ -108,8 +108,8 @@ node server.js
 
 ### 配置模型（任何 OpenAI 兼容接口）
 
-1. 进入左侧栏「**设置**」→ 选择服务商预设（**智谱 GLM** / OpenAI / DeepSeek / Kimi / 本地 Ollama / 自定义）；
-2. 填入 API Key，点击「**测试连接**」验证。
+1. 进入左侧栏「**设置**」→ 选择服务商预设（**智谱 GLM** / OpenAI / DeepSeek / Kimi / **本地 Ollama（免 Key）** / 自定义）；
+2. 填入 API Key（本地 Ollama / `localhost` 端点可留空），点击「**测试连接**」验证。
 
 > 🔒 **隐私承诺**：API Key 与所有练习进度、笔记、简历均只保存在**你自己的浏览器 `localStorage`**（以及本机 `data/` 目录）中，请求由本机 `server.js` 直接转发至你配置的模型接口，不经过任何第三方服务器。
 
@@ -146,7 +146,8 @@ INTERVIEW_MATE_JOB_REFRESH_MIN=30            # 岗位雷达自动抓取间隔（
 ┌────────────────────────────────────▼──── server.js（Node 18+，零依赖）───┐
 │  · Host Loopback 校验（防 DNS Rebinding）+ 严格静态资源 CSP 响应头         │
 │  · POST /api/chat       → 提示词组装 + 两段超时流式代理 + 断开传播        │
-│  · GET  /api/questions  → data/questions.json（90+ 高频题库）             │
+│  · GET  /api/questions  → data/questions.json（160+ 高频题库，13 大分类） │
+│  · POST /api/bank/fetch-md → 公开 Markdown / GitHub 题库拉取（200KB 上限） │
 │  · /api/jobs*           → lib/jobs.js（RemoteOK/HN/RSS/JSON 抓取与去重）  │
 │  · /api/agent/briefs*   → lib/briefs.js（服务端定时每日简报）             │
 │  · /api/files/*         → 简历原文与语音回答本地持久化（含路径穿越守卫）  │
@@ -156,7 +157,7 @@ INTERVIEW_MATE_JOB_REFRESH_MIN=30            # 岗位雷达自动抓取间隔（
 ### 自动化测试与 CI 门禁
 
 ```bash
-npm test              # 运行 65 项 node:test 行为测试（SRS / 游戏化 / 岗位纯函数 / 真实 Server & 流式代理 / Quota / Demo 适配层）
+npm test              # 运行 71 项 node:test 行为测试（SRS / 游戏化 / 岗位纯函数 / 真实 Server & 流式代理 / Ollama 免 Key / Quota / Markdown 导入 / Demo 适配层）
 npm run lint          # ESLint 9 静态检查
 npm run sync-version  # 校验 package.json ↔ sw.js / index.html 版本号单一来源
 ```
@@ -166,7 +167,7 @@ npm run sync-version  # 校验 package.json ↔ sw.js / index.html 版本号单�
 ## ❓ 常见问题（FAQ）
 
 **Q：不用 API Key 能干什么？**
-看板统计、90+ 题库练习、Leitner 间隔重复、3D 闪卡（含填空与限时模式）、每日挑战、知识库笔记、投递看板、岗位雷达抓取与本地简历匹配分、PDF/Word 简历预览、Anki 导入导出、全量 JSON 备份恢复**全部离线可用**。
+看板统计、160+ 题库练习、Leitner 间隔重复、3D 闪卡（含填空与限时模式）、知识库笔记、投递看板、岗位雷达抓取与本地简历匹配分、PDF/Word 简历预览、Markdown/Anki 导入导出、全量 JSON 备份恢复**全部离线可用**。此外本地 **Ollama** 等 `localhost` 模型无需 API Key 即可直接驱动 AI 功能。
 
 **Q：国内招聘网站（Boss 直聘、拉勾等）怎么用岗位雷达？**
 国内招聘站有强登录与反爬限制，本项目不做违规爬虫。推荐工作流：在招聘页复制 JD 正文 → 岗位雷达点「**手动添加 JD**」→ 一键生成「**AI 岗位情报**」或带入「**简历工坊**」做深度匹配诊断，也可一键导入「**投递看板**」跟踪进度。

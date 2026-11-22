@@ -134,7 +134,7 @@ function buildMockSystemPrompt(cfg) {
   const type = TYPE_MAP[cfg.type] || TYPE_MAP.mixed;
   const level = LEVEL_MAP[cfg.level] || LEVEL_MAP.junior;
   const lang = cfg.lang === 'en' ? 'English' : '简体中文';
-  return [
+  const parts = [
     `你是一位经验丰富的${role}面试官，正在进行一场${type}。候选人级别：${level}。整场面试使用${lang}。`,
     `本场共约 ${cfg.count || 5} 个问题。你的行为准则：`,
     '1. 一次只问一个问题，绝不一次抛出多个问题。',
@@ -143,7 +143,20 @@ function buildMockSystemPrompt(cfg) {
     '4. 点评简洁、专业、友善，不泄露标准答案的完整内容。',
     '5. 候选人明显跑题时，温和地把面试拉回主线。',
     '6. 你的第一条消息：一段 2-3 句的开场白（自我介绍面试流程），然后提出第一个问题。',
-  ].join('\n');
+  ];
+  const resume = typeof cfg.resumeSummary === 'string' ? cfg.resumeSummary.trim().slice(0, 3000) : '';
+  if (resume) {
+    parts.push(
+      `\n【候选人简历摘要】\n${resume}\n请结合简历中的具体项目、技术栈与量化指标进行针对性追问（尤其在项目深挖与综合面中）。`
+    );
+  }
+  const profile = typeof cfg.profileContext === 'string' ? cfg.profileContext.trim().slice(0, 1500) : '';
+  if (profile) {
+    parts.push(
+      `\n【候选人历史画像（来自往期复盘）】\n${profile}\n请重点检验其历史薄弱项与失分点是否已改进。`
+    );
+  }
+  return parts.join('\n');
 }
 
 const REPORT_INSTRUCTION = [
@@ -497,8 +510,9 @@ async function proxyChat(req, res, body) {
   const apiKey = (body.apiKey && String(body.apiKey).trim()) || DEFAULTS.apiKey;
   const baseURL = (body.baseURL && String(body.baseURL).trim()) || DEFAULTS.baseURL;
   const model = (body.model && String(body.model).trim()) || DEFAULTS.model;
+  const isLocalEndpoint = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?(\/|$)/i.test(baseURL);
 
-  if (!apiKey) {
+  if (!apiKey && !isLocalEndpoint) {
     return sendJson(res, 400, {
       error:
         '未配置 API Key：请在页面「设置」中填写，或在服务端 .env 中配置 INTERVIEW_MATE_API_KEY',
@@ -548,11 +562,12 @@ async function proxyChat(req, res, body) {
     temperature,
     messages: [{ role: 'system', content: system }, ...messages],
   };
+  const authHeader = apiKey || (isLocalEndpoint ? 'ollama' : '');
   const doFetch = () => fetch(endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
+      ...(authHeader ? { Authorization: `Bearer ${authHeader}` } : {}),
     },
     body: JSON.stringify(upstreamPayload),
     signal: ctrl.signal,
@@ -709,6 +724,33 @@ async function handleApi(req, res, pathname) {
       return sendJson(res, 400, { error: e.message });
     }
     return sendJson(res, 404, { error: 'Not Found' });
+  }
+
+  /* ---- 开源题库 Markdown 远程拉取（用于用户自主导入 GitHub Raw / 公开 .md） ---- */
+  if (req.method === 'POST' && pathname === '/api/bank/fetch-md') {
+    try {
+      const body = JSON.parse(await readBody(req));
+      let target;
+      try { target = new URL(body.url); } catch (_) { return sendJson(res, 400, { error: 'URL 无效' }); }
+      if (target.protocol !== 'https:') return sendJson(res, 400, { error: '仅支持 https 公开文档链接' });
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 15000);
+      try {
+        const r = await fetch(target, {
+          signal: ctrl.signal,
+          headers: { 'User-Agent': 'InterviewMate/0.21 (personal study tool)' },
+        });
+        clearTimeout(t);
+        if (!r.ok) return sendJson(res, 502, { error: `远程返回 HTTP ${r.status}` });
+        const text = (await r.text()).slice(0, 200000);
+        return sendJson(res, 200, { ok: true, text });
+      } catch (e) {
+        clearTimeout(t);
+        return sendJson(res, 502, { error: e.name === 'AbortError' ? '拉取超时（15s）' : e.message });
+      }
+    } catch (e) {
+      return sendJson(res, 400, { error: e.message });
+    }
   }
 
   /* ---- 技能市场：HTTP 工具代理（绕开浏览器 CORS，服务端代抓） ---- */

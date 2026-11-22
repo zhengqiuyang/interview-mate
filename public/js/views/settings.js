@@ -1,7 +1,8 @@
 /* 设置：模型 / 外观 / 数据管理 / 自定义题库 */
 import { $, $$, esc, icon, toast, openModal, confirmModal, downloadFile, applyTheme } from '../core.js';
-import { S, persist, remergeBank } from '../state.js';
+import { S, persist, remergeBank, BACKUP_KEYS } from '../state.js';
 import { streamChat, checkHealth, hasKey } from '../api.js';
+import { normalizeGithubUrl, parseMarkdownQuestions } from '../md-import.js';
 import { render as renderBank } from './bank.js';
 import { render as renderDashboard } from './dashboard.js';
 
@@ -14,7 +15,7 @@ const CUSTOM_TEMPLATE = `[
   }
 ]`;
 
-const DATA_KEYS = ['im_settings', 'im_theme', 'im_sessions', 'im_srs', 'im_notes', 'im_bank_favs', 'im_activity', 'im_daily', 'im_custom', 'im_knowledge'];
+const DATA_KEYS = BACKUP_KEYS;
 
 export function init() {
   /* ---- 模型 ---- */
@@ -194,6 +195,7 @@ export function init() {
 
   /* ---- 自定义题库 ---- */
   $('#btn-import-questions').onclick = openImportQuestions;
+  $('#btn-import-md')?.addEventListener('click', openImportMarkdown);
   $('#btn-export-custom').onclick = () => {
     if (!S.custom.length) { toast('还没有自定义题目', 'err'); return; }
     downloadFile('interview-mate-custom-questions.json',
@@ -289,5 +291,117 @@ function openImportQuestions() {
     renderCustomList();
     m.close();
     toast(`成功导入 ${items.length} 道题，已并入题库`, 'ok');
+  };
+}
+
+function openImportMarkdown() {
+  const m = openModal(`
+    <label class="field">
+      <span>方式一：粘贴 GitHub Markdown 链接或 Raw URL（自动转换直链并抓取）</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="md-url" class="input" style="flex:1;min-width:220px" placeholder="https://github.com/CyC2018/CS-Notes/blob/master/notes/...">
+        <button class="btn" id="md-fetch">${icon('download', 14)}拉取并解析</button>
+        <button class="btn ghost" id="md-file-btn">${icon('upload', 14)}选本地 .md</button>
+        <input type="file" id="md-file" accept=".md,.markdown,.txt" class="hidden">
+      </div>
+    </label>
+    <div style="display:grid;grid-template-columns:1fr 160px;gap:10px;margin-top:12px">
+      <label class="field">
+        <span>方式二：直接粘贴 Markdown 正文（以 ## / ### 标题作为题目，正文作为答案）</span>
+        <textarea id="md-ta" rows="8" placeholder="## 1. 什么是 Redis 跳表？\n跳表是在有序链表基础上增加了多级索引……"></textarea>
+      </label>
+      <label class="field">
+        <span>导入标签</span>
+        <input id="md-tag" class="input" value="开源导入" placeholder="如：JavaGuide">
+      </label>
+    </div>
+    <div class="actions" style="justify-content:space-between">
+      <button class="btn" id="md-parse">${icon('search', 14)}解析预览</button>
+      <button class="btn primary" id="md-ok" disabled>${icon('check', 14)}确认导入（0 题）</button>
+    </div>
+    <div id="md-preview" style="margin-top:12px"></div>
+    <p class="hint">推荐开源题库：
+      <a href="https://github.com/CyC2018/CS-Notes" target="_blank" rel="noopener">CS-Notes</a> ·
+      <a href="https://github.com/Snailclimb/JavaGuide" target="_blank" rel="noopener">JavaGuide</a> ·
+      <a href="https://github.com/yangshun/tech-interview-handbook" target="_blank" rel="noopener">tech-interview-handbook</a> ·
+      <a href="https://github.com/donnemartin/system-design-primer" target="_blank" rel="noopener">system-design-primer</a>
+    </p>`,
+    { title: '从 Markdown / 开源仓库导入题库', icon: 'book', width: 760 });
+
+  let parsed = [];
+  const updatePreview = () => {
+    const tag = $('#md-tag', m.el).value.trim() || '开源导入';
+    parsed = parseMarkdownQuestions($('#md-ta', m.el).value, { defaultTag: tag, max: 200 });
+    const okBtn = $('#md-ok', m.el);
+    okBtn.disabled = !parsed.length;
+    okBtn.innerHTML = `${icon('check', 14)}确认导入（${parsed.length} 题）`;
+    const box = $('#md-preview', m.el);
+    if (!parsed.length) {
+      box.innerHTML = '<p class="hint">未识别到符合格式的 ## / ### 问答段落（每题正文需不少于 8 个字）。</p>';
+      return;
+    }
+    box.innerHTML = `
+      <div class="q-note" style="margin-top:0"><b>共解析出 ${parsed.length} 道题</b>（仅展示前 5 条预览）</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+        ${parsed.slice(0, 5).map((it, idx) => `
+          <div class="card" style="margin:0;padding:10px 12px">
+            <div style="font-weight:600;font-size:13px">${idx + 1}. ${esc(it.q)}</div>
+            <div class="muted" style="font-size:12px;margin-top:3px">${esc(it.a.slice(0, 90))}${it.a.length > 90 ? '…' : ''}</div>
+          </div>`).join('')}
+      </div>`;
+  };
+
+  $('#md-parse', m.el).onclick = updatePreview;
+  $('#md-file-btn', m.el).onclick = () => $('#md-file', m.el).click();
+  $('#md-file', m.el).onchange = async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    $('#md-ta', m.el).value = await f.text();
+    if ($('#md-tag', m.el).value === '开源导入') {
+      $('#md-tag', m.el).value = f.name.replace(/\.(md|markdown|txt)$/i, '').slice(0, 16) || '开源导入';
+    }
+    updatePreview();
+  };
+  $('#md-fetch', m.el).onclick = async () => {
+    const rawUrl = $('#md-url', m.el).value.trim();
+    if (!rawUrl) { toast('请先输入 GitHub 或 Raw Markdown 链接', 'err'); return; }
+    const url = normalizeGithubUrl(rawUrl);
+    const btn = $('#md-fetch', m.el);
+    btn.disabled = true;
+    btn.textContent = '拉取中…';
+    try {
+      const res = await fetch('/api/bank/fetch-md', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error || `HTTP ${res.status}`);
+      $('#md-ta', m.el).value = j.text || '';
+      updatePreview();
+      toast(`已抓取文档并解析出 ${parsed.length} 题`, parsed.length ? 'ok' : '');
+    } catch (e) {
+      toast('抓取失败：' + e.message, 'err');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `${icon('download', 14)}拉取并解析`;
+    }
+  };
+  $('#md-ok', m.el).onclick = () => {
+    if (!parsed.length) return;
+    const now = Date.now();
+    const existing = new Set(S.questions.map((q) => q.q));
+    const fresh = parsed
+      .filter((it) => !existing.has(it.q))
+      .map((it, i) => ({ ...it, id: `custom-${now}-${i}`, cat: 'custom' }));
+    if (!fresh.length) { toast('解析出的题目已全部在题库中', 'err'); return; }
+    S.custom = [...S.custom, ...fresh];
+    persist('custom');
+    remergeBank();
+    renderBank();
+    renderDashboard();
+    renderCustomList();
+    m.close();
+    toast(`已导入 ${fresh.length} 道新题到「自定义」分类`, 'ok');
   };
 }

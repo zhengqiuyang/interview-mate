@@ -74,6 +74,17 @@ export function init() {
 
 export function onShow() {
   $('#mock-nokey').classList.toggle('hidden', hasKey());
+  refreshResumeSelect();
+}
+
+function refreshResumeSelect() {
+  const sel = $('#mock-resume');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">不关联简历</option>' +
+    S.resumes.map((r) => `<option value="${esc(r.id)}">${esc(r.name)}</option>`).join('');
+  if (cur && [...sel.options].some((o) => o.value === cur)) sel.value = cur;
+  else if (S.resumes.length) sel.value = S.resumes[0].id;
 }
 
 function autoGrow(ta) {
@@ -267,18 +278,30 @@ function startMock() {
     return;
   }
   const campaignMode = $('[data-mode].active')?.dataset.mode === 'campaign';
+  const resumeId = $('#mock-resume')?.value || '';
+  const resume = resumeId ? S.resumes.find((r) => r.id === resumeId) : null;
+  const useProfile = $('#mock-use-profile')?.value !== '0';
+  const profileContext = useProfile && S.profile?.cards?.length
+    ? S.profile.cards.slice(0, 12).map((c) => `[${c.type}] ${c.content}`).join('\n')
+    : '';
   let cfg = {
     role: $('#mock-role').value,
     type: $('#mock-type').value,
     level: $('#mock-level').value,
     lang: $('#mock-lang').value,
     count: Number($('#mock-count').value),
+    resumeSummary: resume?.content ? resume.content.slice(0, 2600) : '',
+    resumeName: resume?.name || '',
+    profileContext,
   };
   if (campaignMode) {
     S.campaign = {
       active: true, idx: 0,
       rounds: CAMPAIGN_ROUNDS.map((r) => ({ ...r, status: 'pending', score: null })),
       role: cfg.role, lang: cfg.lang,
+      resumeSummary: cfg.resumeSummary,
+      resumeName: cfg.resumeName,
+      profileContext: cfg.profileContext,
     };
     persist('campaign');
     const r0 = S.campaign.rounds[0];
@@ -294,9 +317,10 @@ function startMock() {
   $('#mock-chat').classList.remove('hidden');
   $('#chat-messages').innerHTML = '';
   $('#chat-target').textContent = cfg.count;
-  $('#chat-config-label').textContent = campaignMode
+  const ctxTag = cfg.resumeName ? ` · 简历：${cfg.resumeName}` : '';
+  $('#chat-config-label').textContent = (campaignMode
     ? `闯关模式 · ${ROLE_NAMES[cfg.role] || cfg.role} · ${S.campaign.rounds[0].label}`
-    : `${ROLE_NAMES[cfg.role] || cfg.role} · ${TYPE_NAMES[cfg.type] || cfg.type} · ${LEVEL_NAMES[cfg.level] || cfg.level}`;
+    : `${ROLE_NAMES[cfg.role] || cfg.role} · ${TYPE_NAMES[cfg.type] || cfg.type} · ${LEVEL_NAMES[cfg.level] || cfg.level}`) + ctxTag;
   renderRoundChips();
 
   clearInterval(mock._timer);
@@ -500,6 +524,9 @@ function finishMock(reportMd) {
         const cfg2 = {
           role: S.campaign.role, type: nr.type, level: nr.level,
           lang: S.campaign.lang, count: nr.count,
+          resumeSummary: S.campaign.resumeSummary || '',
+          resumeName: S.campaign.resumeName || '',
+          profileContext: S.campaign.profileContext || '',
         };
         // 直接以该轮配置开始
         mock = null;
@@ -552,7 +579,8 @@ function startCampaignRound(cfg, roundLabel) {
   $('#mock-chat').classList.remove('hidden');
   $('#chat-messages').innerHTML = '';
   $('#chat-target').textContent = cfg.count;
-  $('#chat-config-label').textContent = `闯关模式 · ${ROLE_NAMES[cfg.role] || cfg.role} · ${roundLabel}`;
+  const ctxTag = cfg.resumeName ? ` · 简历：${cfg.resumeName}` : '';
+  $('#chat-config-label').textContent = `闯关模式 · ${ROLE_NAMES[cfg.role] || cfg.role} · ${roundLabel}${ctxTag}`;
   renderRoundChips();
   clearInterval(mock._timer);
   mock._timer = setInterval(() => {

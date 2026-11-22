@@ -1,6 +1,7 @@
 /* 路由模块：视图注册表 + switchView
  * 独立于 app.js，避免视图 ↔ 入口的循环依赖（也让浏览器缓存旧入口时不出问题） */
 import { $$ } from './core.js';
+import { S } from './state.js';
 
 import * as dashboard from './views/dashboard.js';
 import * as agent from './views/agent.js';
@@ -30,6 +31,7 @@ export const VIEWS = {
 
 export function switchView(name) {
   if (!VIEWS[name]) name = 'dashboard';
+  S.view = name;
   $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.view === name));
   $$('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${name}`));
   VIEWS[name].mod.onShow();

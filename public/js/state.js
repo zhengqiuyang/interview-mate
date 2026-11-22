@@ -60,7 +60,7 @@ export const S = {
   bankLoaded: false,
 };
 
-const KEYMAP = {
+export const KEYMAP = {
   settings: 'im_settings',
   theme: 'im_theme',
   style: 'im_style',
@@ -84,6 +84,9 @@ const KEYMAP = {
   apps: 'im_apps',
 };
 
+// 全量备份/恢复覆盖的全部持久化 key（含 tokens 用量日志）
+export const BACKUP_KEYS = [...Object.values(KEYMAP), 'im_tokens'];
+
 export function persist(key) {
   const storageKey = KEYMAP[key] || 'im_' + key;
   if (typeof localStorage === 'undefined') return;
@@ -92,7 +95,10 @@ export function persist(key) {
 }
 
 /* 合并内置题库 + 自定义题库 */
+let builtinCatsCache = null;
+
 export function mergeBank(builtin) {
+  builtinCatsCache = [...builtin.categories];
   const cats = [...builtin.categories];
   if (S.custom.length && !cats.find((c) => c.key === 'custom')) {
     cats.push({ key: 'custom', name: '自定义' });
@@ -106,13 +112,14 @@ export function mergeBank(builtin) {
 export const BUILTIN_CATS = [
   { key: 'net', name: '计算机网络' }, { key: 'os', name: '操作系统' }, { key: 'db', name: '数据库 & 缓存' },
   { key: 'algo', name: '算法与数据结构' }, { key: 'code', name: '手写代码' }, { key: 'fe', name: '前端' },
-  { key: 'be', name: '后端 & 分布式' }, { key: 'java', name: 'Java 专项' },
-  { key: 'sys', name: '系统设计' }, { key: 'behavior', name: '行为面试' }, { key: 'project', name: '项目复盘' },
+  { key: 'be', name: '后端 & 分布式' }, { key: 'java', name: 'Java 专项' }, { key: 'go', name: 'Go / Python 专项' },
+  { key: 'ai', name: 'AI / LLM 工程' }, { key: 'sys', name: '系统设计' },
+  { key: 'behavior', name: '行为面试' }, { key: 'project', name: '项目复盘' },
 ];
 
 export function remergeBank() {
   const builtinQs = S.questions.filter((q) => !String(q.id).startsWith('custom-'));
-  mergeBank({ categories: BUILTIN_CATS, questions: builtinQs });
+  mergeBank({ categories: builtinCatsCache || BUILTIN_CATS, questions: builtinQs });
 }
 
 export function initMigrations() {
