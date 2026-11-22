@@ -1,6 +1,7 @@
 /* 设置：模型 / 外观 / 数据管理 / 自定义题库 */
 import { $, $$, esc, icon, toast, openModal, confirmModal, downloadFile, applyTheme } from '../core.js';
-import { S, persist, remergeBank, BACKUP_KEYS } from '../state.js';
+import { S, persist, remergeBank, BACKUP_KEYS, syncMeta, pushDiskSync, pullDiskSync } from '../state.js';
+import { isDemoMode } from '../demo.js';
 import { streamChat, checkHealth, hasKey } from '../api.js';
 import { normalizeGithubUrl, parseMarkdownQuestions } from '../md-import.js';
 import { render as renderBank } from './bank.js';
@@ -146,7 +147,35 @@ export function init() {
     window.dispatchEvent(new CustomEvent('themechange'));
   });
 
-  /* ---- 数据管理 ---- */
+  /* ---- 数据管理与本机磁盘同步 ---- */
+  window.addEventListener('im:sync-updated', renderSyncStatus);
+  $('#btn-sync-push')?.addEventListener('click', async () => {
+    if (isDemoMode()) { toast('演示模式不会写入本机真实存档', 'err'); return; }
+    const r = await pushDiskSync();
+    if (r?.ok) {
+      toast(`已同步 ${r.keys} 项状态至本机 data/user-state.json`, 'ok');
+      renderSyncStatus();
+    } else {
+      toast('同步失败：' + (r?.error || '未连接到本机 Node 服务'), 'err');
+    }
+  });
+  $('#btn-sync-pull')?.addEventListener('click', async () => {
+    if (isDemoMode()) { toast('演示模式不可覆盖本地演示档案', 'err'); return; }
+    try {
+      const pre = await fetch('/api/sync/state').then((x) => x.json());
+      if (!pre.exists) { toast('本机尚无已保存的磁盘存档', 'err'); return; }
+      const timeStr = pre.updatedAt ? new Date(pre.updatedAt).toLocaleString('zh-CN') : '未知时间';
+      if (!(await confirmModal(`发现本机存档（更新时间 ${timeStr}），恢复将覆盖当前浏览器数据，确定吗？`, { danger: true }))) return;
+      const r = await pullDiskSync();
+      if (r.restored) {
+        toast(`已恢复 ${r.restored} 项数据，即将刷新`, 'ok');
+        setTimeout(() => location.reload(), 700);
+      }
+    } catch (e) {
+      toast('恢复失败：' + e.message, 'err');
+    }
+  });
+
   $('#btn-export-data').onclick = () => {
     const backup = { app: 'interview-mate', version: 2, exportedAt: new Date().toISOString(), data: {} };
     for (const k of DATA_KEYS) {
@@ -209,6 +238,7 @@ export function init() {
 
 export function onShow() {
   renderCustomList();
+  renderSyncStatus();
   checkHealth().then((j) => {
     if (!j) return;
     $('#settings-envhint').textContent = j.serverKeyConfigured
@@ -216,6 +246,22 @@ export function onShow() {
       : '服务端未配置密钥，请在本页填写 API Key（推荐智谱 GLM，注册即有免费额度）。';
     $('#mock-nokey').classList.toggle('hidden', hasKey());
   });
+}
+
+function renderSyncStatus() {
+  const el = $('#sync-status');
+  if (!el) return;
+  if (isDemoMode()) {
+    el.textContent = '演示模式：数据只暂存当前浏览器，自动与本机磁盘隔离。';
+    return;
+  }
+  if (syncMeta.status === 'error') {
+    el.textContent = `⚠️ 本机同步异常：${syncMeta.lastError}`;
+  } else if (syncMeta.updatedAt) {
+    el.textContent = `✓ 本机已连接（上次同步：${new Date(syncMeta.updatedAt).toLocaleString('zh-CN')}）`;
+  } else {
+    el.textContent = '本机自动同步就绪（修改练习记录后自动写入 data/user-state.json）。';
+  }
 }
 
 function renderCustomList() {

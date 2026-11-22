@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/zhengqiuyang/interview-mate/actions/workflows/ci.yml/badge.svg?style=flat-square)](https://github.com/zhengqiuyang/interview-mate/actions/workflows/ci.yml)
 [![Live Demo](https://img.shields.io/badge/demo-在线试用-2563EB?style=flat-square)](https://zhengqiuyang.github.io/interview-mate/?demo=1)
-![version](https://img.shields.io/badge/version-0.22.0-0C0E13?style=flat-square)
+![version](https://img.shields.io/badge/version-0.23.0-0C0E13?style=flat-square)
 ![license](https://img.shields.io/badge/license-MIT-0D7A52?style=flat-square)
 ![deps](https://img.shields.io/badge/dependencies-0-0D7A52?style=flat-square)
 ![node](https://img.shields.io/badge/node-%3E%3D18-339933?style=flat-square)
@@ -44,8 +44,8 @@ node server.js
 | 数据看板（中性 Swiss） | 数据看板（墨黑 Dark） |
 | --- | --- |
 | ![数据看板（浅色）](docs/screenshots/v4-dashboard-light.png) | ![数据看板（深色）](docs/screenshots/v4-dashboard-dark.png) |
-| **智能体教练 Mentor** | **题库练习与 AI 追问** |
-| ![智能体教练](docs/screenshots/v4-agent.png) | ![题库练习](docs/screenshots/v4-bank.png) |
+| **交互式代码演练场 Code Lab** | **265+ 题库练习与 AI 追问** |
+| ![交互式代码演练场](docs/screenshots/v4-codelab.png) | ![题库练习](docs/screenshots/v4-bank.png) |
 
 <a id="features"></a>
 
@@ -77,7 +77,7 @@ node server.js
 | --- | --- | --- |
 | 📊 **数据看板** | 8 宫格核心指标、每日 AI 简报 + 每日挑战双焦点、分类能力雷达图、得分趋势线、26 周练习年历、7 天复习预测、成就墙、长期画像 | ✅（简报含本地兜底） |
 | 🎙️ **模拟面试** | 单场 / 四轮闯关；**支持关联简历与长期画像针对性追问**；**语音整场面试**（TTS 播报 + 语音识别 + 同步录音 + 语速/填充词复盘）；量化评分环与可分享成绩单海报 | ❌（需 LLM） |
-| 📚 **题库练习** | **265+ 内置高频题、14 大分类**（网络/OS/数据库/算法 40 题/手写代码 26 题/前端/后端分布式/Java/Go·Python/C++ 35 题/AI·LLM 工程 40 题/系统设计/行为面试/项目复盘），支持 C++/Python/JS 围栏代码块高亮与一键复制、收藏、笔记、**Markdown/GitHub 开源题库导入** | ✅（AI 追问需 LLM） |
+| 📚 **题库与 Code Lab** | **265+ 内置高频题、14 大分类**（网络/OS/数据库/算法 40 题/手写代码 26 题/前端/后端分布式/Java/Go·Python/C++ 35 题/AI·LLM 工程 40 题/系统设计/行为面试/项目复盘），支持 **交互式代码演练场（JS 浏览器沙箱 / 本机 Python·C++17 编译运行 + 18 题断言单测 + AI Code Review）**、代码块高亮复制、**Markdown/GitHub 开源题库导入** | ✅（AI 追问/Review 需 LLM） |
 | 🔁 **复习中心 & 闪卡** | Leitner 5 级记忆盒子（10 分钟 / 1 / 3 / 7 / 21 天），3D 翻转闪卡、**Cloze 填空模式**、**60s 限时口述**、错题本一键回炉、Anki TSV 双向互通 | ✅ |
 | 📡 **岗位雷达** | 订阅公开源（RemoteOK / HN Who is hiring / 自定义 JSON / RSS）定时自动抓取、关键词过滤与去重；**绑定简历后自动计算本地匹配分排序**；AI 岗位情报 | 抓取/匹配 ✅ · AI 情报 ❌ |
 | 📮 **投递看板** | 九列状态看板 + 列表双视图（已投 → 约面 → 一/二/三/HR 面 → Offer/挂/搁置），从岗位雷达一键导入，面试倒计时横幅提醒与转化率统计 | ✅ |
@@ -140,13 +140,15 @@ INTERVIEW_MATE_JOB_REFRESH_MIN=30            # 岗位雷达自动抓取间隔（
 │       core.js(存储/图标/Modal/主题/Canvas图表/分享海报)  state.js(状态)    │
 │       api.js(SSE流式客户端)   demo.js(?demo=1 静态Mock适配层)             │
 │       srs.js(Leitner间隔重复) gamify.js(XP/成就) profile.js(长期画像)     │
-│       tokens.js(Token记账)    views/*(12个业务视图模块)                   │
+│       tokens.js(Token记账)    views/*(含 Code Lab 等13个业务视图)      │
 └────────────────────────────────────┬─────────────────────────────────────┘
                                      │ fetch /api/*
 ┌────────────────────────────────────▼──── server.js（Node 18+，零依赖）───┐
 │  · Host Loopback 校验（防 DNS Rebinding）+ 严格静态资源 CSP 响应头         │
 │  · POST /api/chat       → 提示词组装 + 两段超时流式代理 + 断开传播        │
 │  · GET  /api/questions  → data/questions.json（265+ 高频题库，14 大分类） │
+│  · POST /api/code/run   → lib/coderun.js（回环限定 Node/Python/C++17 沙箱）│
+│  · GET/PUT /api/sync/state → lib/sync.js（本机 user-state.json 原子同步） │
 │  · POST /api/bank/fetch-md → 公开 Markdown / GitHub 题库拉取（200KB 上限） │
 │  · /api/jobs*           → lib/jobs.js（RemoteOK/HN/RSS/JSON 抓取与去重）  │
 │  · /api/agent/briefs*   → lib/briefs.js（服务端定时每日简报）             │
@@ -157,7 +159,7 @@ INTERVIEW_MATE_JOB_REFRESH_MIN=30            # 岗位雷达自动抓取间隔（
 ### 自动化测试与 CI 门禁
 
 ```bash
-npm test              # 运行 71 项 node:test 行为测试（SRS / 游戏化 / 岗位纯函数 / 真实 Server & 流式代理 / Ollama 免 Key / Quota / Markdown 导入 / Demo 适配层）
+npm test              # 运行 80 项 node:test 行为测试（Code Lab / 磁盘同步 / SRS / 游戏化 / 岗位 / 真实 Server & 流式代理 / Ollama 免 Key / Quota / Markdown 导入 / Demo 适配层）
 npm run lint          # ESLint 9 静态检查
 npm run sync-version  # 校验 package.json ↔ sw.js / index.html 版本号单一来源
 ```
@@ -167,7 +169,7 @@ npm run sync-version  # 校验 package.json ↔ sw.js / index.html 版本号单�
 ## ❓ 常见问题（FAQ）
 
 **Q：不用 API Key 能干什么？**
-看板统计、265+ 题库练习、Leitner 间隔重复、3D 闪卡（含填空与限时模式）、知识库笔记、投递看板、岗位雷达抓取与本地简历匹配分、PDF/Word 简历预览、Markdown/Anki 导入导出、全量 JSON 备份恢复**全部离线可用**。此外本地 **Ollama** 等 `localhost` 模型无需 API Key 即可直接驱动 AI 功能。
+看板统计、265+ 题库练习、**Code Lab 交互式手写与本机/浏览器测试运行**、Leitner 间隔重复、3D 闪卡（含填空与限时模式）、知识库笔记、投递看板、岗位雷达抓取与本地简历匹配分、PDF/Word 简历预览、Markdown/Anki 导入导出、本机磁盘自动同步与全量 JSON 备份恢复**全部离线可用**。此外本地 **Ollama** 等 `localhost` 模型无需 API Key 即可直接驱动 AI 功能。
 
 **Q：国内招聘网站（Boss 直聘、拉勾等）怎么用岗位雷达？**
 国内招聘站有强登录与反爬限制，本项目不做违规爬虫。推荐工作流：在招聘页复制 JD 正文 → 岗位雷达点「**手动添加 JD**」→ 一键生成「**AI 岗位情报**」或带入「**简历工坊**」做深度匹配诊断，也可一键导入「**投递看板**」跟踪进度。

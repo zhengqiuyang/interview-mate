@@ -1,71 +1,79 @@
-# 贡献指南
+# 贡献指南 · Contributing to InterviewMate
 
-感谢你愿意为 InterviewMate 贡献！这是一个**零依赖、本地优先**的项目，保持简单是它的核心竞争力，请让 PR 也保持这个气质。
+感谢你愿意为 **InterviewMate** 贡献！这是一个**零运行时依赖、本地优先**的项目，保持简单克制是它的核心竞争力，请让 PR 也保持这个气质。
 
-## 本地开发
+---
+
+## 核心设计原则
+
+1. **零 npm 运行时依赖**：生产代码（`server.js`、`lib/*`、`public/*`）严格只依赖 **Node.js 18+ 内置标准库**与**浏览器原生 Web API**，请勿引入运行时第三方依赖（仅 `eslint` 与 `@eslint/js`/`globals` 作为开发/CI devDependency）。
+2. **静态演练兼容（GitHub Pages `?demo=1`）**：任何新增界面与 `/api/*` 路由，需在 `public/js/demo.js` 提供对应的 Mock 拦截与降级说明，保证静态托管预览版同样零报错可用。
+3. **单层 CSS Token**：样式统一维护在 `public/css/style.css` 中，颜色/阴影/字体需引用顶层 `--bg` / `--card` / `--ink` / `--brand` 等设计 Token，兼容 **中性 / 墨黑 / 暖调** 三套主题。
+
+---
+
+## 本地开发与校验
 
 ```bash
 git clone https://github.com/zhengqiuyang/interview-mate.git
 cd interview-mate
-node server.js        # 无需 npm install
-# 打开 http://127.0.0.1:3000
+node server.js        # 无需 npm install，刷新浏览器即见最新前端代码
 ```
 
-要求 Node.js 18+。前端是原生 ES Modules，无构建步骤——改完刷新即生效。
+若改动了题库或版本，提交前请执行：
 
-## 项目结构
+```bash
+node scripts/build-demo.mjs          # 修改 data/questions.json 后同步 public/js/demo-bank.js
+node scripts/sync-version.mjs        # 修改 package.json 版本后同步 sw.js / index.html
 
+npm run lint                         # ESLint 9 静态检查（需先 npm ci --ignore-scripts）
+npm test                             # 运行 80 项 node:test 自动化测试
+node scripts/build-demo.mjs --check
+node scripts/sync-version.mjs --check
 ```
-server.js            # 零依赖服务：静态托管 + LLM 流式代理 + Agent 工具代理
-lib/jobs.js          # 岗位雷达引擎（源适配器/关键词过滤/定时调度）
-lib/briefs.js        # 每日简报（快照存储/定时生成）
-data/questions.json  # 内置题库（内容贡献入口）
+
+---
+
+## 项目结构概览
+
+```text
+server.js                 # 零依赖服务：静态托管 + 流式 LLM 代理 + 回环安全校验
+lib/
+  coderun.js              # 本机沙箱（Node / Python 3 / C++17）
+  sync.js                 # 本机 user-state.json 原子落盘同步
+  jobs.js / briefs.js     # 岗位雷达抓取与定时每日简报
+data/questions.json       # 内置高频题库（265+ 题 / 14 分类）
 public/
-  index.html         # 单页应用骨架（所有视图的静态容器）
-  css/style.css      # 设计系统（CSS 变量双主题）
+  index.html              # 单页应用骨架
+  css/style.css           # Design System v4 单层样式与三套主题 Token
   js/
-    app.js           # 入口：命令面板/全局搜索/快捷键/新手引导
-    router.js        # 视图注册表与切换
-    core.js          # 工具库：存储/图标/Markdown/图表/动效/Modal/Toast
-    state.js         # 全局状态单例（localStorage 持久化）
-    srs.js           # 间隔重复算法（Leitner）+ 打卡/热力
-    gamify.js        # XP / 等级 / 成就
-    views/*.js       # 每个视图一个模块，导出 init() 与 onShow()
+    app.js / router.js    # 入口、命令面板、全局搜索、快捷键、路由表
+    core.js / state.js    # 存储/图标/Markdown/Canvas 图表/状态与磁盘自动同步
+    demo.js / md-import.js# ?demo=1 Mock 适配层 / 开源 Markdown 解析导入
+    codelab-cases.js      # Code Lab 多语言预置模板与断言测试集
+    views/*.js            # 业务视图（dashboard/agent/mock/bank/codelab/flashcards/...）
 ```
 
-## 我想加题目
+---
 
-编辑 `data/questions.json`，按现有格式追加：
+## 我想加题目（`data/questions.json`）
 
-```json
-{
-  "id": "net-99",              // 唯一 ID：分类前缀-序号
-  "cat": "net",                // 必须是 categories 里已有的 key
-  "diff": 2,                   // 1 基础 / 2 进阶 / 3 高阶
-  "tags": ["TCP"],
-  "q": "问题",
-  "a": "- 要点一\n- 要点二\n- 加分项：..."   // 支持 - 列表与 **加粗**
-}
-```
+- **原创提炼 & 版权合规**：参考主流知识体系提炼结构化知识点，**禁止直接整段复制粘贴第三方版权题库或书籍原文**。推荐采用「核心结论 → 分点对比/原理拆解 → `> **追问 / 加分项**：...`」。
+- **格式与渲染约定**（匹配 `public/js/core.js` `md()`）：
+  - 题干 `q` 保持纯文本，不加反引号 `` ` `` 或 Markdown 符号；
+  - 答案 `a` 支持 `##` 标题、`-`/`1.` 列表、`>` 引用块、`` `行内代码` ``、`**加粗**` 及 ```` ```cpp ```` / ```` ```python ```` / ```` ```js ```` 围栏代码块（避免使用 Markdown 表格与 `$LaTeX$`）；
+  - 避免在 `**加粗**` 内包裹含单独 `*` 的字符（如 `` `*ptr` `` 请放在加粗括号外）；
+  - 为 `手写代码` 新增题目时，欢迎同步在 `public/js/codelab-cases.js` 补充可运行的 starter 模板与断言测试集！
 
-要求：真实高频题（面经里反复出现的）、答案「要点式 + 加分项」风格、不抄任何项目原文。
+## 我想加官方技能包 / 新视图
 
-## 我想加官方技能包
+- **官方技能包**：在 `public/js/views/agent.js` 的 `OFFICIAL_PACKS` 数组追加一项（`expert` 或 `tool`），保持一键安装即用。
+- **新视图**：在 `public/js/views/` 新建模块导出 `init()` 与 `onShow()`，`public/index.html` 添加 `<section id="view-xxx" class="view">` 与侧栏按钮，并在 `public/js/router.js` 的 `VIEWS` 注册。
 
-`public/js/views/agent.js` 里的 `OFFICIAL_PACKS` 数组追加一项（expert 或 tool），保持「一键安装」即用。
+---
 
-## 我想加视图
+## 提交规范与行为准则
 
-1. `public/js/views/你的视图.js`，导出 `init()`（绑定事件，只跑一次）与 `onShow()`（每次切入刷新）
-2. `index.html` 加 `<section id="view-xxx" class="view">` 与导航按钮
-3. `router.js` 的 `VIEWS` 注册（自动获得命令面板/快捷键入口）
-
-## 提交规范
-
-- commit message：中文或英文均可，格式 `类型: 摘要`（feat / fix / docs / bank / ui）
-- PR 请保持小而聚焦，一个 PR 一件事
-- CI 会跑：服务端语法检查、题库完整性、15 个前端模块导入自检——本地先跑 `node --check server.js` 再提交
-
-## 行为准则
-
-友好、就事论事。面试准备内容以「帮助理解」为目标，不鼓励背题应付，更不允许加入任何用于在线面试作弊的功能。
+- 推荐使用 Conventional Commits：`feat:`、`fix:`、`docs:`、`test:`、`chore:`；单个 PR 聚焦一件事。
+- 请勿强行提交 `.env`、`data/user-state.json`、`data/jobs-store.json`、`data/briefs.json`、`data/files/` 等运行期私人数据。
+- **行为准则**：友好、就事论事。所有能力以「帮助理解与系统备考」为目标，拒绝任何形式的在线面试实时作弊外挂或违规爬虫功能。

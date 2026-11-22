@@ -8,7 +8,7 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg">
-  <link rel="stylesheet" href="css/style.css?v=0.22.0">
+  <link rel="stylesheet" href="css/style.css?v=0.23.0">
 </head>
 <body>
   <div class="app">
@@ -45,7 +45,7 @@
         </div>
       </div>
       <div class="sidebar-foot">
-        <span class="foot-ver">v0.22.0 · 本地零依赖 · 数据自持</span>
+        <span class="foot-ver">v0.23.0 · 本地零依赖 · 数据自持</span>
         <span class="foot-links">
           题库参考 <a href="https://github.com/Snailclimb/JavaGuide" target="_blank" rel="noopener">JavaGuide</a> ·
           <a href="https://github.com/CyC2018/CS-Notes" target="_blank" rel="noopener">CS-Notes</a> ·
@@ -544,8 +544,11 @@
 
         <div class="card settings-card">
           <h3><span class="ico" data-icon="db"></span>数据管理</h3>
-          <p class="hint">所有数据仅存于本浏览器。换电脑或换浏览器时，可导出备份再导入恢复。</p>
+          <p class="hint">本地运行服务时，练习进度、笔记与简历会自动防抖同步至本机 <code>data/user-state.json</code>（防清缓存丢数据），也可导出备份迁移。</p>
+          <p class="hint" id="sync-status"></p>
           <div class="actions">
+            <button class="btn primary" id="btn-sync-push"><span class="ico" data-icon="upload"></span>立即同步本机磁盘</button>
+            <button class="btn" id="btn-sync-pull"><span class="ico" data-icon="download"></span>从本机磁盘恢复</button>
             <button class="btn" id="btn-export-data"><span class="ico" data-icon="download"></span>导出全量备份</button>
             <button class="btn" id="btn-import-data"><span class="ico" data-icon="upload"></span>导入备份</button>
             <input type="file" id="file-import-data" accept="application/json" class="hidden">
@@ -576,7 +579,7 @@
 
         <div class="card settings-card about">
           <h3><span class="ico" data-icon="info"></span>关于</h3>
-          <p>InterviewMate v0.22.0 · 零依赖本地运行 · 数据不出本机（除 LLM 请求本身）</p>
+          <p>InterviewMate v0.23.0 · 零依赖本地运行 · 数据不出本机（除 LLM 请求本身）</p>
           <div class="actions">
             <button class="btn ghost" id="btn-onboarding">🚀 重看新手引导</button>
           </div>
@@ -601,6 +604,6 @@
   <div id="toast-root"></div>
   <div id="fatal-error" class="banner warn hidden" style="position:fixed;left:50%;transform:translateX(-50%);bottom:24px;z-index:200"></div>
 
-  <script type="module" src="js/app.js?v=0.22.0"></script>
+  <script type="module" src="js/app.js?v=0.23.0"></script>
 </body>
 </html>

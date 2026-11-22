@@ -5,10 +5,12 @@ import { streamChat, hasKey } from '../api.js';
 import { isMastered, nextReviewText } from '../srs.js';
 import { switchView } from '../router.js';
 import { startFlashcards } from './flashcards.js';
+import { openCodeLab } from './codelab.js';
 
 const store2 = (key, _val) => persist(key);
 
 export function init() {
+  window.addEventListener('im:bank-updated', () => { if (S.view === 'bank') render(); });
   $('#bank-search').addEventListener('input', debounce((e) => {
     S.bankFilter.q = e.target.value;
     render();
@@ -103,6 +105,7 @@ export function render() {
         ${note ? `<div class="q-note"><b>我的笔记　</b>${md(note)}</div>` : ''}
         <div class="md">${md(q.a)}</div>
         <div class="q-foot">
+          ${q.cat === 'code' || /```/.test(q.a) ? `<button class="btn small primary code-lab-btn">${icon('terminal', 14)}动手写这题</button>` : ''}
           <button class="btn small ghost ai-deep">${icon('sparkles', 14)}让 AI 追问这题</button>
           <button class="btn small ghost fc-one">${icon('cards', 14)}闪卡练这题</button>
           ${srsText ? `<span class="srs-info">${esc(srsText)}</span>` : ''}
@@ -123,6 +126,7 @@ export function render() {
       render();
     };
     $('.done-b', card).onclick = (e) => { e.stopPropagation(); toggleMastered(q.id); render(); };
+    $('.code-lab-btn', card)?.addEventListener('click', (e) => { e.stopPropagation(); openCodeLab(q); });
     $('.ai-deep', card).onclick = (e) => { e.stopPropagation(); openDeepdive(q); };
     $('.fc-one', card).onclick = (e) => { e.stopPropagation(); startFlashcards([q], { source: 'review', title: '单题闪卡' }); };
     $$('[data-rel]', card).forEach((b) => {

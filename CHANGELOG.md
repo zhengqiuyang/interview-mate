@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 格式遵循 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，
 版本号遵循 [Semantic Versioning](https://semver.org/)。
 
+## [0.23.0] - 2026-11-23
+
+### Added
+- **⚡ 交互式代码演练场 Code Lab**（`public/js/views/codelab.js` + `public/js/codelab-cases.js` + `lib/coderun.js`）：
+  - 题库中所有手写代码题与带代码块题目底部新增「**动手写这题**」入口，命令行面板 `⌘K` 支持「打开自由代码演练场」
+  - **浏览器 Web Worker JS 沙箱**：在严格 CSP（`script-src 'self'; worker-src 'self' blob:`）下无需后端即可运行并自动 3s 死循环熔断，支持 GitHub Pages 纯静态演示模式开箱即用
+  - **本机 Python 3 / C++17 真机编译运行**：`node server.js` 探测本机运行时，隔离临时目录编译/执行（支持 `g++`/`clang++` `-std=c++17` 与多线程），严格限制仅回环地址 `127.0.0.1/localhost` 可调用，LAN 模式（`HOST=0.0.0.0`）一律 `403` 拒绝远程代码执行
+  - **内置 18 题多语言断言测试集 + 一键 AI Code Review**（`mode: 'code-review'`）：运行后可流式输出边界漏斗、复杂度与面试官追问，测试通过后支持一键打卡标为已掌握（`+20 XP`）
+- **💾 本机 `data/user-state.json` 自动双向落盘同步**（`lib/sync.js` + `state.js` + `settings.js`）：
+  - 本地运行服务时练习进度、笔记、简历、投递与代码草稿改动 1.5s 防抖原子写入本机 `DATA_DIR/user-state.json`（已 `.gitignore`），清浏览器缓存或换浏览器打开自动无感恢复；设置页新增实时同步状态与「立即同步 / 从本机恢复」按钮，`?demo=1` 演示模式完全隔离
+- **📘 开源贡献规范** `CONTRIBUTING.md` 与新版 `v4` 高清界面截图（含 `v4-codelab.png`、`v4-bank.png`、浅/深色看板图）
+
 ## [0.22.0] - 2026-11-23
 
 ### Added

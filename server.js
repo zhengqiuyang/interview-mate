@@ -46,6 +46,8 @@ const ROOT = __dirname;
 // 这两个模块加载时就会读 env（DATA_DIR），require 必须在 dotenv 之后
 const jobs = require('./lib/jobs.js');
 const briefs = require('./lib/briefs.js');
+const coderun = require('./lib/coderun.js');
+const sync = require('./lib/sync.js');
 const pkg = require('./package.json'); // 版本号唯一来源，见 scripts/sync-version.mjs
 
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -186,6 +188,19 @@ function buildDeepdiveSystemPrompt(question, answer) {
     `题干：${question}`,
     `参考答案要点：${answer}`,
     '要求：一次只问一个追问；追问要有梯度（概念 → 原理 → 边界 → 权衡）；候选人答错时先点出问题再给提示；不要一次给出完整答案。',
+  ].join('\n');
+}
+
+function buildCodeReviewSystemPrompt(question, lang) {
+  return [
+    '你是一位一线大厂资深技术面试官，正在 Review 候选人现场手写的代码。',
+    `题目：${String(question || '自由编码练习').slice(0, 500)}`,
+    `编程语言：${String(lang || 'javascript').slice(0, 32)}`,
+    '请结合候选人提交的代码与实际运行/测试输出，使用简洁、尖锐但具建设性的中文 Markdown 评审：',
+    '1. **正确性与边界条件**：是否遗漏空输入、极值溢出、并发/异常安全或内存泄漏等坑点；',
+    '2. **复杂度分析**：明确时间复杂度与空间复杂度（含递归栈/隐藏分配开销）；',
+    '3. **工程风格与关键优化点**：直接点出命名、可读性或核心数据结构优化方向；',
+    '4. **面试官追问（1-2 题）**：如果候选人写对了，下一步会追问什么变体或进阶约束。',
   ].join('\n');
 }
 
@@ -356,6 +371,11 @@ function hostHeaderIsLocal(req) {
   return hostname === '127.0.0.1' || hostname === 'localhost' || hostname === '::1';
 }
 
+function isLoopbackRemote(req) {
+  const addr = String(req.socket?.remoteAddress || '');
+  return addr === '127.0.0.1' || addr === '::1' || addr === '::ffff:127.0.0.1';
+}
+
 // CSP：index.html 无内联 JS（style-src 需 unsafe-inline——模板里全是 style 属性）；
 // pdf.js worker 同源加载（worker-src 'self'，blob: 兜底）；docx/pdf 预览用 blob 传数据
 const CSP = [
@@ -504,6 +524,9 @@ async function proxyChat(req, res, body) {
         String(body.question || ''),
         String(body.answer || '')
       );
+      break;
+    case 'code-review':
+      system = buildCodeReviewSystemPrompt(body.question, body.lang);
       break;
     default:
       system = FREE_SYSTEM;
@@ -838,6 +861,39 @@ async function handleApi(req, res, pathname) {
       return sendJson(res, 400, { error: e.message });
     }
     return sendJson(res, 404, { error: 'Not Found' });
+  }
+
+  /* ---- Code Lab（检测本地编译器 + 本机回环代码运行） ---- */
+  if (req.method === 'GET' && pathname === '/api/code/runtimes') {
+    return sendJson(res, 200, {
+      ...coderun.detectRuntimes(),
+      localExecAllowed: HOST_IS_LOOPBACK && isLoopbackRemote(req),
+    });
+  }
+  if (req.method === 'POST' && pathname === '/api/code/run') {
+    if (!(HOST_IS_LOOPBACK && isLoopbackRemote(req))) {
+      return sendJson(res, 403, { error: '安全限制：本机代码编译运行仅允许回环地址（127.0.0.1 / localhost）访问' });
+    }
+    try {
+      const body = JSON.parse(await readBody(req));
+      const result = await coderun.runLocalCode(body);
+      return sendJson(res, 200, result);
+    } catch (e) {
+      return sendJson(res, 400, { error: e.message });
+    }
+  }
+
+  /* ---- 本机用户学习状态自动落盘同步 ---- */
+  if (req.method === 'GET' && pathname === '/api/sync/state') {
+    return sendJson(res, 200, sync.readState());
+  }
+  if (req.method === 'PUT' && pathname === '/api/sync/state') {
+    try {
+      const body = JSON.parse(await readBody(req));
+      return sendJson(res, 200, sync.writeState(body));
+    } catch (e) {
+      return sendJson(res, 400, { error: e.message });
+    }
   }
 
   return sendJson(res, 404, { error: 'Not Found' });

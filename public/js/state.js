@@ -56,6 +56,7 @@ export const S = {
   targetDate: store.get('im_target_date', ''),
   profile: store.get('im_profile', { cards: [] }),
   apps: store.get('im_apps', []),
+  codeDrafts: store.get('im_code_drafts', {}),
   serverKey: false,
   bankLoaded: false,
 };
@@ -82,16 +83,125 @@ export const KEYMAP = {
   targetDate: 'im_target_date',
   profile: 'im_profile',
   apps: 'im_apps',
+  codeDrafts: 'im_code_drafts',
 };
 
 // 全量备份/恢复覆盖的全部持久化 key（含 tokens 用量日志）
 export const BACKUP_KEYS = [...Object.values(KEYMAP), 'im_tokens'];
+
+export const syncMeta = { status: 'idle', updatedAt: 0, lastError: '' };
+let syncTimer = null;
+
+function isSyncAllowed() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return false;
+  if (typeof fetch !== 'function' || typeof localStorage === 'undefined') return false;
+  if (window.__imDemoInstalled) return false;
+  if (/[?&]demo=1\b/i.test(String(location?.search || ''))) return false;
+  if (/\.github\.io$/i.test(String(location?.hostname || ''))) return false;
+  return true;
+}
+
+export function collectSyncSnapshot() {
+  const data = {};
+  if (typeof localStorage === 'undefined') return data;
+  for (const k of BACKUP_KEYS) {
+    const raw = localStorage.getItem(k);
+    if (raw !== null) data[k] = raw;
+  }
+  return data;
+}
+
+export async function pushDiskSync() {
+  if (!isSyncAllowed()) return { ok: false, skipped: true };
+  syncMeta.status = 'saving';
+  syncMeta.lastError = '';
+  try {
+    const res = await fetch('/api/sync/state', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: collectSyncSnapshot() }),
+    });
+    const j = await res.json();
+    if (!res.ok) throw new Error(j.error || `HTTP ${res.status}`);
+    if (j.demo) return { ok: false, skipped: true };
+    syncMeta.status = 'synced';
+    syncMeta.updatedAt = j.updatedAt || Date.now();
+    window.dispatchEvent(new CustomEvent('im:sync-updated'));
+    return j;
+  } catch (e) {
+    syncMeta.status = 'error';
+    syncMeta.lastError = e.message || String(e);
+    window.dispatchEvent(new CustomEvent('im:sync-updated'));
+    return { ok: false, error: syncMeta.lastError };
+  }
+}
+
+export function scheduleDiskSync() {
+  if (!isSyncAllowed()) return;
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => { pushDiskSync(); }, 1500);
+}
+
+export async function pullDiskSync() {
+  if (!isSyncAllowed()) return { exists: false, restored: 0, skipped: true };
+  const res = await fetch('/api/sync/state');
+  const j = await res.json();
+  if (!res.ok) throw new Error(j.error || `HTTP ${res.status}`);
+  if (!j.exists || !j.data || typeof j.data !== 'object') return { exists: false, restored: 0 };
+  let restored = 0;
+  for (const [k, v] of Object.entries(j.data)) {
+    if (!BACKUP_KEYS.includes(k)) continue;
+    localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
+    restored += 1;
+  }
+  syncMeta.status = 'synced';
+  syncMeta.updatedAt = j.updatedAt || Date.now();
+  return { exists: true, restored, updatedAt: syncMeta.updatedAt };
+}
+
+/** 本地新浏览器或清缓存首次打开时，若本地尚无关键学习数据而本机磁盘已有存档，自动无感恢复 */
+export async function hydrateFromDiskIfEmpty() {
+  if (!isSyncAllowed()) return { restored: 0 };
+  try {
+    const hasPractice = Boolean(
+      Object.keys(S.srs || {}).length ||
+      (S.sessions || []).length ||
+      (S.knowledge || []).length ||
+      (S.custom || []).length ||
+      (S.resumes || []).length ||
+      (S.apps || []).length
+    );
+    const res = await fetch('/api/sync/state');
+    if (!res.ok) return { restored: 0 };
+    const j = await res.json();
+    if (!j.exists || !j.data || j.demo) return { restored: 0 };
+    syncMeta.status = 'synced';
+    syncMeta.updatedAt = j.updatedAt || 0;
+    if (hasPractice) return { restored: 0 };
+
+    let restored = 0;
+    for (const [k, v] of Object.entries(j.data)) {
+      if (!BACKUP_KEYS.includes(k)) continue;
+      localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
+      restored += 1;
+    }
+    if (restored > 0) {
+      for (const [prop, lsKey] of Object.entries(KEYMAP)) {
+        S[prop] = store.get(lsKey, S[prop]);
+      }
+    }
+    return { restored, updatedAt: syncMeta.updatedAt };
+  } catch (_) {
+    return { restored: 0 };
+  }
+}
 
 export function persist(key) {
   const storageKey = KEYMAP[key] || 'im_' + key;
   if (typeof localStorage === 'undefined') return;
   // 配额满时 safeStorageSet 会 toast 引导导出；内存里的 S 不受影响
   safeStorageSet(storageKey, JSON.stringify(S[key]));
+  scheduleDiskSync();
 }
 
 /* 合并内置题库 + 自定义题库 */

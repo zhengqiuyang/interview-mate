@@ -1,6 +1,7 @@
 # 运行时状态（用户本地数据，不入库）
 data/jobs-store.json
 data/briefs.json
+data/user-state.json
 
 # 密钥
 .env

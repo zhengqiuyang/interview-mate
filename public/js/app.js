@@ -1,6 +1,6 @@
 /* InterviewMate 主入口：路由 / 命令面板 / 快捷键 / 初始化 */
 import { $, $$, esc, icon, toast, hydrateIcons, applyTheme, openModal, store, initMicroInteractions, THEME_ORDER, THEME_NAME } from './core.js';
-import { S, initMigrations } from './state.js';
+import { S, initMigrations, hydrateFromDiskIfEmpty } from './state.js';
 import { checkHealth, loadBank, hasKey } from './api.js';
 import { startFlashcards } from './views/flashcards.js';
 import { VIEWS, switchView } from './router.js';
@@ -36,6 +36,10 @@ function commands() {
     {
       name: '组卷刷题（10 题）', icon: 'cards', keys: ['quiz', '刷题'],
       run: () => { switchView('bank'); setTimeout(() => $('#btn-quiz').click(), 150); },
+    },
+    {
+      name: '打开自由代码演练场（Code Lab）', icon: 'terminal', keys: ['code', 'codelab', 'run', '沙箱', '手写'],
+      run: () => import('./views/codelab.js').then((m) => m.openCodeLab(null)),
     },
     {
       name: '切换深色 / 浅色主题', icon: 'moon', keys: ['theme', 'dark', '主题', '深色'],
@@ -305,6 +309,12 @@ if (typeof window !== 'undefined') {
 
 async function init() {
   if (isDemoMode()) seedDemoData(S);
+  else {
+    const syncRes = await hydrateFromDiskIfEmpty();
+    if (syncRes?.restored) {
+      setTimeout(() => toast(`已自动从本机存档恢复 ${syncRes.restored} 项学习数据`, 'ok'), 350);
+    }
+  }
   initMigrations();
   hydrateIcons();
   initMicroInteractions();

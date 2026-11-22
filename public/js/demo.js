@@ -177,6 +177,18 @@ const ANSWERS = {
     improved: '- **下单链路重构**：引入 RabbitMQ 异步解耦，下单 P99 从 800ms 降至 120ms，峰值支撑 X QPS',
     notes: ['改为动词开头', '补量化占位', '技术栈具体化'],
   }),
+  'code-review': [
+    '## 1. 正确性与边界条件',
+    '- 核心逻辑已覆盖主路径与常规边界；建议再显式检查 `capacity <= 0`、空集合或大整数加法溢出。',
+    '',
+    '## 2. 时间与空间复杂度',
+    '- 平均时间复杂度达到最优量级，附加空间仅与核心辅助结构呈线性/常数关系。',
+    '',
+    '## 3. 工程细节与面试追问',
+    '- 若需在并发读写场景下使用，你会如何加细粒度锁（分段锁 / 读写锁）或无锁化改造？',
+    '',
+    '> 演示模式：以上为示例评审，完整本地运行配置 API Key 后会基于你的真实代码与报错动态分析。',
+  ].join('\n'),
 };
 
 function answerFor(mode, body) {
@@ -330,6 +342,27 @@ async function handleApi(pathname, init, rawUrl) {
 
   if (pathname === '/api/bank/fetch-md') {
     return jsonResponse({ error: '演示模式不支持远程拉取外部链接，可直接粘贴 Markdown 正文或上传本地 .md 文件导入' }, 400);
+  }
+
+  if (pathname === '/api/code/runtimes' && method === 'GET') {
+    return jsonResponse({
+      javascript: { ok: true, mode: 'browser' },
+      python: { ok: false },
+      cpp: { ok: false },
+      localExecAllowed: false,
+      demo: true,
+    });
+  }
+  if (pathname === '/api/code/run') {
+    return jsonResponse({
+      error: '在线演示模式无本地编译后端：JavaScript 可直接使用浏览器 Web Worker 沙箱运行；Python / C++ 请本地运行 node server.js 解锁真机编译运行。',
+    }, 400);
+  }
+  if (pathname === '/api/sync/state' && method === 'GET') {
+    return jsonResponse({ exists: false, updatedAt: 0, data: {}, demo: true });
+  }
+  if (pathname === '/api/sync/state' && method === 'PUT') {
+    return jsonResponse({ ok: true, demo: true, updatedAt: Date.now() });
   }
 
   if (pathname === '/api/files/upload') {

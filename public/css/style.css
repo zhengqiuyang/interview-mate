@@ -1967,6 +1967,129 @@ body:has(.demo-bar) .main { padding-bottom: 120px; }
 body:has(.demo-bar) #mock-chat { height: calc(100vh - 196px); }
 
 /* ============================================================
+   交互式代码演练场 Code Lab
+   ============================================================ */
+
+.cl-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 14px;
+}
+.cl-controls, .cl-actions, .cl-lang-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cl-b-ok { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
+.cl-b-warn { background: var(--warn-bg); color: var(--warn); border-color: var(--warn-line); }
+.cl-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+.cl-left, .cl-right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.cl-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.cl-editor {
+  width: 100%;
+  min-height: 330px;
+  max-height: 55vh;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--card-2);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.55;
+  tab-size: 2;
+  resize: vertical;
+  outline: none;
+}
+.cl-editor:focus { border-color: var(--brand); background: var(--card); }
+.cl-ref {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card-2);
+  padding: 8px 12px;
+  font-size: var(--fs-xs);
+}
+.cl-ref summary { cursor: pointer; font-weight: 600; color: var(--ink-2); }
+.cl-ref-body { margin-top: 10px; max-height: 260px; overflow-y: auto; }
+.cl-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card-2);
+  overflow: hidden;
+}
+.cl-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--card);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.cl-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: var(--bg-2);
+  color: var(--muted);
+  font-weight: 600;
+}
+.cl-badge.ok { background: var(--ok-bg); color: var(--ok); }
+.cl-badge.err { background: var(--danger-bg); color: var(--danger); }
+.cl-badge.warn { background: var(--warn-bg); color: var(--warn); }
+.cl-out, .cl-err {
+  margin: 0;
+  padding: 11px 12px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 220px;
+  overflow-y: auto;
+  color: var(--ink);
+}
+.cl-err {
+  border-top: 1px dashed var(--line);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.cl-rev-out {
+  padding: 11px 12px;
+  font-size: var(--fs-xs);
+  line-height: 1.65;
+  max-height: 260px;
+  overflow-y: auto;
+  color: var(--ink-2);
+}
+
+/* ============================================================
    响应式与打印
    ============================================================ */
 
@@ -1977,7 +2100,7 @@ body:has(.demo-bar) #mock-chat { height: calc(100vh - 196px); }
 }
 
 @media (max-width: 960px) {
-  .dash-spotlight, .dash-grid, .dash-grid2, .mission-grid, .polish-grid, .panel-grid {
+  .dash-spotlight, .dash-grid, .dash-grid2, .mission-grid, .polish-grid, .panel-grid, .cl-grid {
     grid-template-columns: 1fr;
   }
   .panel-card.synthesis { grid-column: auto; }

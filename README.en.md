@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/zhengqiuyang/interview-mate/actions/workflows/ci.yml/badge.svg?style=flat-square)](https://github.com/zhengqiuyang/interview-mate/actions/workflows/ci.yml)
 [![Live Demo](https://img.shields.io/badge/demo-Live_Preview-2563EB?style=flat-square)](https://zhengqiuyang.github.io/interview-mate/?demo=1)
-![version](https://img.shields.io/badge/version-0.22.0-0C0E13?style=flat-square)
+![version](https://img.shields.io/badge/version-0.23.0-0C0E13?style=flat-square)
 ![license](https://img.shields.io/badge/license-MIT-0D7A52?style=flat-square)
 ![deps](https://img.shields.io/badge/dependencies-0-0D7A52?style=flat-square)
 ![node](https://img.shields.io/badge/node-%3E%3D18-339933?style=flat-square)
@@ -33,17 +33,18 @@ Three high-contrast token themes (**Swiss Light / Ink Dark / Editorial Warm**), 
 | Dashboard (Swiss Light) | Dashboard (Ink Dark) |
 | --- | --- |
 | ![Dashboard Light](docs/screenshots/v4-dashboard-light.png) | ![Dashboard Dark](docs/screenshots/v4-dashboard-dark.png) |
-| **Agent Mentor & Missions** | **Question Bank & AI Deep-Dive** |
-| ![Agent Mentor](docs/screenshots/v4-agent.png) | ![Question Bank](docs/screenshots/v4-bank.png) |
+| **Interactive Code Lab (JS/Py/C++17 + AI Review)** | **265+ Question Bank & Deep-Dive** |
+| ![Code Lab](docs/screenshots/v4-codelab.png) | ![Question Bank](docs/screenshots/v4-bank.png) |
 
 ## ✨ Highlights
 
+- **⚡ Interactive Code Lab**: In-browser Web Worker JS sandbox (works offline & on GitHub Pages under strict CSP with 3s infinite-loop termination) + loopback-only local **Python 3 / C++17 (`g++`/`clang++`)** execution, **18 multi-language coding harnesses**, and streaming **AI Code Review**.
 - **🤖 Agent Mentor & Multi-Agent Panel**: Prompt-based tool protocol that works with **any OpenAI-compatible model** (OpenAI, DeepSeek, Zhipu GLM, Moonshot Kimi, keyless local Ollama). Calls 10 built-in local tools (`my_stats`, `my_wrong`, `get_profile`, `search_bank`, `add_cards`, `get_resume`, `search_jobs`, `my_applications`, `save_knowledge`, `search_knowledge`) in a multi-step loop, plus a **Skill Market** for custom HTTP tools and expert personas.
 - **🎙️ Mock Interviews & Voice Review**: Solo or 4-round campaign mode (Tech → Project → System Design → HR) with **Resume & Long-Term Profile context injection**, full voice loop (TTS + SpeechRecognition + audio recording + filler-word & speaking-speed analytics), and shareable score cards.
 - **📚 265+ Question Bank & Open-Source Importer**: 14 categories featuring **C++ (35)**, **AI/LLM & ML Engineering (40)**, **Algorithms & Data Structures (40)**, **Coding Templates (26)**, **Go/Python**, Java, Systems Design, and Frontend/Backend; includes fenced C++/Python/JS Markdown code blocks with one-click copy, plus a built-in **Markdown / GitHub Raw URL importer** to parse any open-source question repo into your personal SRS deck.
 - **🔁 Leitner Spaced Repetition & Anki Sync**: 3D flashcards with **Cloze deletion** and **60s timed oral drills**, 26-week practice heatmap, 7-day due forecast, and two-way Anki TSV import/export.
-- **📮 Job Radar → Resume Studio → Application Kanban**: Auto-fetch jobs from RemoteOK / Hacker News / custom RSS & JSON feeds with local resume match scoring; native PDF & DOCX preview with structured JD diagnosis; 9-column application tracking board.
-- **🔒 Local-First & Hardened**: Zero external server — your API key, notes, resumes, and progress stay in your browser `localStorage` and local `data/` directory. Hardened with loopback `Host` validation (DNS-rebinding protection), strict static CSP headers, two-stage streaming timeouts, and 71 automated `node:test` behavioral tests.
+- **💾 Automatic Local Disk Sync & Application Tracking**: When running `node server.js`, progress, notes, resumes, and drafts auto-sync atomically to `data/user-state.json` (never wiped on browser cache clear; `?demo=1` stays isolated). Plus RemoteOK / HN / RSS Job Radar, native PDF & DOCX preview, and 9-column Application Kanban.
+- **🔒 Local-First & Hardened**: Zero external server — your API key, notes, resumes, and progress stay in your browser `localStorage` and local `data/` directory. Hardened with loopback `Host` validation (DNS-rebinding protection), loopback-only local code execution (`403` on LAN), strict static CSP headers, two-stage streaming timeouts, and 80 automated `node:test` behavioral tests.
 
 ## 🚀 Quick Start
 
@@ -53,6 +54,10 @@ cd interview-mate
 node server.js
 # Open http://127.0.0.1:3000 (or http://127.0.0.1:3000/?demo=1 for mock demo mode)
 ```
+
+## 🤝 Contributing
+
+Contributions to the question bank, coding harnesses, bug fixes, and docs are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## 📄 License
 
