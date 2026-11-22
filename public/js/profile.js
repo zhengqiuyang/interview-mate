@@ -1,5 +1,5 @@
 /* Agent 长期记忆画像：跨场沉淀的「用户画像卡」 */
-import { store, icon, esc, toast, openModal, confirmModal } from './core.js';
+import { $, $$, icon, esc, toast, openModal, confirmModal } from './core.js';
 import { S, persist } from './state.js';
 
 export const PROFILE_TYPES = {

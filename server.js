@@ -14,16 +14,13 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { Readable } = require('stream');
-const jobs = require('./lib/jobs.js');
-const briefs = require('./lib/briefs.js');
 
 const ROOT = __dirname;
-const PUBLIC_DIR = path.join(ROOT, 'public');
-const QUESTIONS_FILE = path.join(ROOT, 'data', 'questions.json');
-const PORT = Number(process.env.PORT || 3000);
-const HOST = process.env.HOST || '127.0.0.1';
 
-/* ---------------- 极简 .env 加载（文件不存在则跳过） ---------------- */
+/* ---------------- 极简 .env 加载（文件不存在则跳过） ----------------
+ * 必须排在所有 require 与常量读取之前：lib/jobs.js、lib/briefs.js 在模块加载时
+ * 就把 DATA_DIR 固化成常量，晚一步加载 .env，里面的 INTERVIEW_MATE_DATA_DIR /
+ * PORT / HOST 就全部失效（P2 复核发现的 pre-existing 问题）。 */
 (function loadDotEnv() {
   try {
     const envPath = path.join(ROOT, '.env');
@@ -45,6 +42,39 @@ const HOST = process.env.HOST || '127.0.0.1';
     console.warn('[warn] .env 解析失败（忽略）：', e.message);
   }
 })();
+
+// 这两个模块加载时就会读 env（DATA_DIR），require 必须在 dotenv 之后
+const jobs = require('./lib/jobs.js');
+const briefs = require('./lib/briefs.js');
+const pkg = require('./package.json'); // 版本号唯一来源，见 scripts/sync-version.mjs
+
+const PUBLIC_DIR = path.join(ROOT, 'public');
+// 可写数据目录：jobs-store / briefs / 上传文件都在这里；题库（只读资产）仍在仓库 data/
+// 测试与多实例用 INTERVIEW_MATE_DATA_DIR 重定向，避免写进仓库工作区
+const DATA_DIR = process.env.INTERVIEW_MATE_DATA_DIR || path.join(ROOT, 'data');
+const QUESTIONS_FILE = path.join(ROOT, 'data', 'questions.json');
+
+/** 读整数型环境变量：非法/越界一律回退默认值。
+ *  Number('abc') 是 NaN，而 setTimeout(NaN) 等价 0ms —— 会让“首字节超时”变成立刻误判。 */
+function intEnv(name, def, opts = {}) {
+  const min = opts.min === undefined ? 0 : opts.min;
+  const max = opts.max === undefined ? 2147483647 : opts.max; // setTimeout 上限
+  const raw = process.env[name];
+  if (raw === undefined || raw === '') return def;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < min || n > max) {
+    console.warn(`[warn] 环境变量 ${name}=${JSON.stringify(raw)} 非法（需 ${min}~${max} 的整数），回退默认值 ${def}`);
+    return def;
+  }
+  return Math.floor(n);
+}
+
+const PORT = intEnv('PORT', 3000, { min: 0, max: 65535 });
+const HOST = process.env.HOST || '127.0.0.1';
+// 流式代理超时（ms）：30s 内必须拿到上游响应头；吐字后 120s 无新数据才算空闲超时。
+// 整场面试可能很长，不设总超时。测试可用环境变量缩短。
+const UPSTREAM_FIRST_BYTE_MS = intEnv('INTERVIEW_MATE_UPSTREAM_FIRST_BYTE_MS', 30000, { min: 1 });
+const UPSTREAM_IDLE_MS = intEnv('INTERVIEW_MATE_UPSTREAM_IDLE_MS', 120000, { min: 1 });
 
 const DEFAULTS = {
   baseURL: process.env.INTERVIEW_MATE_BASE_URL || 'https://open.bigmodel.cn/api/paas/v4',
@@ -134,23 +164,6 @@ const REPORT_INSTRUCTION = [
   '（2-4 条，给出可执行的下一步）',
   '评分要严格、有区分度、有依据，不要客套。',
 ].join('\n');
-
-function buildResumeSystemPrompt() {
-  return [
-    '你是一位资深技术招聘官兼面试辅导专家。用户会提供「简历内容」和「目标岗位 JD」，请输出结构化分析，严格使用如下 Markdown 格式：',
-    '# JD 匹配分析',
-    '## 匹配度评估：X/100',
-    '（一句话结论）',
-    '## 关键要求对照',
-    '- 要求：… → 简历证据：… / 缺失：…',
-    '（逐条对照 JD 的硬性要求与加分项）',
-    '## 面试官可能追问的问题',
-    '（8-10 个，按追问概率从高到低排列，覆盖技术栈、项目细节、匹配缺口）',
-    '## 简历风险点与修改建议',
-    '（2-5 条，指出表述不清、量化不足、与 JD 不匹配之处，给出改写示例）',
-    '分析要具体、直接，基于用户给出的材料，不要编造不存在的内容。',
-  ].join('\n');
-}
 
 function buildDeepdiveSystemPrompt(question, answer) {
   return [
@@ -297,6 +310,8 @@ const FREE_SYSTEM =
 /* ---------------- 工具函数 ---------------- */
 
 function sendJson(res, status, obj) {
+  // SSE 代理中途放弃时响应头可能已写（504/客户端断开竞态），静默放弃而不是崩
+  if (res.headersSent || res.writableEnded) return;
   const body = JSON.stringify(obj);
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
@@ -304,6 +319,42 @@ function sendJson(res, status, obj) {
   });
   res.end(body);
 }
+
+/* ---- DNS rebinding 防护：仅 loopback 绑定时强制 Host 校验（双模式） ----
+ * HOST=0.0.0.0 的局域网用法主机名不可预知，跳过校验；默认 127.0.0.1 下，
+ * 合法 Host 只有 127.0.0.1 / localhost / ::1（端口任意）。 */
+const HOST_IS_LOOPBACK = new Set(['127.0.0.1', 'localhost', '::1', '[::1]'])
+  .has(String(HOST).trim().toLowerCase()); // 用真正绑定的 HOST，别再读 process.env.HOST（.env 里写 0.0.0.0 时两者曾不一致）
+
+function hostHeaderIsLocal(req) {
+  const raw = String(req.headers.host || '');
+  if (!raw) return false;
+  let hostname = raw;
+  if (hostname.startsWith('[')) {
+    const end = hostname.indexOf(']');
+    if (end === -1) return false;
+    hostname = hostname.slice(1, end); // [::1]:3000 → ::1
+  } else if (hostname.includes(':')) {
+    hostname = hostname.slice(0, hostname.lastIndexOf(':')); // 127.0.0.1:3000
+  }
+  hostname = hostname.toLowerCase();
+  return hostname === '127.0.0.1' || hostname === 'localhost' || hostname === '::1';
+}
+
+// CSP：index.html 无内联 JS（style-src 需 unsafe-inline——模板里全是 style 属性）；
+// pdf.js worker 同源加载（worker-src 'self'，blob: 兜底）；docx/pdf 预览用 blob 传数据
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "media-src 'self' blob:",
+  "frame-src 'self' blob:",
+  "worker-src 'self' blob:",
+  "connect-src 'self'",
+  "object-src 'none'",
+  "base-uri 'none'",
+].join('; ');
 
 function readBody(req, limit = 2 * 1024 * 1024) {
   return new Promise((resolve, reject) => {
@@ -361,6 +412,7 @@ function serveStatic(res, pathname) {
       'Content-Type': MIME[ext] || 'application/octet-stream',
       // 本地工具，禁缓存保证修改即时生效
       'Cache-Control': 'no-store',
+      'Content-Security-Policy': CSP,
     });
     res.end(data);
   });
@@ -368,7 +420,7 @@ function serveStatic(res, pathname) {
 
 /* ---------------- LLM 流式代理 ---------------- */
 
-async function proxyChat(res, body) {
+async function proxyChat(req, res, body) {
   const mode = String(body.mode || 'free');
   const raw = Array.isArray(body.messages) ? body.messages : [];
   const messages = raw
@@ -460,26 +512,83 @@ async function proxyChat(res, body) {
       ? body.temperature
       : fallbackTemp;
 
+  /* ---- 超时与取消：两段式（首字节 30s / 空闲 120s），不用总超时 ---- */
+  const ctrl = new AbortController();
+  // 客户端断开（关页 / Stop）→ 立即放弃上游，别让服务端白烧 token。
+  // req 'close' 覆盖请求未读完就断；流式期间真正的断开信号是 res 'close'
+  // （writableEnded=false 的 close = premature disconnect）。
+  const abortIfClientGone = () => {
+    if (!res.writableEnded) ctrl.abort();
+  };
+  req.on('close', abortIfClientGone);
+  res.on('close', abortIfClientGone);
+  res.on('error', () => {
+    if (!ctrl.signal.aborted) ctrl.abort();
+  });
+
+  let firstByteTimer = null;
+  const clearFirstByte = () => {
+    if (firstByteTimer) { clearTimeout(firstByteTimer); firstByteTimer = null; }
+  };
+  // 每次发起上游请求前都要重新计时：stream_options 回退的第二次请求同样在“等首字节”，
+  // 不重新 arm 的话第二次连接挂住就永久 hang（P2 复核遗留问题 2）
+  const armFirstByte = () => {
+    clearFirstByte();
+    firstByteTimer = setTimeout(() => {
+      firstByteTimer = null;
+      ctrl.abort();
+      sendJson(res, 504, { error: `上游 ${Math.round(UPSTREAM_FIRST_BYTE_MS / 1000)}s 内未返回首字节，已中断。请检查服务地址/模型是否可用。` });
+    }, UPSTREAM_FIRST_BYTE_MS);
+  };
+
+  const upstreamPayload = {
+    model,
+    stream: true,
+    stream_options: { include_usage: true },
+    temperature,
+    messages: [{ role: 'system', content: system }, ...messages],
+  };
+  const doFetch = () => fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(upstreamPayload),
+    signal: ctrl.signal,
+  });
+
   let upstream;
+  armFirstByte();
   try {
-    upstream = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        stream: true,
-        stream_options: { include_usage: true },
-        temperature,
-        messages: [{ role: 'system', content: system }, ...messages],
-      }),
-    });
+    upstream = await doFetch();
+    clearFirstByte();
   } catch (e) {
+    clearFirstByte();
+    if (res.headersSent || res.writableEnded) return; // 首字节超时 504 已写 / 客户端已断
+    if (ctrl.signal.aborted) return;
     return sendJson(res, 502, {
       error: `无法连接模型服务（${endpoint}）：${e.message}`,
     });
+  }
+
+  // stream_options 兼容回退：部分 OpenAI 兼容服务不认识这个参数，400 提到就去掉重试一次
+  if ((!upstream.ok || !upstream.body) && upstream.status === 400) {
+    const text = await upstream.text().catch(() => '');
+    if (/stream_options/i.test(text)) {
+      delete upstreamPayload.stream_options;
+      armFirstByte(); // 回退请求也要有首字节超时，否则第二次挂住 = 永久 hang
+      try {
+        upstream = await doFetch();
+        clearFirstByte();
+      } catch (e) {
+        clearFirstByte();
+        if (res.headersSent || res.writableEnded || ctrl.signal.aborted) return;
+        return sendJson(res, 502, {
+          error: `无法连接模型服务（${endpoint}）：${e.message}`,
+        });
+      }
+    }
   }
 
   if (!upstream.ok || !upstream.body) {
@@ -494,14 +603,33 @@ async function proxyChat(res, body) {
     return sendJson(res, 502, { error: `模型服务返回 ${upstream.status}：${detail}` });
   }
 
-  // 以 SSE 原文透传，由前端解析 delta
+  // 以 SSE 原文透传，由前端解析 delta；吐字期间 120s 无新数据 → 空闲超时
   res.writeHead(200, {
     'Content-Type': 'text/plain; charset=utf-8',
     'Cache-Control': 'no-cache, no-transform',
     'X-Accel-Buffering': 'no',
   });
   const nodeStream = Readable.fromWeb(upstream.body);
-  nodeStream.on('error', () => res.end());
+  let idleTimer = setTimeout(() => {
+    ctrl.abort();
+    nodeStream.destroy(new Error(`上游空闲超过 ${Math.round(UPSTREAM_IDLE_MS / 1000)}s`));
+    if (!res.writableEnded) res.end();
+  }, UPSTREAM_IDLE_MS);
+  nodeStream.on('data', () => {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      ctrl.abort();
+      nodeStream.destroy(new Error(`上游空闲超过 ${Math.round(UPSTREAM_IDLE_MS / 1000)}s`));
+      if (!res.writableEnded) res.end();
+    }, UPSTREAM_IDLE_MS);
+  });
+  const stopIdle = () => clearTimeout(idleTimer);
+  nodeStream.on('error', () => {
+    stopIdle();
+    if (!res.writableEnded) res.end();
+  });
+  nodeStream.on('close', stopIdle);
+  res.on('close', stopIdle);
   nodeStream.pipe(res);
 }
 
@@ -511,6 +639,7 @@ async function handleApi(req, res, pathname) {
   if (req.method === 'GET' && pathname === '/api/health') {
     return sendJson(res, 200, {
       ok: true,
+      version: pkg.version,
       serverKeyConfigured: Boolean(DEFAULTS.apiKey),
       baseURL: DEFAULTS.baseURL,
       model: DEFAULTS.model,
@@ -530,7 +659,7 @@ async function handleApi(req, res, pathname) {
   if (req.method === 'POST' && pathname === '/api/chat') {
     try {
       const body = JSON.parse(await readBody(req));
-      return await proxyChat(res, body);
+      return await proxyChat(req, res, body);
     } catch (e) {
       return sendJson(res, 400, { error: '请求解析失败：' + e.message });
     }
@@ -609,7 +738,7 @@ async function handleApi(req, res, pathname) {
   }
 
   /* ---- 简历原文件：上传与展示 ---- */
-  const FILES_DIR = path.join(ROOT, 'data', 'files');
+  const FILES_DIR = path.join(DATA_DIR, 'files'); // 上传文件也是可写数据，跟 DATA_DIR 走
   if (req.method === 'POST' && pathname === '/api/files/upload') {
     try {
       let name = 'file';
@@ -692,6 +821,11 @@ async function callLLM(system, user) {
 /* ---------------- 启动 ---------------- */
 
 const server = http.createServer(async (req, res) => {
+  if (HOST_IS_LOOPBACK && !hostHeaderIsLocal(req)) {
+    return sendJson(res, 403, {
+      error: 'Host 不受信任（DNS rebinding 防护）。请用 127.0.0.1 / localhost 访问。',
+    });
+  }
   let pathname;
   try {
     pathname = decodeURIComponent(new URL(req.url, 'http://x').pathname);
@@ -715,6 +849,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
+  const bound = server.address().port; // PORT=0 时由系统分配，横幅必须报真实端口
   jobs.load();
   briefs.load();
   const refreshMin = Number(process.env.INTERVIEW_MATE_JOB_REFRESH_MIN ?? 30);
@@ -722,8 +857,8 @@ server.listen(PORT, HOST, () => {
   const briefMin = Number(process.env.INTERVIEW_MATE_BRIEF_CHECK_MIN ?? 720);
   briefs.startScheduler(briefMin, callLLM, () => Boolean(DEFAULTS.apiKey));
   console.log('');
-  console.log('  🎯 InterviewMate · AI 面试陪练 v0.6.0');
-  console.log(`  已启动: http://${HOST}:${PORT}`);
+  console.log(`  🎯 InterviewMate · AI 面试陪练 v${pkg.version}`);
+  console.log(`  已启动: http://${HOST}:${bound}`);
   console.log(`  服务端 Key: ${DEFAULTS.apiKey ? '已配置（.env）' : '未配置（可在页面设置中填写）'}`);
   console.log(`  岗位雷达: 自动抓取${refreshMin > 0 ? `每 ${refreshMin} 分钟` : '已关闭'}`);
   console.log(`  每日简报: ${DEFAULTS.apiKey ? `调度器每 ${briefMin} 分钟检查` : '等待服务端 Key（页面 Key 也可现场生成）'}`);

@@ -1,9 +1,14 @@
 /* InterviewMate 主入口：路由 / 命令面板 / 快捷键 / 初始化 */
-import { $, $$, esc, icon, toast, hydrateIcons, applyTheme, openModal, store, initMicroInteractions } from './core.js';
+import { $, $$, esc, icon, toast, hydrateIcons, applyTheme, openModal, store, initMicroInteractions, THEME_ORDER, THEME_NAME } from './core.js';
 import { S, initMigrations } from './state.js';
 import { checkHealth, loadBank, hasKey } from './api.js';
 import { startFlashcards } from './views/flashcards.js';
 import { VIEWS, switchView } from './router.js';
+import { installDemoFetch } from './demo.js';
+
+// 演示模式（?demo=1）：先把 /api/* 换成本地 mock，再走正常初始化。
+// 必须在任何请求发出前执行；非演示模式它什么也不做。
+installDemoFetch();
 
 /* ---------------- 命令面板 ---------------- */
 let paletteSel = 0;
@@ -141,8 +146,8 @@ function openGlobalSearch() {
     const qs = S.questions.filter((q) => `${q.q} ${q.a} ${(q.tags || []).join(' ')}`.toLowerCase().includes(k)).slice(0, 8);
     const kn = S.knowledge.filter((x) => `${x.title} ${x.content}`.toLowerCase().includes(k)).slice(0, 6);
     const notes = Object.entries(S.notes)
-      .filter(([qid, n]) => n.toLowerCase().includes(k))
-      .map(([qid, n]) => S.questions.find((q) => q.id === qid))
+      .filter(([_qid, n]) => n.toLowerCase().includes(k))
+      .map(([qid, _n]) => S.questions.find((q) => q.id === qid))
       .filter(Boolean)
       .slice(0, 5);
     if (!qs.length && !kn.length && !notes.length) {
@@ -253,12 +258,12 @@ function showShortcuts() {
 
 function toggleTheme() {
   const cur = document.documentElement.dataset.theme;
-  S.theme = cur === 'dark' ? 'light' : 'dark';
+  S.theme = THEME_ORDER[(THEME_ORDER.indexOf(cur) + 1) % THEME_ORDER.length];
   localStorage.setItem('im_theme', JSON.stringify(S.theme));
   applyTheme(S.theme);
   $$('#theme-choice button').forEach((b) => b.classList.toggle('active', b.dataset.themeVal === S.theme));
   window.dispatchEvent(new CustomEvent('themechange'));
-  toast(`已切换到${S.theme === 'dark' ? '深色' : '浅色'}主题`, 'ok');
+  toast(`已切换到「${THEME_NAME[S.theme]}」主题`, 'ok');
 }
 
 function onGlobalKey(e) {

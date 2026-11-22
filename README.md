@@ -149,10 +149,27 @@ npm start
 INTERVIEW_MATE_API_KEY=你的key
 INTERVIEW_MATE_BASE_URL=https://open.bigmodel.cn/api/paas/v4
 INTERVIEW_MATE_MODEL=glm-4-flash
+HOST=127.0.0.1          # 0.0.0.0 = 允许局域网访问（此时不强制 Host 校验）
 PORT=3000
+INTERVIEW_MATE_DATA_DIR=   # 可写数据目录，默认仓库 data/；挪出仓库可让升级不丢数据
+INTERVIEW_MATE_UPSTREAM_FIRST_BYTE_MS=30000  # 上游首字节超时
+INTERVIEW_MATE_UPSTREAM_IDLE_MS=120000       # 流式吐字空闲超时
 # 岗位雷达自动抓取间隔（分钟），0 = 关闭
 INTERVIEW_MATE_JOB_REFRESH_MIN=30
 ```
+
+`.env` 在服务启动最早期加载，**改完要重启 `node server.js`**；环境变量优先级低于页面「设置」，高于内置默认值。
+
+### 演示模式（不用装、不用 Key）
+
+在地址后加 `?demo=1`（如 <http://127.0.0.1:3000/?demo=1>），所有 `/api/*` 会被本地 mock 取代：
+
+- 不需要服务端、不需要 API Key，**纯静态托管也能跑**（`public/` 单独发布即可）；
+- 看板 / 题库 / 闪卡 / 模拟面试 / 岗位雷达都能点，AI 回答是本地示例（带打字机流式效果），评估报告也是示例；
+- 数据只写当前浏览器的 localStorage，不会上传任何地方；
+- 与正常模式**共用同一套前端**，只替换 API 适配层（`public/js/demo.js`），不存在第二份 UI。
+
+演示用题库由 `node scripts/build-demo.mjs` 从 `data/questions.json` 生成（CI 校验是否漂移），改题库后记得重跑。
 
 ### 岗位雷达怎么用
 

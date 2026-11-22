@@ -603,7 +603,7 @@ const STATUS_META = {
 };
 const PRIO_META = { high: ['高', 'warn'], mid: ['中', ''], low: ['低', ''] };
 
-export function renderReport(p, jdText = '') {
+export function renderReport(p, _jdText = '') {
   const el = document.createElement('div');
   el.className = 'rs-report';
   const cov = (p.coverage || []).map((c) => {

@@ -1,5 +1,5 @@
 /* 知识库：Markdown 知识条目 + 标签 + 全文检索 + AI 剪藏生成学习卡 */
-import { $, $$, esc, md, icon, toast, openModal, confirmModal, staggerIn } from '../core.js';
+import { $, esc, md, icon, toast, openModal, confirmModal, staggerIn } from '../core.js';
 import { S, persist, remergeBank } from '../state.js';
 import { streamChat, hasKey } from '../api.js';
 import { switchView } from '../router.js';

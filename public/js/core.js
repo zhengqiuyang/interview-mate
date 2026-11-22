@@ -2,6 +2,22 @@
 
 /* ---------- 本地存储（带内存回退，便于 Node 环境导入自检） ---------- */
 const mem = {};
+
+/* QuotaExceededError 处理：localStorage 写满不能静默丢数据——
+ * 至少要告诉用户去导出备份（内存副本仍在，本次会话内数据不丢）。 */
+export function safeStorageSet(key, json) {
+  try {
+    localStorage.setItem(key, json);
+    return true;
+  } catch (e) {
+    console.error('localStorage 写入失败（' + (e && e.name) + '）：', key);
+    try {
+      toast('浏览器存储空间已满：新的保存无法落盘。请尽快到「设置 → 导出备份」保留数据，并清理旧数据后重试', 'err');
+    } catch (_) { /* 无 DOM 环境（Node 自检）忽略 */ }
+    return false;
+  }
+}
+
 export const store = {
   get(key, fallback) {
     try {
@@ -14,9 +30,8 @@ export const store = {
   },
   set(key, val) {
     mem[key] = val;
-    try {
-      if (typeof localStorage !== 'undefined') localStorage.setItem(key, JSON.stringify(val));
-    } catch (_) { /* 空间不足等，忽略 */ }
+    if (typeof localStorage === 'undefined') return;
+    safeStorageSet(key, JSON.stringify(val));
   },
 };
 
@@ -216,31 +231,27 @@ export function confirmModal(msg, { title = '确认操作', danger = true } = {}
 /* ---------- 主题 ---------- */
 const media = (typeof matchMedia !== 'undefined') ? matchMedia('(prefers-color-scheme: dark)') : null;
 
+// 三套 token 主题共用一套 Swiss 排版；顺序即切换顺序
+export const THEME_ORDER = ['light', 'dark', 'warm'];
+export const THEME_NAME = { light: '中性', dark: '墨黑', warm: '暖调' };
+
 export function effectiveTheme(pref) {
-  if (pref === 'dark' || pref === 'light') return pref;
+  if (pref === 'dark' || pref === 'light' || pref === 'warm') return pref;
   return media && media.matches ? 'dark' : 'light';
 }
 
 export function applyTheme(pref) {
   const real = effectiveTheme(pref);
   document.documentElement.dataset.theme = real;
-  // 设计风格（aurora / editorial / brutal），与明暗主题正交
-  try { document.documentElement.dataset.style = S_STYLE(); } catch (_) { /* state 未就绪时忽略 */ }
+  // 旧版「设计风格」维度（aurora / editorial / brutal）已废弃，固定为 swiss
+  document.documentElement.dataset.style = 'swiss';
   const btn = $('#theme-toggle');
   if (btn) {
+    const next = THEME_ORDER[(THEME_ORDER.indexOf(real) + 1) % THEME_ORDER.length];
     const icoEl = $('span[data-icon], span.ico', btn) || btn.firstElementChild;
-    if (icoEl) icoEl.innerHTML = icon(real === 'dark' ? 'sun' : 'moon');
+    if (icoEl) icoEl.innerHTML = icon(next === 'dark' ? 'sun' : next === 'warm' ? 'palette' : 'moon');
     const em = $('em', btn);
-    if (em) em.textContent = real === 'dark' ? '浅色模式' : '深色模式';
-  }
-}
-
-/* 延迟读取风格设置，规避 core ↔ state 循环依赖 */
-function S_STYLE() {
-  try {
-    return JSON.parse(localStorage.getItem('im_style'))?.replace(/"/g, '') || 'aurora';
-  } catch (_) {
-    return (localStorage.getItem('im_style') || '"aurora"').replace(/"/g, '') || 'aurora';
+    if (em) em.textContent = `切到${THEME_NAME[next]}`;
   }
 }
 

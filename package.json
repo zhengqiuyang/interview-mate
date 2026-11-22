@@ -5,7 +5,11 @@
   "description": "InterviewMate · AI 面试陪练 —— 模拟面试、题库练习、简历/JD 诊断，本地零依赖运行",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "test": "node --test",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "sync-version": "node scripts/sync-version.mjs --check"
   },
   "engines": {
     "node": ">=18"
@@ -18,5 +22,10 @@
     "question-bank",
     "career"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "globals": "^17.14.0"
+  }
 }

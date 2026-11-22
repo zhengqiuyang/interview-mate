@@ -1,5 +1,5 @@
 /* 复习中心：间隔重复队列 + 每日挑战 */
-import { $, $$, esc, icon } from '../core.js';
+import { $, esc, icon } from '../core.js';
 import { S } from '../state.js';
 import { dueList, learningList, freshList, masteryStats, streakDays, dailyQuestion, isDailyDone, wrongList } from '../srs.js';
 import { startFlashcards } from './flashcards.js';

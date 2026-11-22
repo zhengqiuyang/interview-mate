@@ -22,17 +22,17 @@
         </div>
       </div>
       <nav class="nav" id="main-nav">
-        <button class="nav-item active" data-view="dashboard"><span class="ico" data-icon="gauge"></span>数据看板</button>
-        <button class="nav-item" data-view="agent"><span class="ico" data-icon="sparkles"></span>智能体教练</button>
-        <button class="nav-item" data-view="mock"><span class="ico" data-icon="mic"></span>模拟面试</button>
-        <button class="nav-item" data-view="bank"><span class="ico" data-icon="book"></span>题库练习</button>
-        <button class="nav-item" data-view="review"><span class="ico" data-icon="repeat"></span>复习中心</button>
-        <button class="nav-item" data-view="jobs"><span class="ico" data-icon="radar"></span>岗位雷达<em class="nav-badge hidden" id="nav-jobs-badge"></em></button>
-        <button class="nav-item" data-view="apps"><span class="ico" data-icon="send"></span>投递看板</button>
-        <button class="nav-item" data-view="knowledge"><span class="ico" data-icon="brain"></span>知识库</button>
-        <button class="nav-item" data-view="resume"><span class="ico" data-icon="clipboard"></span>简历工坊</button>
-        <button class="nav-item" data-view="history"><span class="ico" data-icon="folder"></span>面试记录</button>
-        <button class="nav-item" data-view="settings"><span class="ico" data-icon="settings"></span>设置</button>
+        <button class="nav-item active" data-view="dashboard"><span class="ico" data-icon="gauge"></span><span class="nav-label">数据看板</span></button>
+        <button class="nav-item" data-view="agent"><span class="ico" data-icon="sparkles"></span><span class="nav-label">智能体教练</span></button>
+        <button class="nav-item" data-view="mock"><span class="ico" data-icon="mic"></span><span class="nav-label">模拟面试</span></button>
+        <button class="nav-item" data-view="bank"><span class="ico" data-icon="book"></span><span class="nav-label">题库练习</span></button>
+        <button class="nav-item" data-view="review"><span class="ico" data-icon="repeat"></span><span class="nav-label">复习中心</span></button>
+        <button class="nav-item" data-view="jobs"><span class="ico" data-icon="radar"></span><span class="nav-label">岗位雷达</span><em class="nav-badge hidden" id="nav-jobs-badge"></em></button>
+        <button class="nav-item" data-view="apps"><span class="ico" data-icon="send"></span><span class="nav-label">投递看板</span></button>
+        <button class="nav-item" data-view="knowledge"><span class="ico" data-icon="brain"></span><span class="nav-label">知识库</span></button>
+        <button class="nav-item" data-view="resume"><span class="ico" data-icon="clipboard"></span><span class="nav-label">简历工坊</span></button>
+        <button class="nav-item" data-view="history"><span class="ico" data-icon="folder"></span><span class="nav-label">面试记录</span></button>
+        <button class="nav-item" data-view="settings"><span class="ico" data-icon="settings"></span><span class="nav-label">设置</span></button>
       </nav>
       <div class="sidebar-tools">
         <div id="level-chip" class="level-chip"></div>
@@ -493,18 +493,14 @@
 
         <div class="card settings-card">
           <h3><span class="ico" data-icon="palette"></span>外观与目标</h3>
-          <div class="field" style="margin-bottom:14px">
-            <span>设计风格</span>
-            <div class="seg" id="style-choice">
-              <button data-style-val="aurora">✨ 极光</button>
-              <button data-style-val="editorial">📰 编辑部</button>
-              <button data-style-val="brutal">🧱 粗野主义</button>
+          <div class="field" style="margin-bottom:10px">
+            <span>主题</span>
+            <div class="seg" id="theme-choice">
+              <button data-theme-val="auto">跟随系统</button>
+              <button data-theme-val="light">中性</button>
+              <button data-theme-val="dark">墨黑</button>
+              <button data-theme-val="warm">暖调</button>
             </div>
-          </div>
-          <div class="seg" id="theme-choice">
-            <button data-theme-val="auto">跟随系统</button>
-            <button data-theme-val="light">浅色</button>
-            <button data-theme-val="dark">深色</button>
           </div>
           <label class="field" style="margin-top:14px">
             <span>🎯 目标面试日期（用于看板倒计时与 Agent 冲刺计划）</span>

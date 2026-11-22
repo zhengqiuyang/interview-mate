@@ -84,7 +84,7 @@ function autoGrow(ta) {
 /* ---------- 语音：朗读面试官提问 ---------- */
 function speakable(text) {
   return text
-    .replace(/[#*`>\-]/g, '')
+    .replace(/[#*`>-]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 }

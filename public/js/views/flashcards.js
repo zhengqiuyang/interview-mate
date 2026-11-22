@@ -177,7 +177,7 @@ export function startFlashcards(questions, opts = {}) {
     $('#fc-grades').innerHTML = '';
     $('#fc-done').onclick = close;
     $('#fc-again').onclick = () => {
-      const againQs = questions.filter((q, i) => {
+      const againQs = questions.filter((q, _i) => {
         // 本轮中被评为「不会」的：直接按 summary 无法区分，重新查询 box==0 且刚评过的
         const c = S.srs[q.id];
         return c && c.box === 0 && c.last > Date.now() - 30 * 60 * 1000;
